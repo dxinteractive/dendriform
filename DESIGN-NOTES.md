@@ -34,15 +34,19 @@
 
 - only having hooks that provide state
   - Problem: your state must live in react. Sucks if you want to access anything outside React!
-  - Problem: you get bound to executing things on React's terms, which may not be the best choice, just the most obvious one
+  - Problem: you get bound to executing things on React's terms,
+             which may not be the best choice, just the most obvious one
   - Solution: dont put so much of the useful stuff inside hooks, just allow them to be used with hooks
 
 - upward propagation of changes through a chain of all parcels
-  - Problem: nothing ever knows enough and concurrency gets annoying as different parts of the tree know diferent things
+  - Problem: nothing ever knows enough and concurrency gets annoying as different parts of the tree
+             know different things
   - Problem: treating changes as a stream and batching change sets through time is too laggy
-  - Problem: all parcels require unique keys not only on keypath, but each usage of that keypath which is almost impossible without imposing strange restrictions
+  - Problem: all parcels require unique keys not only on keypath, but each usage of that keypath which
+             is almost impossible without imposing strange restrictions
   - Solution: dont do it. only MAYBE do this for debouncing purposes
-  - Solution: if people want a submittable region halfway down a chain, make it easy to chain a new form off the existing one
+  - Solution: if people want a submittable region halfway down a chain, make it easy to chain a new
+              form off the existing one
 
 - halfway-down-the-chain modifiers:
   - Problem: soo much internal juggling and esoteric usage patterns came about because of this one small idea
@@ -67,7 +71,8 @@
   - Solution: dont make that promise, and defer the decision to someone else (e.g. immer)
 
 - Generic package and a react package
-  - Problem: the internal split surfaces as a slightly more complicated api, and im never really planning to work on or use a non-react version. cross that bridge if we need to later
+  - Problem: the internal split surfaces as a slightly more complicated api, and im never really planning to work on
+             or use a non-react version. cross that bridge if we need to later
   - Solution: single package
 
 - providing a bunch of preset pathways for submit / onChange / update and forcing people to use them can be awkward
@@ -136,10 +141,12 @@ const Form = (props) => {
             draftMeta.cool = true;
         });
     }, []);
-    // ^ making multiple changes after each other like this is now totally fine as the handler isnt so bound to react as to always cause a separate update per change
+    // ^ making multiple changes after each other like this is now totally fine as the handler
+    // isnt so bound to react as to always cause a separate update per change
 
     useEffect(() => void form.setBaseValue(props.response), [props.response]);
-    // ^ syncing data from above? do it like this or something - api could change depending on the need for *access* of base data
+    // ^ syncing data from above? do it like this or something - api could change depending
+    // on the need for *access* of base data
 
     return <form onSubmit={form.onSubmit}>
         {form.branch('name', 200, field => <input {...field.useAttach()} />)}
