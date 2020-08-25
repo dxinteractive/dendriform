@@ -76,7 +76,7 @@
 - Generic package and a react package
   - Problem: the internal split surfaces as a slightly more complicated api, and im never really planning to work on
              or use a non-react version. cross that bridge if we need to later
-  - Solution: single package
+  - Solution: single package, way more succint API!
 
 - providing a bunch of preset pathways for submit / onChange / update and forcing people to use them can be awkward
   - Solution: hooks exist, get the user to use them OUTSIDE the library to solve the issue
