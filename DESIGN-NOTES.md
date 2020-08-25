@@ -92,7 +92,7 @@ const initialMeta = {
     newPet
 };
 
-let form = new Dendriform();
+// let form = new Dendriform();
 // form.key
 // form.path
 // form.meta
@@ -105,25 +105,33 @@ form._keys = {
 }
 */
 
-// form.set(123)
-// form.set(draft => {
-//     draft.reverse()   
-// })
+//form.useValue()
 
 const Form = (props) => {
 
-    // let form = useDendriform({
-    //     initialValue,
-    //     initialMeta,
-    //     onChange: (newValue, {prevValue, set, setBase}) => ...
-    //     derive: draft => {},
-    //     history: 50
-    // });
+    let form = useDendriform({
+        initialValue,
+        initialMeta,
+        onChange: (newValue, {newMeta, prevValue, prevMeta, produceValue}) => {},
+        derive: draft => {},
+        history: 50
+    });
+
+    let [value, produceValue] = form.useValue();
+    let [meta, produceMeta] = form.useMeta();
+
+    let doItAll = useCallback(() => {
+        let produced = produceValue(123);
+
+        produceMeta(draftMeta => {
+            draftMeta.cool = true;
+        });
+    }, []);
 
     // useEffect(() => void form.setBase(foo), [foo]);
 
     return <form onSubmit={form.onSubmit}>
-        {form.branch('name', 200, field => <input {...attach(field)} />)}
+        {form.branch('name', 200, field => <input {...field.useAttach()} />)}
         {form.branch('pets', [options], pets => <PetsEditor pets={pets} />)}
 
         <button type="submit">submit</button>
