@@ -25,7 +25,10 @@
 
 - immutable parcels
   - Problem: they inherently force unnecesary ancestor rerenders
-  - Solution: share an unchanging ref to the form instance instead, from there opt in to binding to React's reactions. Let entire layers of data not cause updates if the data at that level isnt actually used by the user for super performance (e.g. like mobx!)
+  - Solution: share an unchanging ref to the form instance instead, from there opt in
+              to binding to React's reactions. Let entire layers of data not cause updates
+              if the data at that level isnt actually used by the user for super performance
+              (e.g. like mobx!)
 
 - meta stored LITERALLY on each parcel:
   - Problem: leads to a difficult api for accessing these
