@@ -84,6 +84,8 @@ form._keys = {
     'pets.#0.nicknames': ['#0']
 }
 
+keep them in sync using immer patches! :D
+
 ///////////
 
 EXAMPLE USAGES
