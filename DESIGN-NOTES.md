@@ -25,10 +25,21 @@
 
 - immutable parcels
   - Problem: they inherently force unnecesary ancestor rerenders
+  - Problem: React's "pass things down as props and let children decide when to update"
+             is a bit flawed, as child components have to then have a bunch of non-declaritive
+             and difficult to test code to determine if their shouldComponentUpdate() code is good,
+             rather than just letting children opt in to the type of updates they're interested in
+             in a single place
+             (e.g. like mobx!)
+             (e.g. "this component only cares about meta.error! ONLY UPDATE IF THAT BIT CHANGES")
   - Solution: share an unchanging ref to the form instance instead, from there opt in
               to binding to React's reactions. Let entire layers of data not cause updates
               if the data at that level isnt actually used by the user for super performance
               (e.g. like mobx!)
+  - Solution: provide a hook for each type of data to access (value. vs each type of meta), so usage
+              is fine grained enough that re-renders can be reduced heaps WITHOUT touching
+               shouldComponentUpdate() and duplicating the "I want to use this" type code that
+               shouldComponentUpdate() or React.memo() normally wants you to write
 
 - meta stored LITERALLY on each parcel:
   - Problem: leads to a difficult api for accessing these
@@ -65,7 +76,7 @@
   - Problem: lots of code to maintain and tests to write
   - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
 
-- inner platform sundrome
+- inner platform syndrome
   - Problem: seems like parcels has too many array methods, but also doesnt have all of them :/
   - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
 
