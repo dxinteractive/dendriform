@@ -1,9 +1,5 @@
-
-.DS_Store
-coverage
-dist
-lib
-node_modules
 *.log
+.DS_Store
+node_modules
 .cache
-docs
+dist
