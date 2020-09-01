@@ -4,7 +4,7 @@
 - traverse your data like a tree
 - ability to be controlled by higher up data sources / cope with shifting source data
 - keeps original data in original shape, with attachable arbitrary metadata
-- a syntax that doesnt require a new component per field
+- a syntax that doesnt require a new component per field (even if it does this under the hood)
 - autokeyed children
 - debounce
 - validation including async
