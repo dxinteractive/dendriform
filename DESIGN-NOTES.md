@@ -25,13 +25,13 @@
 
 - immutable parcels
   - Problem: they inherently force unnecesary ancestor rerenders
-  - Problem: React's "pass things down as props and let children decide when to update"
-             is a bit flawed, as child components have to then have a bunch of non-declaritive
-             and difficult to test code to determine if their shouldComponentUpdate() code is good,
-             rather than just letting children opt in to the type of updates they're interested in
-             in a single place
-             (e.g. like mobx!)
-             (e.g. "this component only cares about meta.error! ONLY UPDATE IF THAT BIT CHANGES")
+  - Problem: React's whole "pass things down as props and let children decide when to update"
+             is a bit flawed, as child components are forced to have a bunch of non-declaritive
+             and difficult to test code to determine if they shouldComponentUpdate(). Its duplicative,
+             must be kept in sync with the data access, and nobody can be bothered.
+             They should just let child components opt in to the type of updates they're interested in
+             and know if it should update based on that usage. Which is exactly what mobx does.
+             (e.g. I want "this component only cares about meta.error! ONLY UPDATE IF THAT BIT CHANGES")
   - Solution: share an unchanging ref to the form instance instead, from there opt in
               to binding to React's reactions. Let entire layers of data not cause updates
               if the data at that level isnt actually used by the user for super performance
