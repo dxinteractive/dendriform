@@ -1,3 +1,225 @@
-<!DOCTYPE html><html><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="next-head-count" content="2"/><link rel="preload" href="/_next/static/css/ba1d3b8a1304a7c43b03.css" as="style"/><link rel="stylesheet" href="/_next/static/css/ba1d3b8a1304a7c43b03.css"/><link rel="preload" href="/_next/static/U0qB6saPvh8--c3woYxB5/pages/index.js" as="script"/><link rel="preload" href="/_next/static/U0qB6saPvh8--c3woYxB5/pages/_app.js" as="script"/><link rel="preload" href="/_next/static/runtime/webpack-b65cab0b00afd201cbda.js" as="script"/><link rel="preload" href="/_next/static/chunks/framework.934881a8a2d3672acc22.js" as="script"/><link rel="preload" href="/_next/static/chunks/7fa497e3df6a4e619fdfad8336323eca3bbc18e6.90164ddb1c3a531c9145.js" as="script"/><link rel="preload" href="/_next/static/runtime/main-40338d0a87bad8a900d5.js" as="script"/><style data-styled="kxERWr kAsIMp" data-styled-version="4.4.1">
+<!DOCTYPE html><html><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="next-head-count" content="2"/><link rel="preload" href="/_next/static/css/ba1d3b8a1304a7c43b03.css" as="style"/><link rel="stylesheet" href="/_next/static/css/ba1d3b8a1304a7c43b03.css"/><link rel="preload" href="/_next/static/WHv9h2EpVGv_ePAeN2Rbk/pages/index.js" as="script"/><link rel="preload" href="/_next/static/WHv9h2EpVGv_ePAeN2Rbk/pages/_app.js" as="script"/><link rel="preload" href="/_next/static/runtime/webpack-b65cab0b00afd201cbda.js" as="script"/><link rel="preload" href="/_next/static/chunks/framework.934881a8a2d3672acc22.js" as="script"/><link rel="preload" href="/_next/static/chunks/aaf1a9b82a936bbc00769f3d7d6b478b93a7258f.90164ddb1c3a531c9145.js" as="script"/><link rel="preload" href="/_next/static/runtime/main-40338d0a87bad8a900d5.js" as="script"/><style data-styled="kxERWr OwFrU gTIduj" data-styled-version="4.4.1">
 /* sc-component-id: sc-bwzfXH */
-.kxERWr{display:block;padding:16px;}.kAsIMp{display:block;margin-top:16px;}</style></head><body><div id="__next"><div class="sc-bwzfXH kxERWr"><h1>dendriform demo</h1><div class="sc-bwzfXH kAsIMp"><div style="background-color:rgb(168,251,227)">Top level...<div style="background-color:rgb(197,176,237)"><input value="a"/></div><div style="background-color:rgb(252,159,187)"><input value="a"/>;</div><div style="background-color:rgb(183,244,242)"><h2>Up up! <!-- -->12</h2><p>upset!</p></div></div></div></div></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/","query":{},"buildId":"U0qB6saPvh8--c3woYxB5","nextExport":true,"autoExport":true,"isFallback":false}</script><script nomodule="" src="/_next/static/runtime/polyfills-ee4ee5083d7312778722.js"></script><script async="" data-next-page="/" src="/_next/static/U0qB6saPvh8--c3woYxB5/pages/index.js"></script><script async="" data-next-page="/_app" src="/_next/static/U0qB6saPvh8--c3woYxB5/pages/_app.js"></script><script src="/_next/static/runtime/webpack-b65cab0b00afd201cbda.js" async=""></script><script src="/_next/static/chunks/framework.934881a8a2d3672acc22.js" async=""></script><script src="/_next/static/chunks/7fa497e3df6a4e619fdfad8336323eca3bbc18e6.90164ddb1c3a531c9145.js" async=""></script><script src="/_next/static/runtime/main-40338d0a87bad8a900d5.js" async=""></script><script src="/_next/static/U0qB6saPvh8--c3woYxB5/_buildManifest.js" async=""></script><script src="/_next/static/U0qB6saPvh8--c3woYxB5/_ssgManifest.js" async=""></script></body></html>
+.kxERWr{display:block;padding:16px;}.OwFrU{display:block;margin-top:16px;margin-bottom:128px;}.gTIduj{display:block;padding:8px;}</style></head><body><div id="__next"><div class="sc-bwzfXH kxERWr"><h1>dendriform demo</h1><div class="sc-bwzfXH OwFrU"><div style="background-color:rgb(252,212,212)"><div class="sc-bwzfXH gTIduj">Top level... notice how it doesnt rerender becaue it didnt use .useValue() and therefore didnt opt in to receiving value updates, even though the useDendriform() hook holding the state lives in this component</div><div class="sc-bwzfXH gTIduj">2 identical string fields:</div><div class="sc-bwzfXH gTIduj"><div style="background-color:rgb(158,162,243)"><input value="a"/></div></div><div class="sc-bwzfXH gTIduj"><div style="background-color:rgb(190,225,166)"><input value="a"/></div></div><div class="sc-bwzfXH gTIduj">Click below text to change value via editing immer draft...</div><div class="sc-bwzfXH gTIduj"><div style="background-color:rgb(222,204,168)"><h2>Add 3 to draft! - <!-- -->12</h2></div></div><div class="sc-bwzfXH gTIduj">Click below text to trigger 3 separate updates, testing batching...</div><div class="sc-bwzfXH gTIduj"><div style="background-color:rgb(162,227,200)"><h2>Add one, three times! - <!-- -->12</h2></div></div></div></div><pre>
+
+// THINGS TO KEEP
+
+- traverse your data like a tree ✅
+- traverse your data like a tree including arrays
+- ability to be controlled by higher up data sources
+- keeps original data in original shape ✅
+- attachable arbitrary metadata
+- a syntax that doesnt require a new component per field (even if it does this under the hood) ✅
+- autokeyed children
+- debounce changes
+- validation including async
+- opt-in submit with failed request rollbacks
+- undo / redo
+- drag and drop array elements
+- derived data
+- provide modifiers somehow to translate data from one format to another
+- ability to cope with shifting data sources ✅
+- memoize branch creation 🚀
+
+// NEW THINGS
+
+- typescript support! ✅
+- batch changes 🚀
+- better focus control!
+- better integration with existing validation libs like yup
+- able to output partial changes for proper concurrent editing?
+- api that allows components to &quot;opt in&quot; to updates ✅
+- non &quot;inner platform&quot; syntax for editing deep objects (immer) ✅
+- chain a small form off a big one (and dont allow Boundaries to have submit() actions) ✅
+- can instanciate a form outside of react
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// THINGS TO DITCH
+
+- immutable parcels
+  - Problem: they inherently force unnecesary ancestor rerenders
+  - Problem: React&#x27;s whole &quot;pass things down as props and let children decide when to update&quot;
+             is a bit flawed, as child components are forced to have a bunch of non-declaritive
+             and difficult to test code to determine if they shouldComponentUpdate(). Its duplicative,
+             must be kept in sync with the data access, and nobody can be bothered.
+             They should just let child components opt in to the type of updates they&#x27;re interested in
+             and know if it should update based on that usage. Which is exactly what mobx does.
+             (e.g. I want &quot;this component only cares about meta.error! ONLY UPDATE IF THAT BIT CHANGES&quot;)
+  - Solution: share an unchanging ref to the form instance instead, from there opt in
+              to binding to React&#x27;s reactions. Let entire layers of data not cause updates
+              if the data at that level isnt actually used by the user for super performance
+              (e.g. like mobx!)
+  - Solution: provide a hook for each type of data to access (value. vs each type of meta), so usage
+              is fine grained enough that re-renders can be reduced heaps WITHOUT touching
+               shouldComponentUpdate() and duplicating the &quot;I want to use this&quot; type code that
+               shouldComponentUpdate() or React.memo() normally wants you to write
+
+- meta stored LITERALLY on each parcel:
+  - Problem: leads to a difficult api for accessing these
+  - Problem: inability to extend the idea to meta that doesnt belong to one single location path
+  - Solution: meta as a Map() thats keyed on ids, very open and avaiable to all parcels in a tree
+
+- only having hooks that provide state
+  - Problem: your state must live in react. Sucks if you want to access anything outside React!
+  - Problem: you get bound to executing things on React&#x27;s terms,
+             which may not be the best choice, just the most obvious one
+  - Solution: dont put so much of the useful stuff inside hooks, just allow them to be used with hooks
+
+- upward propagation of changes through a chain of all parcels
+  - Problem: nothing ever knows enough and concurrency gets annoying as different parts of the tree
+             know different things
+  - Problem: treating changes as a stream and batching change sets through time is too laggy
+  - Problem: all parcels require unique keys not only on keypath, but each usage of that keypath which
+             is almost impossible without imposing strange restrictions
+  - Solution: dont do it. only MAYBE do this for debouncing purposes
+  - Solution: if people want a submittable region halfway down a chain, make it easy to chain a new
+              form off the existing one
+
+- halfway-down-the-chain modifiers:
+  - Problem: soo much internal juggling and esoteric usage patterns came about because of this one small idea
+  - Problem: knowledge of these modifiers isnt known up at the top where its needed half the time
+  - Solution: config these at the top??? what if two inputs want different modifiers? Needs more thought
+
+- changing data via un-codesplittable methods
+  - Problem: methods on a class arent code-splittable
+  - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
+  - Solution: make people import fancy methods for changing
+
+- roll-your-own history system
+  - Problem: lots of code to maintain and tests to write
+  - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
+
+- inner platform syndrome
+  - Problem: seems like parcels has too many array methods, but also doesnt have all of them :/
+  - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
+
+- the promise to be extensible enough to cope with any data type
+  - Problem: becomes way more difficult to leverage other libraries that deal specifically with immutable state changes
+  - Solution: dont make that promise, and defer the decision to someone else (e.g. immer)
+
+- Generic package and a react package
+  - Problem: the internal split surfaces as a slightly more complicated api, and im never really planning to work on
+             or use a non-react version. cross that bridge if we need to later
+  - Solution: single package, way more succint API!
+
+- providing a bunch of preset pathways for submit / onChange / update and forcing people to use them can be awkward
+  - Solution: hooks exist, get the user to use them OUTSIDE the library to solve the issue
+
+PROBLEM - how to uniquely key array elements!?
+
+key from top like
+
+form._keys = {
+    &#x27;pets&#x27;: [&#x27;#0&#x27;,&#x27;#1&#x27;,&#x27;#2&#x27;],
+    &#x27;pets.#0.nicknames&#x27;: [&#x27;#0&#x27;]
+}
+
+keep them in sync using immer patches! :D
+
+///////////
+
+EXAMPLE USAGES
+
+JUST SPITBALLING
+
+props.response = {
+    name: &#x27;Geoff&#x27;,
+    pets: [
+        {
+            name: &#x27;Woop&#x27;,
+            food: &#x27;Pellets&#x27;,
+            nice: true
+        }
+    ]
+};
+
+const newPet = {
+    name: &#x27;&#x27;,
+    food: &#x27;&#x27;,
+    nice: true
+};
+
+const initialMeta = {};
+
+// let form = new Dendriform();
+// form.key
+// form.path
+
+const Form = (props) =&gt; {
+
+    let form = useDendriform({
+        initialValue: props.response,
+        initialMeta,
+        onChange: (newValue, {newMeta, prevValue, prevMeta, produceValue}) =&gt; {},
+        derive: draft =&gt; {},
+        history: 50
+    });
+
+    let [value, produceValue] = form.useValue();
+    // ^ heres the user opting into make this component react to changes in form value at this level
+
+    let [meta, produceMeta] = form.useMeta();
+    // ^ maybe also this?
+
+    let doItAll = useCallback(() =&gt; {
+        let produced = produceValue(123);
+
+        produceMeta(draftMeta =&gt; {
+            draftMeta.cool = true;
+        });
+    }, []);
+    // ^ making multiple changes after each other like this is now totally fine as the handler
+    // isnt so bound to react as to always cause a separate update per change
+
+    useEffect(() =&gt; void form.setBaseValue(props.response), [props.response]);
+    // ^ syncing data from above? do it like this or something - api could change depending
+    // on the need for *access* of base data
+
+    return &lt;form onSubmit={form.onSubmit}&gt;
+        {form.branch(&#x27;name&#x27;, 200, field =&gt; &lt;input {...field.useAttach()} /&gt;)}
+        {form.branch(&#x27;pets&#x27;, [options], pets =&gt; &lt;PetsEditor pets={pets} /&gt;)}
+
+        &lt;button type=&quot;submit&quot;&gt;submit&lt;/button&gt;
+    &lt;/form&gt;;
+};
+
+// stuff below here may be out of date
+
+const PetsEditor = (props) =&gt; {
+    let {pets} = props;
+
+    return &lt;div&gt;
+        {pets.branchAll(pet =&gt; &lt;&gt;
+            &lt;PetEditor key={pet.key} pet={pet} /&gt;
+            &lt;button onClick={remove(pet)}&gt;Remove&lt;/button&gt;
+            &lt;button onClick={move(pet, -1)}&gt;^&lt;/button&gt;
+        &lt;/&gt;)}
+        &lt;button onClick={push(pets, data =&gt; data.meta.newPet)}&gt;Add&lt;/button&gt;
+    &lt;/div&gt;;
+};
+
+const PetEditor = (props) =&gt; {
+    let {pet} = props;
+    let [nice, setNice] = pet.get(&#x27;nice&#x27;).state();
+
+    return &lt;div&gt;
+        {pet.branch(&#x27;name&#x27;, field =&gt; &lt;input {...attach(field)} /&gt;)}
+        {pet.branch(&#x27;food&#x27;, field =&gt; &lt;input {...attach(field)} /&gt;)}
+
+        &lt;button onClick={setNice(nice =&gt; !nice)}&gt;{nice ? &#x27;nice&#x27; : &#x27;not nice&#x27;}&lt;/button&gt;
+    &lt;/div&gt;;
+};
+</pre></div></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}},"page":"/","query":{},"buildId":"WHv9h2EpVGv_ePAeN2Rbk","nextExport":true,"autoExport":true,"isFallback":false}</script><script nomodule="" src="/_next/static/runtime/polyfills-ee4ee5083d7312778722.js"></script><script async="" data-next-page="/" src="/_next/static/WHv9h2EpVGv_ePAeN2Rbk/pages/index.js"></script><script async="" data-next-page="/_app" src="/_next/static/WHv9h2EpVGv_ePAeN2Rbk/pages/_app.js"></script><script src="/_next/static/runtime/webpack-b65cab0b00afd201cbda.js" async=""></script><script src="/_next/static/chunks/framework.934881a8a2d3672acc22.js" async=""></script><script src="/_next/static/chunks/aaf1a9b82a936bbc00769f3d7d6b478b93a7258f.90164ddb1c3a531c9145.js" async=""></script><script src="/_next/static/runtime/main-40338d0a87bad8a900d5.js" async=""></script><script src="/_next/static/WHv9h2EpVGv_ePAeN2Rbk/_buildManifest.js" async=""></script><script src="/_next/static/WHv9h2EpVGv_ePAeN2Rbk/_ssgManifest.js" async=""></script></body></html>
