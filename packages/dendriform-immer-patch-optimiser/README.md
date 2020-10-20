@@ -1,6 +1,6 @@
 # dendriform-immer-patch-optimiser
 
-[Dendriform](https://github.com/92green/dendriform) uses [Immer](https://github.com/immerjs/immer). Immer is wonderful, especially its ability to produce [patches](https://immerjs.github.io/immer/docs/patches).
+[Dendriform](https://github.com/92green/dendriform) uses [Immer](https://github.com/immerjs/immer). Immer is wonderful, especially its ability to produce [patches](https://immerjs.github.io/immer/docs/patches) for implementing concurrent editing and undo & redo functionality.
 
 But Dendriform needs to track how array elements are moved around. Luckily the RFC6902 JSON patch standard that Immer's patches are similar to describes ["move" operations](https://tools.ietf.org/html/rfc6902#section-4.4). Immer does not produce "move" patches, so this plugin post-processes Immer patches to infer array element movement and produce "move" patches.
 
