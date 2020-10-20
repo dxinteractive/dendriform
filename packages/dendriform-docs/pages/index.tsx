@@ -24,28 +24,374 @@ export const Fixed = styled.div({position: 'fixed'}, styledProps);
 
 export const Absolute = styled.div({position: 'absolute'}, styledProps);
 
+//
+// usage
+//
 
-import React from 'react';
+import {useEffect, useState, useCallback} from 'react';
+import {useDendriform, useInput, useCheckbox, array} from 'dendriform';
 
-// exciting top component
+type MyValue = {
+    text: string;
+    checkbox: boolean;
+    fruit: string|undefined;
+    bar: {
+        baz: number;
+    };
+    pets: Array<{name: string}>;
+};
 
 export default function Main(): React.ReactElement {
+
+    const form = useDendriform<MyValue>({
+        initialValue: {
+            text: 'a',
+            checkbox: true,
+            fruit: undefined,
+            bar: {
+                baz: 12
+            },
+            pets: [
+                {name: 'oh no'},
+                {name: 'oh no!'},
+                {name: 'oh noo!'}
+            ]
+        }
+    });
+
+    console.log('form', form.value.checkbox);
+
+    // tick for testing pure rendering
+    const [tick/*, setTick*/] = useState(0);
+    useEffect(() => {
+        // const interval = setInterval(() => setTick(a => a + 2), 5000);
+        // return () => clearInterval(interval);
+    }, []);
+
     return <Layout>
-        hi
+        <RenderRegion>
+            <Box p={2}>
+                Top level... notice how it doesnt rerender because it didnt use .useValue() and therefore didnt opt in to receiving value updates, even though the useDendriform() hook holding the state lives in this component. This is going to be a **huge** perf boost
+            </Box>
+            <Box p={2}>
+                Tick: {tick} seconds
+            </Box>
+
+
+
+            <Box p={2}>
+                <strong>Text inputs with debounce</strong><br/>
+            </Box>
+            <Box p={2}>
+                {form.branch('text', form => {
+                    return <RenderRegion p={2}>
+                        <input {...useInput(form, 150)} />
+                    </RenderRegion>;
+                })}
+            </Box>
+            <Box p={2}>
+                {form.branch('text', form => {
+                    return <RenderRegion p={2}>
+                        <input {...useInput(form, 150)} /> and tick dependency: {tick} seconds
+                    </RenderRegion>;
+                }, [tick])}
+            </Box>
+
+
+
+            <Box p={2}>
+                <strong>Checkbox field</strong>
+            </Box>
+            <Box p={2}>
+                {form.branch('checkbox', form => {
+                    return <RenderRegion p={2}>
+                        <input type="checkbox" {...useCheckbox(form)} />
+                    </RenderRegion>;
+                })}
+            </Box>
+
+
+
+            <Box p={2}>
+                <strong>Select field</strong>
+            </Box>
+            <Box p={2}>
+                {form.branch('fruit', form => {
+                    return <RenderRegion p={2}>
+                        <select {...useInput(form)}>
+                            <option value="grapefruit">Grapefruit</option>
+                            <option value="lime">Lime</option>
+                            <option value="coconut">Coconut</option>
+                            <option value="mango">Mango</option>
+                        </select>
+                    </RenderRegion>;
+                })}
+            </Box>
+
+
+            <Box p={2}>
+                <strong>Array of fields</strong>
+            </Box>
+            <Box p={2}>
+                {/*form.branchAll('pets', form => {
+                    //const [pets, producePets] = form.useValue();
+
+                    return <RenderRegion p={2}>
+                        {form.branch('name', form => {
+                            return <RenderRegion p={2}>
+                                <input {...useInput(form, 150)} />
+                            </RenderRegion>;
+                        })}
+                    </RenderRegion>;
+                })*/}
+
+                {form.branch('pets', form => {
+                    return <RenderRegion p={2}>
+                        {form.branchAll(form => {
+                            //const [pets, producePets] = form.useValue();
+
+                            return <RenderRegion p={2}>
+                                {form.branch('name', form => {
+                                    return <RenderRegion p={2}>
+                                        <input {...useInput(form, 150)} />
+                                        "{form.value}"
+                                    </RenderRegion>;
+                                })}
+                                "{form.value.name}"
+                                <p>
+                                    <span onClick={() => form.produce(array.remove())}>X </span>
+                                    <span onClick={() => form.produce(array.remove())}>V </span>
+                                    <span onClick={() => form.produce(array.remove())}>^ </span>
+                                </p>
+                            </RenderRegion>;
+                        })}
+                    </RenderRegion>;
+                })}
+
+                <p onClick={() => form.get('pets').produce(array.unshift({name: 'new pet'}))}>unshift()</p>
+                <p onClick={() => form.get('pets').produce(array.shift())}>shift()</p>
+                <p onClick={() => form.get('pets').produce(array.push({name: 'new pet'}))}>push()</p>
+                <p onClick={() => form.get('pets').produce(array.pop())}>pop()</p>
+            </Box>
+
+
+
+            <Box p={2}>
+                <strong>Deep field calling produce() directly</strong>
+            </Box>
+            <Box p={2}>
+                {form.branch(['bar','baz'], form => {
+                    const [baz, produceBaz] = form.useValue();
+
+                    const upSet = useCallback(() => {
+                        produceBaz(baz + 3);
+                    }, [baz]);
+
+                    return <RenderRegion p={2}>
+                        <p onClick={upSet}>Click to +3 - {baz}</p>
+                    </RenderRegion>;
+                })}
+            </Box>
+
+
+
+            <Box p={2}>
+                <strong>Calling produce() multiple times in a row</strong>
+            </Box>
+            <Box p={2}>
+                {form.branch('bar', form => {
+                    const [bar, produceBar] = form.useValue();
+
+                    const up = useCallback(() => {
+                        produceBar(draft => {
+                            draft.baz++;
+                        });
+                        produceBar(draft => {
+                            draft.baz++;
+                        });
+                        produceBar(draft => {
+                            draft.baz++;
+                        });
+                    }, []);
+
+                    return <RenderRegion p={2}>
+                        <p onClick={up}>Click to +3 - {bar.baz}</p>
+                    </RenderRegion>;
+                })}
+            </Box>
+        </RenderRegion>
     </Layout>;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const TEXT = `
+- traverse your data like a tree ✅
+- traverse your data like a tree including arrays ✅
+- keeps original data in original shape ✅
+- a syntax that doesnt require a new component per field (even if it does this under the hood) ✅
+- full typescript support! ✅
+- api that allows components to "opt in" to React updates for way better perf ✅
+- non "inner platform" syntax for editing deep objects (immer) ✅
+- helpers for binding to inputs ✅
+- debounce changes ✅
+- getIn() ✅
+- batch changes ✅
+- memoized branch creation ✅
+- can instanciate forms outside of react ✅
+
+// SOON
+- autokeyed children / rearrange arrays with immer and keep meta associated 🚀
+- onChange
+- derived data computation
+- opt-in es6 class compatibility (may already exist with immer)
+- change request details what fields have changed
+- validation
+- opt-in submit with failed request rollbacks
+- ability to be controlled by higher up data sources including meta
+  - need to make it possible to prefill errors from back end response
+
+// LATER
+- drag and drop array elements
+- provide modifiers somehow to translate data from one format to another
+- arbitrary metadata per field / path
+- ability to rebase actions onto new source data 🚀
+- undo / redo
+- better focus control
+- better integration with existing validation libs like yup
+- chain a small form off a big one for submittable sub-forms
+- able to output JSON patches for proper concurrent editing
+- opt-in es6 Map and Set compatibility
+- arbitrary metadata global to a form
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// THINGS TO DITCH - DATAPARCELS POST-MORTEM
+
+- immutable parcels
+  - Problem: they inherently force unnecesary ancestor rerenders
+  - Problem: React's whole "pass things down as props and let children decide when to update"
+             is a bit flawed, as child components are forced to have a bunch of non-declaritive
+             and difficult to test code to determine if they shouldComponentUpdate(). Its duplicative,
+             must be kept in sync with the data access, and nobody can be bothered.
+             They should just let child components opt in to the type of updates they're interested in
+             and know if it should update based on that usage. Which is exactly what mobx does.
+             (e.g. I want "this component only cares about meta.error! ONLY UPDATE IF THAT BIT CHANGES")
+  - Solution: share an unchanging ref to the form instance instead, from there opt in
+              to binding to React's reactions. Let entire layers of data not cause updates
+              if the data at that level isnt actually used by the user for super performance
+              (e.g. like mobx!)
+  - Solution: provide a hook for each type of data to access (value. vs each type of meta), so usage
+              is fine grained enough that re-renders can be reduced heaps WITHOUT touching
+               shouldComponentUpdate() and duplicating the "I want to use this" type code that
+               shouldComponentUpdate() or React.memo() normally wants you to write
+
+- meta stored LITERALLY on each parcel:
+  - Problem: leads to a difficult api for accessing these
+  - Problem: inability to extend the idea to meta that doesnt belong to one single location path
+  - Solution: meta as a Map() thats keyed on ids, very open and avaiable to all parcels in a tree
+
+- only having hooks that provide state
+  - Problem: your state must live in react. Sucks if you want to access anything outside React!
+  - Problem: you get bound to executing things on React's terms,
+             which may not be the best choice, just the most obvious one
+  - Solution: dont put so much of the useful stuff inside hooks, just allow them to be used with hooks
+
+- upward propagation of changes through a chain of all parcels
+  - Problem: nothing ever knows enough and concurrency gets annoying as different parts of the tree
+             know different things
+  - Problem: treating changes as a stream and batching change sets through time is too laggy
+  - Problem: all parcels require unique keys not only on keypath, but each usage of that keypath which
+             is almost impossible without imposing strange restrictions
+  - Solution: dont do it. only MAYBE do this for debouncing purposes
+  - Solution: if people want a submittable region halfway down a chain, make it easy to chain a new
+              form off the existing one
+
+- halfway-down-the-chain modifiers:
+  - Problem: soo much internal juggling and esoteric usage patterns came about because of this one small idea
+  - Problem: knowledge of these modifiers isnt known up at the top where its needed half the time
+  - Solution: config these at the top??? what if two inputs want different modifiers? Needs more thought
+
+- changing data via un-codesplittable methods
+  - Problem: methods on a class arent code-splittable
+  - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
+  - Solution: make people import fancy methods for changing
+
+- roll-your-own history system
+  - Problem: lots of code to maintain and tests to write
+  - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
+
+- inner platform syndrome
+  - Problem: seems like parcels has too many array methods, but also doesnt have all of them :/
+  - Solution: use immer, it does what the inside of dataparcels was trying to do, but way better
+
+- the promise to be extensible enough to cope with any data type
+  - Problem: becomes way more difficult to leverage other libraries that deal specifically with immutable state changes
+  - Solution: dont make that promise, and defer the decision to someone else (e.g. immer)
+
+- Generic package and a react package
+  - Problem: the internal split surfaces as a slightly more complicated api, and im never really planning to work on
+             or use a non-react version. cross that bridge if we need to later
+  - Solution: single package, way more succint API!
+
+- providing a bunch of preset pathways for submit / onChange / update and forcing people to use them can be awkward
+  - Solution: hooks exist, get the user to use them OUTSIDE the library to solve the issue
+`;
+
+
+
+
+
+
+
+
+
 
 // boring layout, skip this one
 
 interface LayoutProps {
-    children: React.ReactElement[]
+    children: React.ReactNode[]|React.ReactNode
 }
 
 const Layout = (props: LayoutProps): React.ReactElement => {
     return <Box p={3}>
         <h1>dendriform demo</h1>
-        <Box mt={3}>
-            {props.children}
-        </Box>
+        <Box mt={3} mb={6}>{props.children}</Box>
+        <pre>{TEXT}</pre>
     </Box>;
+};
+
+interface RenderRegionProps {
+    children: React.ReactNode[]|React.ReactNode;
+    p?: number;
+}
+
+const RenderRegion = (props: RenderRegionProps): React.ReactElement => {
+    const num = () => Math.floor(Math.random() * 100) + 156;
+    const backgroundColor = `rgb(${num()},${num()},${num()})`;
+    return <Box style={{backgroundColor}} {...props} />;
 };

@@ -15,7 +15,7 @@
     "dcme-style": "^1.1.11",
     "gray-matter": "^4.0.2",
     "dendriform": "^0.0.0",
-    "next": "9.3.5",
+    "next": "9.5.3",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "remark": "^12.0.0",
@@ -33,9 +33,5 @@
     "eslint-config-blueflag": "^0.11.1",
     "eslint-plugin-react": "^7.20.6",
     "typescript": "^4.0.2"
-  },
-  "resolutions": {
-    "**/react": "16.13.1",
-    "**/react-dom": "16.13.1"
   }
 }
