@@ -12,5 +12,9 @@
   },
   "dependencies": {
     "lerna": "^3.10.7"
+  },
+  "workspaces": {
+    "packages": ["packages/*"],
+    "nohoist": ["**/tsdx", "**/tsdx/**"]
   }
 }
