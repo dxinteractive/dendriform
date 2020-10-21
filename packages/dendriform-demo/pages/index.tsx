@@ -30,8 +30,20 @@ export const Absolute = styled.div({position: 'absolute'}, styledProps);
 
 import {useEffect, useState, useCallback} from 'react';
 import {useDendriform, useInput, useCheckbox, array} from 'dendriform';
+import {immerable} from 'immer';
 
-type MyValue = {
+class MyValue {
+
+    [immerable] = true;
+
+    constructor(data: unknown) {
+        this.text = data.text;
+        this.checkbox = data.checkbox;
+        this.fruit = data.fruit;
+        this.bar = data.bar;
+        this.pets = data.pets;
+    }
+
     text: string;
     checkbox: boolean;
     fruit: string|undefined;
@@ -39,13 +51,17 @@ type MyValue = {
         baz: number;
     };
     pets: Array<{name: string}>;
-};
+
+    stringy(): string {
+        return `${this.text} ... ${this.fruit}`;
+    }
+}
 
 export default function Main(): React.ReactElement {
 
     const form = useDendriform<MyValue>({
-        initialValue: {
-            text: 'a',
+        initialValue: new MyValue({
+            text: 'ad',
             checkbox: true,
             fruit: undefined,
             bar: {
@@ -56,16 +72,14 @@ export default function Main(): React.ReactElement {
                 {name: 'oh no!'},
                 {name: 'oh noo!'}
             ]
-        }
+        })
     });
 
-    console.log('form', form.value.checkbox);
-
     // tick for testing pure rendering
-    const [tick/*, setTick*/] = useState(0);
+    const [tick, setTick] = useState(0);
     useEffect(() => {
-        // const interval = setInterval(() => setTick(a => a + 2), 5000);
-        // return () => clearInterval(interval);
+        const interval = setInterval(() => setTick(a => a + 2), 5000);
+        return () => clearInterval(interval);
     }, []);
 
     return <Layout>
@@ -251,12 +265,12 @@ const TEXT = `
 - batch changes ✅
 - memoized branch creation ✅
 - can instanciate forms outside of react ✅
+- autokeyed children / rearrange arrays with immer and keep meta associated ✅
+- opt-in es6 class compatibility ✅
 
 // SOON
-- autokeyed children / rearrange arrays with immer and keep meta associated 🚀
 - onChange
 - derived data computation
-- opt-in es6 class compatibility (may already exist with immer)
 - change request details what fields have changed
 - validation
 - opt-in submit with failed request rollbacks

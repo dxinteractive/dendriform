@@ -1,0 +1,11 @@
+{
+  "docs": {
+    "Documentation": [
+      "intro",
+      "store",
+      "react",
+      "rxjs",
+      "alias"
+    ]
+  }
+}

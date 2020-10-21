@@ -2,7 +2,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "main": "dist/index.js",
-  "description": "...",
+  "description": "Lets you build flexible and powerful data-editing React UIs with better performance and much less code.",
   "typings": "dist/index.d.ts",
   "files": [
     "dist",
