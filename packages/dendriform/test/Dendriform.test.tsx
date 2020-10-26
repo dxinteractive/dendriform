@@ -20,18 +20,14 @@ describe(`Dendriform`, () => {
     describe(`without branching`, () => {
 
         test(`should contain value`, () => {
-            const form = new Dendriform({
-                initialValue: 123
-            });
+            const form = new Dendriform(123);
 
             expect(form.value).toBe(123);
             expect(form.id).toBe(0);
         });
 
         test(`should produce value`, () => {
-            const form = new Dendriform({
-                initialValue: 123
-            });
+            const form = new Dendriform(123);
 
             form.produce(456);
             form.core.changeBuffer.flush();
@@ -41,9 +37,7 @@ describe(`Dendriform`, () => {
         });
 
         test(`should produce value from immer producer`, () => {
-            const form = new Dendriform({
-                initialValue: 1
-            });
+            const form = new Dendriform(1);
 
             form.produce(draft => draft + 1);
             form.core.changeBuffer.flush();
@@ -53,12 +47,10 @@ describe(`Dendriform`, () => {
         });
     });
 
-    describe('.useValue()', () => {
+    describe('useDendriform() and .useValue()', () => {
         test(`should provide value and produce an update`, () => {
 
-            const firstHook = renderHook(() => useDendriform({
-                initialValue: 123
-            }));
+            const firstHook = renderHook(() => useDendriform(123));
 
             const form = firstHook.result.current;
             const {result} = renderHook(() => form.useValue());
@@ -83,9 +75,7 @@ describe(`Dendriform`, () => {
     describe(`.get()`, () => {
 
         test(`should get child value`, () => {
-            const form = new Dendriform({
-                initialValue: ['A','B','C']
-            });
+            const form = new Dendriform(['A','B','C']);
 
             const bForm = form.get(1);
 
@@ -94,9 +84,7 @@ describe(`Dendriform`, () => {
         });
 
         test(`should produce child value with new value`, () => {
-            const form = new Dendriform({
-                initialValue: ['A','B','C']
-            });
+            const form = new Dendriform(['A','B','C']);
 
             const secondElement = form.get(1);
             const nodesBefore = form.core.nodes;
@@ -108,9 +96,7 @@ describe(`Dendriform`, () => {
         });
 
         test(`should produce child value with immer producer`, () => {
-            const form = new Dendriform({
-                initialValue: {foo: [1,2]}
-            });
+            const form = new Dendriform({foo: [1,2]});
 
             form.get('foo').produce(draft => {
                 draft.unshift(0);
@@ -124,9 +110,7 @@ describe(`Dendriform`, () => {
         });
 
         test(`should return same instance for all .get()s to same child`, () => {
-            const form = new Dendriform({
-                initialValue: ['A','B','C']
-            });
+            const form = new Dendriform(['A','B','C']);
 
             expect(form.get(1)).toBe(form.get(1));
         });
@@ -138,10 +122,8 @@ describe(`Dendriform`, () => {
 
         test(`should get child value`, () => {
             const form = new Dendriform({
-                initialValue: {
-                    foo: {
-                        bar: 123
-                    }
+                foo: {
+                    bar: 123
                 }
             });
 
@@ -153,10 +135,8 @@ describe(`Dendriform`, () => {
 
         test(`should produce child value with new value`, () => {
             const form = new Dendriform({
-                initialValue: {
-                    foo: {
-                        bar: 123
-                    }
+                foo: {
+                    bar: 123
                 }
             });
 
@@ -176,9 +156,7 @@ describe(`Dendriform`, () => {
         describe(`branching`, () => {
 
             test(`should branch no levels and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -195,9 +173,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branch no levels (using []) and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -213,9 +189,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branch one level and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -232,9 +206,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branch multiple levels and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: [[['A','B']]]
-                });
+                const form = new Dendriform([[['A','B']]]);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -254,9 +226,7 @@ describe(`Dendriform`, () => {
         describe(`react memo and deps`, () => {
 
             test(`should not re-render when unrelated props changes`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -274,9 +244,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branch no levels with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -298,9 +266,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branch no levels (using []) with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -322,9 +288,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branch one level with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -346,9 +310,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branch multiple levels with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: [[['A','B']]]
-                });
+                const form = new Dendriform([[['A','B']]]);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -380,9 +342,7 @@ describe(`Dendriform`, () => {
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 console.error = () => {};
 
-                const form = new Dendriform({
-                    initialValue: '4'
-                });
+                const form = new Dendriform('4');
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -396,9 +356,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll no levels and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -416,9 +374,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll no levels (using []) and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -436,9 +392,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll one level and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: {foo: ['A','B','C']}
-                });
+                const form = new Dendriform({foo: ['A','B','C']});
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -456,9 +410,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll multiple levels and return React element`, () => {
-                const form = new Dendriform({
-                    initialValue: [[['A','B']]]
-                });
+                const form = new Dendriform([[['A','B']]]);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -478,9 +430,7 @@ describe(`Dendriform`, () => {
         describe(`react memo and deps`, () => {
 
             test(`should not re-render when unrelated props changes`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -498,9 +448,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll no levels with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -522,9 +470,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll no levels (using []) with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: ['A','B','C']
-                });
+                const form = new Dendriform(['A','B','C']);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -546,9 +492,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll one level with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: {foo: ['A','B','C']}
-                });
+                const form = new Dendriform({foo: ['A','B','C']});
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 
@@ -570,9 +514,7 @@ describe(`Dendriform`, () => {
             });
 
             test(`should branchAll multiple levels with deps`, () => {
-                const form = new Dendriform({
-                    initialValue: [[['A','B']]]
-                });
+                const form = new Dendriform([[['A','B']]]);
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
 

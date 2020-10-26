@@ -23,9 +23,7 @@ describe(`array`, () => {
     });
 
     test(`unshift with Dendriform`, () => {
-        const form = new Dendriform({
-            initialValue: ['a','b','c']
-        });
+        const form = new Dendriform(['a','b','c']);
 
         expect(form.get(0).id).toBe(1);
         expect(form.get(1).id).toBe(2);
@@ -60,9 +58,7 @@ describe(`array`, () => {
     });
 
     test(`push with Dendriform`, () => {
-        const form = new Dendriform({
-            initialValue: ['a','b','c']
-        });
+        const form = new Dendriform(['a','b','c']);
 
         form.produce(array.push('d'));
         form.core.changeBuffer.flush();
@@ -93,9 +89,7 @@ describe(`array`, () => {
     });
 
     test(`pop with Dendriform`, () => {
-        const form = new Dendriform({
-            initialValue: ['a','b','c']
-        });
+        const form = new Dendriform(['a','b','c']);
 
         form.produce(array.pop());
         form.core.changeBuffer.flush();
@@ -124,9 +118,7 @@ describe(`array`, () => {
     });
 
     test(`shift with Dendriform`, () => {
-        const form = new Dendriform({
-            initialValue: ['a','b','c']
-        });
+        const form = new Dendriform(['a','b','c']);
 
         form.produce(array.shift());
         form.core.changeBuffer.flush();
@@ -151,9 +143,7 @@ describe(`array`, () => {
     });
 
     test(`remove with Dendriform`, () => {
-        const form = new Dendriform({
-            initialValue: ['a','b','c']
-        });
+        const form = new Dendriform(['a','b','c']);
 
         form.get(0).produce(array.remove());
         form.core.changeBuffer.flush();
@@ -165,13 +155,11 @@ describe(`array`, () => {
 
     test(`unshift deep with Dendriform`, () => {
         const form = new Dendriform({
-            initialValue: {
-                foo: [
-                    {name: 'a'},
-                    {name: 'b'},
-                    {name: 'c'}
-                ]
-            }
+            foo: [
+                {name: 'a'},
+                {name: 'b'},
+                {name: 'c'}
+            ]
         });
 
         form.get('foo').produce(array.unshift({name: 'd'}));

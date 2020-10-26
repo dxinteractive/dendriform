@@ -59,8 +59,8 @@ class MyValue {
 
 export default function Main(): React.ReactElement {
 
-    const form = useDendriform<MyValue>({
-        initialValue: new MyValue({
+    const form = useDendriform<MyValue>(() => {
+        return new MyValue({
             text: 'ad',
             checkbox: true,
             fruit: undefined,
@@ -72,7 +72,7 @@ export default function Main(): React.ReactElement {
                 {name: 'oh no!'},
                 {name: 'oh noo!'}
             ]
-        })
+        });
     });
 
     // tick for testing pure rendering

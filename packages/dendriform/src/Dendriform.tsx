@@ -67,8 +67,8 @@ class Core<C> {
 
     createForm = (node: NodeAny): unknown => {
         const {id} = node;
-        const _branch = {core: this, id};
-        const form = new Dendriform({_branch});
+        const __branch = {core: this, id};
+        const form = new Dendriform<any>({__branch});
         this.dendriforms.set(id, form);
         return form;
     };
@@ -164,17 +164,17 @@ const Branch = React.memo(
 //
 
 type DendriformBranch<C> = {
-    core: Core<C>;
-    id: number;
-};
-
-type DendriformOptions<V,C> = {
-    initialValue: V;
-} | {
-    _branch: DendriformBranch<C>;
+    __branch: {
+        core: Core<C>;
+        id: number;
+    };
 };
 
 type Renderer<D> = (form: D) => React.ReactElement;
+
+//function isDendriformBranch<V,C,>(value: V|DendriformBranch<C>) value is DendriformBranch<C> {
+//    return !!;
+//}
 
 export class Dendriform<V,C=V> {
 
@@ -188,10 +188,12 @@ export class Dendriform<V,C=V> {
 
     id: number;
 
-    constructor(options: DendriformOptions<V,C>) {
-        if('_branch' in options) {
-            this.core = options._branch.core;
-            this.id = options._branch.id;
+    constructor(initialValue: V|DendriformBranch<C>) {
+
+        if((typeof initialValue === 'object' && (initialValue as DendriformBranch<C>).__branch)) {
+            const {__branch} = initialValue as DendriformBranch<C>;
+            this.core = __branch.core;
+            this.id = __branch.id;
             return;
         }
 
@@ -199,7 +201,7 @@ export class Dendriform<V,C=V> {
         this.core = new Core<C>({
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            initialValue: options.initialValue as C
+            initialValue: initialValue as C
         });
     }
 
@@ -297,11 +299,15 @@ export class Dendriform<V,C=V> {
     }
 }
 
-interface UseDendriformOptions<V> {
-    initialValue: V
-}
+type UseDendriformValue<V> = (() => V)|V;
 
-export const useDendriform = <V,C=V>(options: UseDendriformOptions<V>): Dendriform<V,C> => {
-    const [form] = useState(() => new Dendriform<V,C>(options));
+export const useDendriform = <V,C=V>(initialValue: UseDendriformValue<V>): Dendriform<V,C> => {
+    const [form] = useState(() => {
+        const value = typeof initialValue === 'function'
+            ? (initialValue as (() => V))()
+            : initialValue;
+
+        return new Dendriform<V,C>(value as V);
+    });
     return form;
 };
