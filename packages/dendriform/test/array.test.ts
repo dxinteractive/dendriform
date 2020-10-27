@@ -25,18 +25,18 @@ describe(`array`, () => {
     test(`unshift with Dendriform`, () => {
         const form = new Dendriform(['a','b','c']);
 
-        expect(form.get(0).id).toBe(1);
-        expect(form.get(1).id).toBe(2);
-        expect(form.get(2).id).toBe(3);
+        expect(form.branch(0).id).toBe(1);
+        expect(form.branch(1).id).toBe(2);
+        expect(form.branch(2).id).toBe(3);
 
-        form.produce(array.unshift('d'));
+        form.set(array.unshift('d'));
         form.core.changeBuffer.flush();
 
         expect(form.value).toEqual(['d','a','b','c']);
-        expect(form.get(0).id).toBe(4);
-        expect(form.get(1).id).toBe(1);
-        expect(form.get(2).id).toBe(2);
-        expect(form.get(3).id).toBe(3);
+        expect(form.branch(0).id).toBe(4);
+        expect(form.branch(1).id).toBe(1);
+        expect(form.branch(2).id).toBe(2);
+        expect(form.branch(3).id).toBe(3);
     });
 
     test(`push with producePatches`, () => {
@@ -60,14 +60,14 @@ describe(`array`, () => {
     test(`push with Dendriform`, () => {
         const form = new Dendriform(['a','b','c']);
 
-        form.produce(array.push('d'));
+        form.set(array.push('d'));
         form.core.changeBuffer.flush();
 
         expect(form.value).toEqual(['a','b','c','d']);
-        expect(form.get(0).id).toBe(1);
-        expect(form.get(1).id).toBe(2);
-        expect(form.get(2).id).toBe(3);
-        expect(form.get(3).id).toBe(4);
+        expect(form.branch(0).id).toBe(1);
+        expect(form.branch(1).id).toBe(2);
+        expect(form.branch(2).id).toBe(3);
+        expect(form.branch(3).id).toBe(4);
     });
 
     test(`pop with producePatches`, () => {
@@ -91,12 +91,12 @@ describe(`array`, () => {
     test(`pop with Dendriform`, () => {
         const form = new Dendriform(['a','b','c']);
 
-        form.produce(array.pop());
+        form.set(array.pop());
         form.core.changeBuffer.flush();
 
         expect(form.value).toEqual(['a','b']);
-        expect(form.get(0).id).toBe(1);
-        expect(form.get(1).id).toBe(2);
+        expect(form.branch(0).id).toBe(1);
+        expect(form.branch(1).id).toBe(2);
     });
 
     test(`shift with producePatches`, () => {
@@ -120,12 +120,12 @@ describe(`array`, () => {
     test(`shift with Dendriform`, () => {
         const form = new Dendriform(['a','b','c']);
 
-        form.produce(array.shift());
+        form.set(array.shift());
         form.core.changeBuffer.flush();
 
         expect(form.value).toEqual(['b','c']);
-        expect(form.get(0).id).toBe(2);
-        expect(form.get(1).id).toBe(3);
+        expect(form.branch(0).id).toBe(2);
+        expect(form.branch(1).id).toBe(3);
     });
 
     test(`remove with producePatches`, () => {
@@ -145,12 +145,12 @@ describe(`array`, () => {
     test(`remove with Dendriform`, () => {
         const form = new Dendriform(['a','b','c']);
 
-        form.get(0).produce(array.remove());
+        form.branch(0).set(array.remove());
         form.core.changeBuffer.flush();
 
         expect(form.value).toEqual(['b','c']);
-        expect(form.get(0).id).toBe(2);
-        expect(form.get(1).id).toBe(3);
+        expect(form.branch(0).id).toBe(2);
+        expect(form.branch(1).id).toBe(3);
     });
 
     test(`unshift deep with Dendriform`, () => {
@@ -162,7 +162,7 @@ describe(`array`, () => {
             ]
         });
 
-        form.get('foo').produce(array.unshift({name: 'd'}));
+        form.branch('foo').set(array.unshift({name: 'd'}));
         form.core.changeBuffer.flush();
 
         expect(form.value).toEqual({
@@ -174,9 +174,9 @@ describe(`array`, () => {
             ]
         });
 
-        expect(form.get(['foo',0]).id).toBe(5);
-        expect(form.get(['foo',1]).id).toBe(2);
-        expect(form.get(['foo',2]).id).toBe(3);
-        expect(form.get(['foo',3]).id).toBe(4);
+        expect(form.branch(['foo',0]).id).toBe(5);
+        expect(form.branch(['foo',1]).id).toBe(2);
+        expect(form.branch(['foo',2]).id).toBe(3);
+        expect(form.branch(['foo',3]).id).toBe(4);
     });
 });
