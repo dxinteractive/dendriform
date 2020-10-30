@@ -220,7 +220,7 @@ export class Dendriform<V,C=V> {
     useValue = (): [V, ProduceValue<V>] => {
         const [value, setValue] = useState<V>(() => this.value);
 
-        useEffect(() => this.onChange(setValue), []);
+        this.useOnChange(setValue);
 
         // TODO - add optimistic hook updates back in after undo / redo
         // const set = useCallback((toProduce: ToProduce<V>): void => {
@@ -238,6 +238,10 @@ export class Dendriform<V,C=V> {
         const changeCallback: ChangeCallbackRef = [this.id, callback, this.value];
         this.core.changeCallbackRefs.add(changeCallback);
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
+    };
+
+    useOnChange = (callback: ChangeCallback<V>): void => {
+        useEffect(() => this.onChange(callback), []);
     };
 
     branch<K1 extends keyof V, K2 extends keyof V[K1], K3 extends keyof V[K1][K2], K4 extends keyof V[K1][K2][K3]>(path: [K1, K2, K3, K4]): Dendriform<V[K1][K2][K3][K4],C>;

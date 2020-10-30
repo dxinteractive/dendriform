@@ -3,6 +3,7 @@
 
 import styled from 'styled-components';
 import {space, color, layout, flexbox, position, border, compose, textStyle} from 'styled-system';
+import {useRouter} from 'next/router';
 
 const styledProps = compose(
     border,
@@ -59,6 +60,8 @@ class MyValue {
 
 export default function Main(): React.ReactElement {
 
+    const router = useRouter();
+
     const form = useDendriform<MyValue>(() => {
         return new MyValue({
             text: 'ad',
@@ -74,6 +77,17 @@ export default function Main(): React.ReactElement {
             ]
         });
     });
+
+    form.useOnChange(thing => {
+        router.push(`?text=${thing.text}`)
+    });
+
+    const {text} = router.query;
+    useEffect(() => {
+        if(text) {
+            form.branch('text').set(text);
+        }
+    }, [text]);
 
     // tick for testing pure rendering
     const [tick, setTick] = useState(0);
@@ -97,14 +111,14 @@ export default function Main(): React.ReactElement {
                 <strong>Text inputs with debounce</strong><br/>
             </Box>
             <Box p={2}>
-                {form.branch('text', form => {
+                {form.render('text', form => {
                     return <RenderRegion p={2}>
                         <input {...useInput(form, 150)} />
                     </RenderRegion>;
                 })}
             </Box>
             <Box p={2}>
-                {form.branch('text', form => {
+                {form.render('text', form => {
                     return <RenderRegion p={2}>
                         <input {...useInput(form, 150)} /> and tick dependency: {tick} seconds
                     </RenderRegion>;
@@ -117,7 +131,7 @@ export default function Main(): React.ReactElement {
                 <strong>Checkbox field</strong>
             </Box>
             <Box p={2}>
-                {form.branch('checkbox', form => {
+                {form.render('checkbox', form => {
                     return <RenderRegion p={2}>
                         <input type="checkbox" {...useCheckbox(form)} />
                     </RenderRegion>;
@@ -130,7 +144,7 @@ export default function Main(): React.ReactElement {
                 <strong>Select field</strong>
             </Box>
             <Box p={2}>
-                {form.branch('fruit', form => {
+                {form.render('fruit', form => {
                     return <RenderRegion p={2}>
                         <select {...useInput(form)}>
                             <option value="grapefruit">Grapefruit</option>
@@ -147,11 +161,11 @@ export default function Main(): React.ReactElement {
                 <strong>Array of fields</strong>
             </Box>
             <Box p={2}>
-                {/*form.branchAll('pets', form => {
-                    //const [pets, producePets] = form.useValue();
+                {/*form.renderAll('pets', form => {
+                    //const [pets, setPets] = form.useValue();
 
                     return <RenderRegion p={2}>
-                        {form.branch('name', form => {
+                        {form.render('name', form => {
                             return <RenderRegion p={2}>
                                 <input {...useInput(form, 150)} />
                             </RenderRegion>;
@@ -159,13 +173,13 @@ export default function Main(): React.ReactElement {
                     </RenderRegion>;
                 })*/}
 
-                {form.branch('pets', form => {
+                {form.render('pets', form => {
                     return <RenderRegion p={2}>
-                        {form.branchAll(form => {
-                            //const [pets, producePets] = form.useValue();
+                        {form.renderAll(form => {
+                            //const [pets, setPets] = form.useValue();
 
                             return <RenderRegion p={2}>
-                                {form.branch('name', form => {
+                                {form.render('name', form => {
                                     return <RenderRegion p={2}>
                                         <input {...useInput(form, 150)} />
                                         "{form.value}"
@@ -173,32 +187,32 @@ export default function Main(): React.ReactElement {
                                 })}
                                 "{form.value.name}"
                                 <p>
-                                    <span onClick={() => form.produce(array.remove())}>X </span>
-                                    <span onClick={() => form.produce(array.remove())}>V </span>
-                                    <span onClick={() => form.produce(array.remove())}>^ </span>
+                                    <span onClick={() => form.set(array.remove())}>X </span>
+                                    <span onClick={() => form.set(array.remove())}>V </span>
+                                    <span onClick={() => form.set(array.remove())}>^ </span>
                                 </p>
                             </RenderRegion>;
                         })}
                     </RenderRegion>;
                 })}
 
-                <p onClick={() => form.get('pets').produce(array.unshift({name: 'new pet'}))}>unshift()</p>
-                <p onClick={() => form.get('pets').produce(array.shift())}>shift()</p>
-                <p onClick={() => form.get('pets').produce(array.push({name: 'new pet'}))}>push()</p>
-                <p onClick={() => form.get('pets').produce(array.pop())}>pop()</p>
+                <p onClick={() => form.branch('pets').set(array.unshift({name: 'new pet'}))}>unshift()</p>
+                <p onClick={() => form.branch('pets').set(array.shift())}>shift()</p>
+                <p onClick={() => form.branch('pets').set(array.push({name: 'new pet'}))}>push()</p>
+                <p onClick={() => form.branch('pets').set(array.pop())}>pop()</p>
             </Box>
 
 
 
             <Box p={2}>
-                <strong>Deep field calling produce() directly</strong>
+                <strong>Deep field calling set() directly</strong>
             </Box>
             <Box p={2}>
-                {form.branch(['bar','baz'], form => {
-                    const [baz, produceBaz] = form.useValue();
+                {form.render(['bar','baz'], form => {
+                    const [baz, setBaz] = form.useValue();
 
                     const upSet = useCallback(() => {
-                        produceBaz(baz + 3);
+                        setBaz(baz + 3);
                     }, [baz]);
 
                     return <RenderRegion p={2}>
@@ -210,20 +224,20 @@ export default function Main(): React.ReactElement {
 
 
             <Box p={2}>
-                <strong>Calling produce() multiple times in a row</strong>
+                <strong>Calling set() multiple times in a row</strong>
             </Box>
             <Box p={2}>
-                {form.branch('bar', form => {
-                    const [bar, produceBar] = form.useValue();
+                {form.render('bar', form => {
+                    const [bar, setBar] = form.useValue();
 
                     const up = useCallback(() => {
-                        produceBar(draft => {
+                        setBar(draft => {
                             draft.baz++;
                         });
-                        produceBar(draft => {
+                        setBar(draft => {
                             draft.baz++;
                         });
-                        produceBar(draft => {
+                        setBar(draft => {
                             draft.baz++;
                         });
                     }, []);
@@ -267,22 +281,28 @@ const TEXT = `
 - can instanciate forms outside of react ✅
 - autokeyed children / rearrange arrays with immer and keep meta associated ✅
 - opt-in es6 class compatibility ✅
+- onChange ✅
+- ability to be controlled by higher up data sources ✅
+
+// DEV WORK
+- re-add buffered multicalls to .set() even outside of hook usage
+  - add typed .data field to Node for storage of current value outside of Dendriform instances
+- array element move
 
 // SOON
-- onChange
+
 - derived data computation
 - change request details what fields have changed
 - validation
-- opt-in submit with failed request rollbacks
-- ability to be controlled by higher up data sources including meta
   - need to make it possible to prefill errors from back end response
+- opt-in submit with failed request rollbacks
 
 // LATER
 - drag and drop array elements
 - provide modifiers somehow to translate data from one format to another
 - arbitrary metadata per field / path
 - ability to rebase actions onto new source data 🚀
-- undo / redo
+- undo / redo 🚀
 - better focus control
 - better integration with existing validation libs like yup
 - chain a small form off a big one for submittable sub-forms
