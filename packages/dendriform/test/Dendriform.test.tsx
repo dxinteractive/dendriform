@@ -15,6 +15,11 @@ type MyComponentProps<V> = {
     form: Dendriform<V>;
 };
 
+type NotSetTestValue = {
+    foo?: string;
+    bar?: string;
+};
+
 describe(`Dendriform`, () => {
 
     describe(`without branching`, () => {
@@ -115,7 +120,28 @@ describe(`Dendriform`, () => {
             expect(form.branch(1)).toBe(form.branch(1));
         });
 
-        // TODO what about misses?
+        describe('not set values', () => {
+            test(`should get child value`, () => {
+                const form = new Dendriform<NotSetTestValue>({foo: 'a'});
+
+                const bForm = form.branch('bar');
+
+                expect(bForm.value).toBe(undefined);
+                expect(bForm.id).toBe(2);
+            });
+
+            test(`should produce child value with new value`, () => {
+                const form = new Dendriform<NotSetTestValue>({foo: 'a'});
+
+                const bForm = form.branch('bar');
+                const nodesBefore = form.core.nodes;
+                bForm.set('B!');
+                form.core.changeBuffer.flush();
+
+                expect(form.value).toEqual({foo: 'a', bar: 'B!'});
+                expect(form.core.nodes).toEqual(nodesBefore);
+            });
+        });
     });
 
     describe(`.branch() deep`, () => {
