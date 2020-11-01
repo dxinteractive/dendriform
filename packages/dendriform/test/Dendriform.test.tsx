@@ -72,6 +72,26 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe('useDendriform() and .useChange()', () => {
+        test(`should provide value and produce an update`, () => {
+
+            const firstHook = renderHook(() => useDendriform(() => 123));
+            const callback = jest.fn();
+
+            const form = firstHook.result.current;
+            const {result} = renderHook(() => form.useValue());
+            renderHook(() => form.useChange(callback));
+
+            act(() => {
+                result.current[1](456);
+                form.core.changeBuffer.flush();
+            });
+
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback.mock.calls[0][0]).toBe(456);
+        });
+    });
+
     describe(`.branch()`, () => {
 
         test(`should get child value`, () => {

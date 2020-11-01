@@ -207,6 +207,10 @@ export class Dendriform<V,C=V> {
         });
     }
 
+    //
+    // public api
+    //
+
     get value(): V {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -217,10 +221,20 @@ export class Dendriform<V,C=V> {
         this.core.set(this.id, toProduce);
     };
 
+    onChange = (callback: ChangeCallback<V>): (() => void) => {
+        const changeCallback: ChangeCallbackRef = [this.id, callback, this.value];
+        this.core.changeCallbackRefs.add(changeCallback);
+        return () => void this.core.changeCallbackRefs.delete(changeCallback);
+    };
+
+    //
+    // hooks
+    //
+
     useValue = (): [V, ProduceValue<V>] => {
         const [value, setValue] = useState<V>(() => this.value);
 
-        this.useOnChange(setValue);
+        this.useChange(setValue);
 
         // TODO - add optimistic hook updates back in after undo / redo
         // const set = useCallback((toProduce: ToProduce<V>): void => {
@@ -234,15 +248,13 @@ export class Dendriform<V,C=V> {
         return [value, this.set];
     };
 
-    onChange = (callback: ChangeCallback<V>): (() => void) => {
-        const changeCallback: ChangeCallbackRef = [this.id, callback, this.value];
-        this.core.changeCallbackRefs.add(changeCallback);
-        return () => void this.core.changeCallbackRefs.delete(changeCallback);
-    };
-
-    useOnChange = (callback: ChangeCallback<V>): void => {
+    useChange = (callback: ChangeCallback<V>): void => {
         useEffect(() => this.onChange(callback), []);
     };
+
+    //
+    // branching
+    //
 
     branch<K1 extends keyof V, K2 extends keyof V[K1], K3 extends keyof V[K1][K2], K4 extends keyof V[K1][K2][K3]>(path: [K1, K2, K3, K4]): Dendriform<V[K1][K2][K3][K4],C>;
     branch<K1 extends keyof V, K2 extends keyof V[K1], K3 extends keyof V[K1][K2]>(path: [K1, K2, K3]): Dendriform<V[K1][K2][K3],C>;
