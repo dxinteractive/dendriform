@@ -1,4 +1,4 @@
-import {producePatches} from '../src/index';
+import {producePatches, patches} from '../src/index';
 
 describe(`producePatches`, () => {
 
@@ -93,6 +93,45 @@ describe(`producePatches`, () => {
                 {op: 'add', path: [2], value: 'c'}
             ]);
         });
+    });
+
+});
+
+
+describe(`patches`, () => {
+
+    const base = {foo: 0};
+
+    test(`should create patches from patch arrays`, () => {
+
+        const p1 = [{op: 'add', path: ['foo'], value: 123}];
+        const p2 = [{op: 'remove', path: ['foo']}];
+
+        const patchPair = patches(p1, p2);
+
+        expect(patchPair.__patches(base)).toEqual(p1);
+        expect(patchPair.__patchesInverse(base)).toEqual(p2);
+    });
+
+    test(`should create patches from patch creators`, () => {
+
+        const p1 = () => [{op: 'add', path: ['foo'], value: 123}];
+        const p2 = () => [{op: 'remove', path: ['foo']}];
+
+        const patchPair = patches(p1, p2);
+
+        expect(patchPair.__patches(base)).toEqual(p1());
+        expect(patchPair.__patchesInverse(base)).toEqual(p2());
+    });
+
+    test(`should create empty array for inverse patches if not provided`, () => {
+
+        const p1 = [{op: 'add', path: ['foo'], value: 123}];
+
+        const patchPair = patches(p1);
+
+        expect(patchPair.__patches(base)).toEqual(p1);
+        expect(patchPair.__patchesInverse(base)).toEqual([]);
     });
 
 });

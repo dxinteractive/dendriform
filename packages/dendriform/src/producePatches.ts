@@ -4,9 +4,11 @@ import {applyPatches, optimise} from 'dendriform-immer-patch-optimiser';
 import type {Draft} from 'immer';
 import type {DendriformPatch} from 'dendriform-immer-patch-optimiser';
 
+export type PatchCreator<V> = (base: V) => DendriformPatch[];
+
 export type PatchPair<V> = {
-    __patches: (base: V) => DendriformPatch[];
-    __patchesInverse: (base: V) => DendriformPatch[];
+    __patches: PatchCreator<V>;
+    __patchesInverse: PatchCreator<V>;
 };
 
 export type ImmerProducer<V> = (draft: Draft<V>) => V | undefined | void;
@@ -20,6 +22,19 @@ function isPatchPair<V>(toProduce: ToProduce<V>): toProduce is PatchPair<V> {
 function isImmerProducer<V>(toProduce: ToProduce<V>): toProduce is ImmerProducer<V> {
     return typeof (toProduce as ImmerProducer<V>) === 'function';
 }
+
+function isPatchCreator<V>(patches: DendriformPatch[]|PatchCreator<V>): patches is PatchCreator<V> {
+    return typeof (patches as PatchCreator<V>) === 'function';
+}
+
+export const patches = <V,>(patches: DendriformPatch[]|PatchCreator<V>, patchesInverse?: DendriformPatch[]|PatchCreator<V>): PatchPair<V> => {
+    return {
+        __patches: isPatchCreator(patches) ? patches : () => patches,
+        __patchesInverse: patchesInverse
+            ? (isPatchCreator(patchesInverse) ? patchesInverse : () => patchesInverse)
+            : () => []
+    };
+};
 
 export const producePatches = <V>(base: V, toProduce: ToProduce<V>): [V, DendriformPatch[], DendriformPatch[]] => {
     if(isPatchPair(toProduce)) {
