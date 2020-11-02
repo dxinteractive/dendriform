@@ -3,7 +3,7 @@ import {BufferTime} from '../src/index';
 jest.useFakeTimers();
 
 describe(`BufferTime`, () => {
-    test(`should push and callback if time > 0`, () => {
+    test(`should push and callback`, () => {
         const callback = jest.fn();
         const bufferTime = new BufferTime<number>(callback);
         bufferTime.time = 1000;

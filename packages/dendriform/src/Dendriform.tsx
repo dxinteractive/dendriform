@@ -192,7 +192,7 @@ export class Dendriform<V,C=V> {
 
     constructor(initialValue: V|DendriformBranch<C>) {
 
-        if((typeof initialValue === 'object' && (initialValue as DendriformBranch<C>).__branch)) {
+        if(initialValue instanceof Object && (initialValue as DendriformBranch<C>).__branch) {
             const {__branch} = initialValue as DendriformBranch<C>;
             this.core = __branch.core;
             this.id = __branch.id;
