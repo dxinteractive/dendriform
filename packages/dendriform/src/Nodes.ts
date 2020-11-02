@@ -6,42 +6,45 @@ import {produceWithPatches, setAutoFreeze} from 'immer';
 // node.child is a safe mutation as the tree / nodes are entirely internal
 setAutoFreeze(false);
 
-export type NodeObject = {
+export type NodeObject<D> = {
     type: typeof OBJECT;
     child?: {[key: string]: number};
     childKeysCached?: boolean;
     id: number;
     parentId: number;
     cachedKey?: number|string;
+    data: D;
 };
 
-export type NodeArray = {
+export type NodeArray<D> = {
     type: typeof ARRAY;
     child?: number[];
     childKeysCached?: boolean;
     id: number;
     parentId: number;
     cachedKey?: number|string;
+    data: D;
 };
 
-export type NodeBasic = {
+export type NodeBasic<D> = {
     type: typeof BASIC;
     child: undefined;
     childKeysCached?: boolean;
     id: number;
     parentId: number;
     cachedKey?: number|string;
+    data: D;
 };
 
-export type NodeAny = NodeObject|NodeArray|NodeBasic;
+export type NodeAny<D> = NodeObject<D>|NodeArray<D>|NodeBasic<D>;
 
-export type Nodes = {[id: string]: NodeAny};
+export type Nodes<D> = {[id: string]: NodeAny<D>};
 
 export type CountRef = {
     current: number
 };
 
-export const newNode = (countRef: CountRef, value: unknown, parentId: number): NodeAny => {
+export const newNode = <D>(countRef: CountRef, value: unknown, parentId: number): NodeAny<D> => {
     const type = getType(value);
     const id = countRef.current++;
     return {
@@ -52,15 +55,15 @@ export const newNode = (countRef: CountRef, value: unknown, parentId: number): N
     };
 };
 
-export const addNode = (nodes: Nodes, node: NodeAny): void => {
+export const addNode = <D>(nodes: Nodes<D>, node: NodeAny<D>): void => {
     nodes[`${node.id}`] = node;
 };
 
-export const _prepChild = <P>(
-    nodes: Nodes,
+export const _prepChild = <P,D>(
+    nodes: Nodes<D>,
     countRef: CountRef,
     parentValueRef: P,
-    parentNode: NodeAny
+    parentNode: NodeAny<D>
 ): void => {
 
     if(parentNode.type === BASIC || parentNode.child) return;
@@ -75,24 +78,24 @@ export const _prepChild = <P>(
     parentNode.child = child;
 };
 
-export const getNode = (nodes: Nodes, id: number): NodeAny|undefined => {
+export const getNode = <D>(nodes: Nodes<D>, id: number): NodeAny<D>|undefined => {
     return nodes[`${id}`];
 };
 
-export const getNodeByPath = (
-    nodes: Nodes,
+export const getNodeByPath = <D,P = unknown>(
+    nodes: Nodes<D>,
     countRef: CountRef,
-    valueRef: unknown,
+    valueRef: P,
     path: Path,
     andChildren?: boolean
-): NodeAny|undefined => {
+): NodeAny<D>|undefined => {
 
-    let node: NodeAny|undefined = nodes['0'];
+    let node: NodeAny<D>|undefined = nodes['0'];
 
     for(const key of path) {
         if(!node || node.type === BASIC) return undefined;
 
-        _prepChild(nodes, countRef, valueRef, node);
+        _prepChild<P,D>(nodes, countRef, valueRef, node);
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Path is a bit too loose for get() to be happy
@@ -104,16 +107,16 @@ export const getNodeByPath = (
     }
 
     if(andChildren && node) {
-        _prepChild(nodes, countRef, valueRef, node);
+        _prepChild<P,D>(nodes, countRef, valueRef, node);
     }
 
     return node;
 };
 
-export const _getKey = (
-    nodes: Nodes,
-    parentNode: NodeAny,
-    childNode: NodeAny
+export const _getKey = <D>(
+    nodes: Nodes<D>,
+    parentNode: NodeAny<D>,
+    childNode: NodeAny<D>
 ): number|string => {
 
     if(!parentNode.childKeysCached) {
@@ -127,40 +130,40 @@ export const _getKey = (
     return childNode.cachedKey!;
 };
 
-export const getPath = (nodes: Nodes, id: number): Path|undefined => {
-    let node: NodeAny = get(nodes, id);
+export const getPath = <D>(nodes: Nodes<D>, id: number): Path|undefined => {
+    let node: NodeAny<D> = get(nodes, id);
     if(!node) return undefined;
 
     const path: Path = [];
     while(node && node.parentId !== -1) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const parentNode: NodeAny = get(nodes, node.parentId)!;
-        const key = _getKey(nodes, parentNode, node);
+        const parentNode: NodeAny<D> = get(nodes, node.parentId)!;
+        const key = _getKey<D>(nodes, parentNode, node);
         path.unshift(key);
         node = parentNode;
     }
     return path;
 };
 
-export const removeNode = (nodes: Nodes, id: number, onlyChildren = false): void => {
+export const removeNode = <D>(nodes: Nodes<D>, id: number, onlyChildren = false): void => {
     const node = get(nodes, id);
     if(!node) return;
 
     if(node.child) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Path is a bit too loose for get() to be happy
-        each(node.child, id => removeNode(nodes, id));
+        each(node.child, id => removeNode<D>(nodes, id));
     }
     if(!onlyChildren) {
         delete nodes[`${id}`];
     }
 };
 
-export const updateNode = (nodes: Nodes, id: number, value: unknown): void => {
+export const updateNode = <D>(nodes: Nodes<D>, id: number, value: unknown): void => {
     const node = get(nodes, id);
     if(!node) return;
 
-    removeNode(nodes, id, true);
+    removeNode<D>(nodes, id, true);
     const type = getType(value);
     nodes[`${id}`] = {
         ...node,
@@ -169,12 +172,12 @@ export const updateNode = (nodes: Nodes, id: number, value: unknown): void => {
     };
 };
 
-export const produceNodePatches = (
-    nodes: Nodes,
+export const produceNodePatches = <D>(
+    nodes: Nodes<D>,
     countRef: CountRef,
     baseValue: unknown,
     valuePatches: DendriformPatch[]
-): [Nodes, DendriformPatch[], DendriformPatch[]] => {
+): [Nodes<D>, DendriformPatch[], DendriformPatch[]] => {
 
     const result = produceWithPatches(nodes, draft => {
 

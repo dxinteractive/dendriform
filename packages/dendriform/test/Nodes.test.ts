@@ -260,6 +260,21 @@ describe(`Nodes`, () => {
             removeNode(nodes, 1);
             expect(Object.keys(nodes)).toEqual(['0','2']);
         });
+
+        test(`should no nothing if node doesnt exist`, () => {
+            const value = {foo: {bar: 'bar!'}, baz: 'baz!'};
+            const [nodes, countRef] = createNodesFrom(value);
+            // create child nodes first
+            getNodeByPath(nodes, countRef, value, ['foo','bar']);
+
+            const nodesBefore = JSON.stringify(nodes);
+
+            // run test
+            removeNode(nodes, 1888);
+
+            // should be the same still
+            expect(JSON.stringify(nodes)).toBe(nodesBefore);
+        });
     });
 
     describe(`updateNode()`, () => {
@@ -299,6 +314,21 @@ describe(`Nodes`, () => {
             });
             // internal node check
             expect(Object.keys(nodes)).toEqual(['0','1','2','3']);
+        });
+
+        test(`should do nothing if node doesnt exist`, () => {
+            const value = ['a','b','c'];
+            const [nodes, countRef] = createNodesFrom(value);
+            // create child nodes first
+            getNodeByPath(nodes, countRef, value, [2]);
+
+            const nodesBefore = JSON.stringify(nodes);
+
+            // run test
+            updateNode(nodes, 389890890, {c: 'd'});
+
+            // should be the same still
+            expect(JSON.stringify(nodes)).toBe(nodesBefore);
         });
 
     });

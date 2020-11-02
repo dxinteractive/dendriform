@@ -42,10 +42,12 @@ type CoreOptions<C> = {
     initialValue: C;
 };
 
+type NodeData = string|undefined;
+
 class Core<C> {
 
     value: C;
-    nodes: Nodes = {};
+    nodes: Nodes<NodeData> = {};
     nodeCountRef: CountRef = {current: 0};
     changeCallbackRefs = new Set<ChangeCallbackRef>();
     dendriforms = new Map<number,Dendriform<unknown,C>>();
@@ -53,7 +55,7 @@ class Core<C> {
     constructor(options: CoreOptions<C>) {
         this.value = options.initialValue;
         this.changeBuffer.time = 10;
-        addNode(this.nodes, newNode(this.nodeCountRef, this.value, -1));
+        addNode<NodeData>(this.nodes, newNode<NodeData>(this.nodeCountRef, this.value, -1));
     }
 
     getPath = (id: number): Path|undefined => {
@@ -66,7 +68,7 @@ class Core<C> {
         return getIn(this.value, path);
     };
 
-    createForm = (node: NodeAny): unknown => {
+    createForm = (node: NodeAny<NodeData>): unknown => {
         const {id} = node;
         const __branch = {core: this, id};
         const form = new Dendriform<any>({__branch});
@@ -80,7 +82,7 @@ class Core<C> {
             throw new Error('NOPE!');
         }
         const path = basePath.concat(appendPath);
-        const node = getNodeByPath(this.nodes, this.nodeCountRef, this.value, path);
+        const node = getNodeByPath<NodeData>(this.nodes, this.nodeCountRef, this.value, path);
         if(!node) {
             throw new Error('NOPE!!!');
         }
@@ -97,7 +99,7 @@ class Core<C> {
         const valuePatchesZoomed = zoomOutPatches(path, valuePatches);
         const valuePatchesInvZoomed = zoomOutPatches(path, valuePatchesInv);
 
-        const [, nodesPatches, nodesPatchesInv] = produceNodePatches(
+        const [, nodesPatches, nodesPatchesInv] = produceNodePatches<NodeData>(
             this.nodes,
             this.nodeCountRef,
             this.value,
