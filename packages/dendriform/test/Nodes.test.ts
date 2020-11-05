@@ -1,12 +1,16 @@
 import {newNode, addNode, getNode, getPath, getNodeByPath, updateNode, removeNode, produceNodePatches} from '../src/index';
-import type {Nodes, NodeAny, CountRef} from '../src/index';
+import type {Nodes, NodeAny, NewNodeCreator} from '../src/index';
 import {BASIC, OBJECT, ARRAY, applyPatches} from 'dendriform-immer-patch-optimiser';
 
-const createNodesFrom = (value: unknown): [Nodes, CountRef] => {
+type E = string;
+const exampleData: E = 'aaa';
+
+const createNodesFrom = (value: unknown): [Nodes<E>, NewNodeCreator<E>] => {
     const nodes = {};
     const countRef = {current: 0};
-    addNode(nodes, newNode(countRef, value, -1));
-    return [nodes, countRef];
+    const newNodeCreator = newNode(countRef, exampleData);
+    addNode(nodes, newNodeCreator(value, -1));
+    return [nodes, newNodeCreator];
 };
 
 describe(`Nodes`, () => {
@@ -22,30 +26,31 @@ describe(`Nodes`, () => {
                 type: BASIC,
                 child: undefined,
                 parentId: -1,
-                id: 0
+                id: 0,
+                data: exampleData
             };
 
-            expect(newNode(countRef, undefined, -1)).toEqual(expected);
+            expect(newNode(countRef, exampleData)(undefined, -1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef, null, -1)).toEqual(expected);
+            expect(newNode(countRef, exampleData)(null, -1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef, 1, -1)).toEqual(expected);
+            expect(newNode(countRef, exampleData)(1, -1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef, 'string', -1)).toEqual(expected);
+            expect(newNode(countRef, exampleData)('string', -1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef, true, -1)).toEqual(expected);
+            expect(newNode(countRef, exampleData)(true, -1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef, NaN, -1)).toEqual(expected);
+            expect(newNode(countRef, exampleData)(NaN, -1)).toEqual(expected);
             expect(countRef.current).toBe(1);
         });
 
@@ -59,11 +64,12 @@ describe(`Nodes`, () => {
                 bar: 'bar!'
             };
 
-            expect(newNode(countRef, obj, -1)).toEqual({
+            expect(newNode(countRef, exampleData)(obj, -1)).toEqual({
                 type: OBJECT,
                 child: undefined,
                 parentId: -1,
-                id: 0
+                id: 0,
+                data: exampleData
             });
         });
 
@@ -74,11 +80,12 @@ describe(`Nodes`, () => {
 
             const arr = ['a','b','c'];
 
-            expect(newNode(countRef, arr, -1)).toEqual({
+            expect(newNode(countRef, exampleData)(arr, -1)).toEqual({
                 type: ARRAY,
                 child: undefined,
                 parentId: -1,
-                id: 0
+                id: 0,
+                data: exampleData
             });
         });
     });
@@ -87,18 +94,20 @@ describe(`Nodes`, () => {
 
         test(`addNode() should add node`, () => {
 
-            const node: NodeAny = {
+            const node: NodeAny<E> = {
                 type: OBJECT,
                 child: undefined,
                 parentId: -1,
-                id: 0
+                id: 0,
+                data: exampleData
             };
 
-            const node2: NodeAny = {
+            const node2: NodeAny<E> = {
                 type: BASIC,
                 child: undefined,
                 parentId: 0,
-                id: 1
+                id: 1,
+                data: exampleData
             };
 
             const nodes = {};
@@ -115,11 +124,12 @@ describe(`Nodes`, () => {
     describe(`getNode()`, () => {
 
         test(`should get node if its there`, () => {
-            const node: NodeAny = {
+            const node: NodeAny<E> = {
                 type: OBJECT,
                 child: undefined,
                 parentId: -1,
-                id: 0
+                id: 0,
+                data: exampleData
             };
 
             const nodes = {
@@ -135,20 +145,21 @@ describe(`Nodes`, () => {
 
         test(`should return undefined if getNodeByPath() on basic`, () => {
             const value = 123;
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
 
-            expect(getNodeByPath(nodes, countRef, value, ['foo'])).toBe(undefined);
+            expect(getNodeByPath(nodes, newNodeCreator, value, ['foo'])).toBe(undefined);
         });
 
         test(`should accept objects and getNodeByPath()`, () => {
             const value = {foo: 'foo!', bar: 'bar!'};
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
 
-            expect(getNodeByPath(nodes, countRef, value, ['foo'])).toEqual({
+            expect(getNodeByPath(nodes, newNodeCreator, value, ['foo'])).toEqual({
                 type: BASIC,
                 child: undefined,
                 parentId: 0,
-                id: 1
+                id: 1,
+                data: exampleData
             });
 
             expect(nodes['0'].child).toEqual({
@@ -160,30 +171,33 @@ describe(`Nodes`, () => {
                 type: BASIC,
                 child: undefined,
                 parentId: 0,
-                id: 1
+                id: 1,
+                data: exampleData
             });
         });
 
         test(`should accept objects and getNodeByPath() deep`, () => {
             const value = {foo: {bar: 'bar!'}};
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
 
-            expect(getNodeByPath(nodes, countRef, value, ['foo'])).toEqual({
+            expect(getNodeByPath(nodes, newNodeCreator, value, ['foo'])).toEqual({
                 type: OBJECT,
                 child: undefined,
                 parentId: 0,
-                id: 1
+                id: 1,
+                data: exampleData
             });
 
             expect(nodes['0'].child).toEqual({
                 foo: 1
             });
 
-            expect(getNodeByPath(nodes, countRef, value, ['foo', 'bar'])).toEqual({
+            expect(getNodeByPath(nodes, newNodeCreator, value, ['foo', 'bar'])).toEqual({
                 type: BASIC,
                 child: undefined,
                 parentId: 1,
-                id: 2
+                id: 2,
+                data: exampleData
             });
 
             expect(nodes['1'].child).toEqual({
@@ -193,9 +207,9 @@ describe(`Nodes`, () => {
 
         test(`should accept objects and getNodeByPath() should return undefined if nothing at path`, () => {
             const value = {foo: 'foo!', bar: 'bar!'};
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
 
-            expect(getNodeByPath(nodes, countRef, value, ['baz'])).toBe(undefined);
+            expect(getNodeByPath(nodes, newNodeCreator, value, ['baz'])).toBe(undefined);
 
             expect(nodes['0'].child).toEqual({
                 foo: 1,
@@ -205,13 +219,14 @@ describe(`Nodes`, () => {
 
         test(`should accept arrays and getNodeByPath()`, () => {
             const value = ['a','b','c'];
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
 
-            expect(getNodeByPath(nodes, countRef, value, [2])).toEqual({
+            expect(getNodeByPath(nodes, newNodeCreator, value, [2])).toEqual({
                 type: BASIC,
                 child: undefined,
                 parentId: 0,
-                id: 3
+                id: 3,
+                data: exampleData
             });
 
             // internal child check
@@ -220,9 +235,9 @@ describe(`Nodes`, () => {
 
         test(`should accept arrays and getNodeByPath() and miss`, () => {
             const value = ['a','b','c'];
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
 
-            expect(getNodeByPath(nodes, countRef, value, [99])).toBe(undefined);
+            expect(getNodeByPath(nodes, newNodeCreator, value, [99])).toBe(undefined);
         });
     });
 
@@ -240,9 +255,9 @@ describe(`Nodes`, () => {
 
         test(`should getPath() on object value`, () => {
             const value = {foo: 'foo!', bar: 'bar!'};
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
             // create child nodes first
-            getNodeByPath(nodes, countRef, value, ['bar']);
+            getNodeByPath(nodes, newNodeCreator, value, ['bar']);
             // run test
             expect(getPath(nodes, 2)).toEqual(['bar']);
         });
@@ -251,9 +266,9 @@ describe(`Nodes`, () => {
     describe(`removeNode()`, () => {
         test(`should remove nodes deeply`, () => {
             const value = {foo: {bar: 'bar!'}, baz: 'baz!'};
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
             // create child nodes first
-            getNodeByPath(nodes, countRef, value, ['foo','bar']);
+            getNodeByPath(nodes, newNodeCreator, value, ['foo','bar']);
             expect(Object.keys(nodes)).toEqual(['0','1','2','3']);
 
             // run test
@@ -263,9 +278,9 @@ describe(`Nodes`, () => {
 
         test(`should no nothing if node doesnt exist`, () => {
             const value = {foo: {bar: 'bar!'}, baz: 'baz!'};
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
             // create child nodes first
-            getNodeByPath(nodes, countRef, value, ['foo','bar']);
+            getNodeByPath(nodes, newNodeCreator, value, ['foo','bar']);
 
             const nodesBefore = JSON.stringify(nodes);
 
@@ -281,9 +296,9 @@ describe(`Nodes`, () => {
 
         test(`should update item and change its type from basic to object`, () => {
             const value = ['a','b','c'];
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
             // create child nodes first
-            getNodeByPath(nodes, countRef, value, [2]);
+            getNodeByPath(nodes, newNodeCreator, value, [2]);
             // run test
             updateNode(nodes, 3, {c: 'd'});
             // internal child check
@@ -291,15 +306,16 @@ describe(`Nodes`, () => {
                 type: OBJECT,
                 child: undefined,
                 parentId: 0,
-                id: 3
+                id: 3,
+                data: exampleData
             });
         });
 
         test(`should update item and change its type from object to basic`, () => {
             const value = ['a','b',{c:'d'}];
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
             // create child nodes first
-            getNodeByPath(nodes, countRef, value, [2,'c']);
+            getNodeByPath(nodes, newNodeCreator, value, [2,'c']);
             expect(nodes['3'].child).toEqual({c: 4});
             expect(Object.keys(nodes)).toEqual(['0','1','2','3','4']);
 
@@ -310,7 +326,8 @@ describe(`Nodes`, () => {
                 type: BASIC,
                 child: undefined,
                 parentId: 0,
-                id: 3
+                id: 3,
+                data: exampleData
             });
             // internal node check
             expect(Object.keys(nodes)).toEqual(['0','1','2','3']);
@@ -318,9 +335,9 @@ describe(`Nodes`, () => {
 
         test(`should do nothing if node doesnt exist`, () => {
             const value = ['a','b','c'];
-            const [nodes, countRef] = createNodesFrom(value);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
             // create child nodes first
-            getNodeByPath(nodes, countRef, value, [2]);
+            getNodeByPath(nodes, newNodeCreator, value, [2]);
 
             const nodesBefore = JSON.stringify(nodes);
 
@@ -343,10 +360,10 @@ describe(`Nodes`, () => {
         describe(`should be able to apply object patches`, () => {
             testNodePatches(`of type "add"`, (premakeChildNodes) => {
                 const value = {top: {foo: 1, bar: 2}};
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','foo']);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','bar']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','foo']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','bar']);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -356,7 +373,7 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual({top: {foo: 1, bar: 2, baz: 3}});
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ...nodesBefore,
@@ -371,17 +388,18 @@ describe(`Nodes`, () => {
                         child: undefined,
                         id: 4,
                         parentId: 1,
-                        type: BASIC
+                        type: BASIC,
+                        data: exampleData
                     }
                 });
             });
 
             testNodePatches(`of type "remove"`, (premakeChildNodes) => {
                 const value = {top: {foo: 1, bar: 2}};
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','foo']);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','bar']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','foo']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','bar']);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -391,7 +409,7 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual({top: {foo: 1}});
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ['0']: nodesBefore['0'],
@@ -408,10 +426,10 @@ describe(`Nodes`, () => {
 
             testNodePatches(`of type "remove" parent`, (premakeChildNodes) => {
                 const value = {top: {foo: 1, bar: 2}};
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','foo']);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','bar']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','foo']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','bar']);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -421,7 +439,7 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual({});
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ['0']: {
@@ -434,10 +452,10 @@ describe(`Nodes`, () => {
 
             testNodePatches(`of type "replace"`, (premakeChildNodes) => {
                 const value = {top: {foo: 1, bar: 2}};
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','foo']);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','bar']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','foo']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','bar']);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -447,17 +465,17 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual({top: {foo: 1, bar: 3}});
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual(nodesBefore);
             });
 
             testNodePatches(`of type "replace" and change type`, (premakeChildNodes) => {
                 const value = {top: {foo: 1, bar: 2}};
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','foo']);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['top','bar']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','foo']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['top','bar']);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -467,7 +485,7 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual({top: {foo: 1, bar: []}});
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ...nodesBefore,
@@ -475,7 +493,8 @@ describe(`Nodes`, () => {
                         child: undefined,
                         id: 3,
                         parentId: 1,
-                        type: ARRAY
+                        type: ARRAY,
+                        data: exampleData
                     }
                 });
             });
@@ -484,11 +503,11 @@ describe(`Nodes`, () => {
         describe(`should be able to apply array patches`, () => {
             testNodePatches(`of type "add"`, (premakeChildNodes) => {
                 const value = ['a','b','c'];
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [0]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [1]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [2]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [0]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [1]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [2]);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -498,7 +517,7 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual(['a','d','b','c']);
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ...nodesBefore,
@@ -510,18 +529,19 @@ describe(`Nodes`, () => {
                         child: undefined,
                         id: 4,
                         parentId: 0,
-                        type: BASIC
+                        type: BASIC,
+                        data: exampleData
                     }
                 });
             });
 
             testNodePatches(`of type "remove"`, (premakeChildNodes) => {
                 const value = ['a','b','c'];
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [0]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [1]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [2]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [0]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [1]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [2]);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -531,7 +551,7 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual(['a','c']);
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ['0']: {
@@ -546,11 +566,11 @@ describe(`Nodes`, () => {
 
             testNodePatches(`of type "replace"`, (premakeChildNodes) => {
                 const value = ['a','b','c'];
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [0]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [1]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [2]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [0]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [1]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [2]);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -560,18 +580,18 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual(['a','?','c']);
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual(nodesBefore);
             });
 
             testNodePatches(`of type "move"`, (premakeChildNodes) => {
                 const value = ['a','b','c'];
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [0]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [1]);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, [2]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [0]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [1]);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, [2]);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -581,7 +601,7 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual(['a','c','b']);
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ...nodesBefore,
@@ -594,13 +614,13 @@ describe(`Nodes`, () => {
 
             testNodePatches(`of type "remove", setting childKeys correctly with getPath()`, (premakeChildNodes) => {
                 const value = ['a','b','c'];
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
                 if(premakeChildNodes) {
 
-                    getNodeByPath(nodes, countRef, value, [0]);
-                    getNodeByPath(nodes, countRef, value, [1]);
-                    getNodeByPath(nodes, countRef, value, [2]);
+                    getNodeByPath(nodes, newNodeCreator, value, [0]);
+                    getNodeByPath(nodes, newNodeCreator, value, [1]);
+                    getNodeByPath(nodes, newNodeCreator, value, [2]);
 
                     expect(nodes['0'].childKeysCached).toBe(undefined);
 
@@ -613,8 +633,7 @@ describe(`Nodes`, () => {
                     {op: 'remove', path: [0]}
                 ];
 
-                // const newValue = applyPatches(value, patches);
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes['0'].childKeysCached).toBe(false);
 
@@ -628,9 +647,9 @@ describe(`Nodes`, () => {
         describe(`should be able to apply object patches at top level`, () => {
             testNodePatches(`of type "replace"`, (premakeChildNodes) => {
                 const value = [1];
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, []);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, []);
                 const nodesBefore = nodes;
 
                 const patches = [
@@ -640,17 +659,17 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual([2]);
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual(nodesBefore);
             });
 
             testNodePatches(`of type "replace" and change type`, (premakeChildNodes) => {
                 const value = {foo: true};
-                const [nodes, countRef] = createNodesFrom(value);
+                const [nodes, newNodeCreator] = createNodesFrom(value);
 
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, []);
-                premakeChildNodes && getNodeByPath(nodes, countRef, value, ['foo']);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, []);
+                premakeChildNodes && getNodeByPath(nodes, newNodeCreator, value, ['foo']);
 
                 const patches = [
                     {op: 'replace', path: [], value: 9}
@@ -659,14 +678,15 @@ describe(`Nodes`, () => {
                 const newValue = applyPatches(value, patches);
                 expect(newValue).toEqual(9);
 
-                const [newNodes] = produceNodePatches(nodes, countRef, value, patches);
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual({
                     ['0']: {
                         child: undefined,
                         id: 0,
                         parentId: -1,
-                        type: BASIC
+                        type: BASIC,
+                        data: exampleData
                     }
                 });
             });

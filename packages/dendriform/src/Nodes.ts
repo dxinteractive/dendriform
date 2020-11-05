@@ -1,6 +1,7 @@
 import {BASIC, OBJECT, ARRAY, getType, get, set, each, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path, DendriformPatch} from 'dendriform-immer-patch-optimiser';
 import {produceWithPatches, setAutoFreeze} from 'immer';
+import type {Draft} from 'immer';
 
 // never autofreeze, this stops us from mutating node.child
 // node.child is a safe mutation as the tree / nodes are entirely internal
@@ -44,14 +45,19 @@ export type CountRef = {
     current: number
 };
 
-export const newNode = <D>(countRef: CountRef, value: unknown, parentId: number): NodeAny<D> => {
-    const type = getType(value);
-    const id = countRef.current++;
-    return {
-        type,
-        child: undefined,
-        parentId,
-        id
+export type NewNodeCreator<D> = (value: unknown, parentId: number) => NodeAny<D>;
+
+export const newNode = <D>(countRef: CountRef, data: D): NewNodeCreator<D> => {
+    return (value: unknown, parentId: number): NodeAny<D> => {
+        const type = getType(value);
+        const id = countRef.current++;
+        return {
+            type,
+            child: undefined,
+            parentId,
+            id,
+            data
+        };
     };
 };
 
@@ -61,7 +67,7 @@ export const addNode = <D>(nodes: Nodes<D>, node: NodeAny<D>): void => {
 
 export const _prepChild = <P,D>(
     nodes: Nodes<D>,
-    countRef: CountRef,
+    newNodeCreator: NewNodeCreator<D>,
     parentValueRef: P,
     parentNode: NodeAny<D>
 ): void => {
@@ -71,7 +77,7 @@ export const _prepChild = <P,D>(
     const child: number[]|{[key: string]: number} = parentNode.type === ARRAY ? [] : {};
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     each(parentValueRef, (value, key: any) => {
-        const childNode = newNode(countRef, value, parentNode.id);
+        const childNode = newNodeCreator(value, parentNode.id);
         addNode(nodes, childNode);
         return set(child, key, childNode.id);
     });
@@ -84,7 +90,7 @@ export const getNode = <D>(nodes: Nodes<D>, id: number): NodeAny<D>|undefined =>
 
 export const getNodeByPath = <D,P = unknown>(
     nodes: Nodes<D>,
-    countRef: CountRef,
+    newNodeCreator: NewNodeCreator<D>,
     valueRef: P,
     path: Path,
     andChildren?: boolean
@@ -95,7 +101,7 @@ export const getNodeByPath = <D,P = unknown>(
     for(const key of path) {
         if(!node || node.type === BASIC) return undefined;
 
-        _prepChild<P,D>(nodes, countRef, valueRef, node);
+        _prepChild<P,D>(nodes, newNodeCreator, valueRef, node);
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Path is a bit too loose for get() to be happy
@@ -107,7 +113,7 @@ export const getNodeByPath = <D,P = unknown>(
     }
 
     if(andChildren && node) {
-        _prepChild<P,D>(nodes, countRef, valueRef, node);
+        _prepChild<P,D>(nodes, newNodeCreator, valueRef, node);
     }
 
     return node;
@@ -174,7 +180,7 @@ export const updateNode = <D>(nodes: Nodes<D>, id: number, value: unknown): void
 
 export const produceNodePatches = <D>(
     nodes: Nodes<D>,
-    countRef: CountRef,
+    newNodeCreator: NewNodeCreator<D>,
     baseValue: unknown,
     valuePatches: DendriformPatch[]
 ): [Nodes<D>, DendriformPatch[], DendriformPatch[]] => {
@@ -193,7 +199,7 @@ export const produceNodePatches = <D>(
 
             const parentNode = getNodeByPath(
                 nodes,
-                countRef,
+                newNodeCreator,
                 baseValue,
                 path.slice(0,-1),
                 true
@@ -212,8 +218,8 @@ export const produceNodePatches = <D>(
             // depending on type, make changes to the child node
             // and to the parent node's child
             if(op === 'add') {
-                const node = newNode(countRef, value, parentNode.id);
-                addNode(draft, node);
+                const node = newNodeCreator(value, parentNode.id);
+                addNode(draft, node as NodeAny<Draft<D>>);
                 patchesForNodes.push({
                     op,
                     path: [...basePath, key],

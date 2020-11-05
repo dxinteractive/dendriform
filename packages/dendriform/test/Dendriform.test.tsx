@@ -45,6 +45,18 @@ describe(`Dendriform`, () => {
             expect(form.value).toBe(2);
             expect(form.id).toBe(0);
         });
+
+        // test(`buffering multiple sets`, () => {
+        //     const form = new Dendriform(1);
+
+        //     form.set(draft => draft + 1);
+        //     form.set(draft => draft + 1);
+        //     form.set(draft => draft + 1);
+        //     form.core.changeBuffer.flush();
+
+        //     expect(form.value).toBe(4);
+        //     expect(form.id).toBe(0);
+        // });
     });
 
     describe('useDendriform() and .useValue()', () => {

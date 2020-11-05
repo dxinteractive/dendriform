@@ -26,7 +26,7 @@ import {producePatches} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {BufferTime} from './BufferTime';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './Nodes';
-import type {Nodes, NodeAny, CountRef} from './Nodes';
+import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
 
 //
 // core
@@ -42,20 +42,21 @@ type CoreOptions<C> = {
     initialValue: C;
 };
 
-type NodeData = string|undefined;
+type NodeData = string;
 
 class Core<C> {
 
     value: C;
     nodes: Nodes<NodeData> = {};
     nodeCountRef: CountRef = {current: 0};
+    newNodeCreator: NewNodeCreator<NodeData> = newNode<NodeData>(this.nodeCountRef, 'hi');
     changeCallbackRefs = new Set<ChangeCallbackRef>();
     dendriforms = new Map<number,Dendriform<unknown,C>>();
 
     constructor(options: CoreOptions<C>) {
         this.value = options.initialValue;
         this.changeBuffer.time = 10;
-        addNode<NodeData>(this.nodes, newNode<NodeData>(this.nodeCountRef, this.value, -1));
+        addNode<NodeData>(this.nodes, this.newNodeCreator(this.value, -1));
     }
 
     getPath = (id: number): Path|undefined => {
@@ -82,7 +83,7 @@ class Core<C> {
             throw new Error('NOPE!');
         }
         const path = basePath.concat(appendPath);
-        const node = getNodeByPath<NodeData>(this.nodes, this.nodeCountRef, this.value, path);
+        const node = getNodeByPath<NodeData>(this.nodes, this.newNodeCreator, this.value, path);
         if(!node) {
             throw new Error('NOPE!!!');
         }
@@ -101,7 +102,7 @@ class Core<C> {
 
         const [, nodesPatches, nodesPatchesInv] = produceNodePatches<NodeData>(
             this.nodes,
-            this.nodeCountRef,
+            this.newNodeCreator,
             this.value,
             valuePatchesZoomed
         );
@@ -235,18 +236,7 @@ export class Dendriform<V,C=V> {
 
     useValue = (): [V, ProduceValue<V>] => {
         const [value, setValue] = useState<V>(() => this.value);
-
         this.useChange(setValue);
-
-        // TODO - add optimistic hook updates back in after undo / redo
-        // const set = useCallback((toProduce: ToProduce<V>): void => {
-        //     setValue((base: V): V => {
-        //         const [,patches] = setPatches(base, toProduce);
-        //         //this.core.changeBuffer.push([this.id, patches]);
-        //         return applyPatches(base, patches);
-        //     });
-        // }, []);
-
         return [value, this.set];
     };
 
