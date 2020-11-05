@@ -26,7 +26,7 @@ import {producePatches} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {BufferTime} from './BufferTime';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './Nodes';
-import type {Nodes, NodeAny, CountRef} from './Nodes';
+import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
 
 //
 // core
@@ -42,18 +42,21 @@ type CoreOptions<C> = {
     initialValue: C;
 };
 
+type NodeData = string;
+
 class Core<C> {
 
     value: C;
-    nodes: Nodes = {};
+    nodes: Nodes<NodeData> = {};
     nodeCountRef: CountRef = {current: 0};
+    newNodeCreator: NewNodeCreator<NodeData> = newNode<NodeData>(this.nodeCountRef, 'hi');
     changeCallbackRefs = new Set<ChangeCallbackRef>();
     dendriforms = new Map<number,Dendriform<unknown,C>>();
 
     constructor(options: CoreOptions<C>) {
         this.value = options.initialValue;
         this.changeBuffer.time = 10;
-        addNode(this.nodes, newNode(this.nodeCountRef, this.value, -1));
+        addNode<NodeData>(this.nodes, this.newNodeCreator(this.value, -1));
     }
 
     getPath = (id: number): Path|undefined => {
@@ -66,7 +69,7 @@ class Core<C> {
         return getIn(this.value, path);
     };
 
-    createForm = (node: NodeAny): unknown => {
+    createForm = (node: NodeAny<NodeData>): unknown => {
         const {id} = node;
         const __branch = {core: this, id};
         const form = new Dendriform<any>({__branch});
@@ -80,7 +83,7 @@ class Core<C> {
             throw new Error('NOPE!');
         }
         const path = basePath.concat(appendPath);
-        const node = getNodeByPath(this.nodes, this.nodeCountRef, this.value, path);
+        const node = getNodeByPath<NodeData>(this.nodes, this.newNodeCreator, this.value, path);
         if(!node) {
             throw new Error('NOPE!!!');
         }
@@ -97,9 +100,9 @@ class Core<C> {
         const valuePatchesZoomed = zoomOutPatches(path, valuePatches);
         const valuePatchesInvZoomed = zoomOutPatches(path, valuePatchesInv);
 
-        const [, nodesPatches, nodesPatchesInv] = produceNodePatches(
+        const [, nodesPatches, nodesPatchesInv] = produceNodePatches<NodeData>(
             this.nodes,
-            this.nodeCountRef,
+            this.newNodeCreator,
             this.value,
             valuePatchesZoomed
         );
@@ -192,7 +195,7 @@ export class Dendriform<V,C=V> {
 
     constructor(initialValue: V|DendriformBranch<C>) {
 
-        if((typeof initialValue === 'object' && (initialValue as DendriformBranch<C>).__branch)) {
+        if(initialValue instanceof Object && (initialValue as DendriformBranch<C>).__branch) {
             const {__branch} = initialValue as DendriformBranch<C>;
             this.core = __branch.core;
             this.id = __branch.id;
@@ -207,6 +210,10 @@ export class Dendriform<V,C=V> {
         });
     }
 
+    //
+    // public api
+    //
+
     get value(): V {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -217,32 +224,29 @@ export class Dendriform<V,C=V> {
         this.core.set(this.id, toProduce);
     };
 
-    useValue = (): [V, ProduceValue<V>] => {
-        const [value, setValue] = useState<V>(() => this.value);
-
-        this.useOnChange(setValue);
-
-        // TODO - add optimistic hook updates back in after undo / redo
-        // const set = useCallback((toProduce: ToProduce<V>): void => {
-        //     setValue((base: V): V => {
-        //         const [,patches] = setPatches(base, toProduce);
-        //         //this.core.changeBuffer.push([this.id, patches]);
-        //         return applyPatches(base, patches);
-        //     });
-        // }, []);
-
-        return [value, this.set];
-    };
-
     onChange = (callback: ChangeCallback<V>): (() => void) => {
         const changeCallback: ChangeCallbackRef = [this.id, callback, this.value];
         this.core.changeCallbackRefs.add(changeCallback);
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
     };
 
-    useOnChange = (callback: ChangeCallback<V>): void => {
+    //
+    // hooks
+    //
+
+    useValue = (): [V, ProduceValue<V>] => {
+        const [value, setValue] = useState<V>(() => this.value);
+        this.useChange(setValue);
+        return [value, this.set];
+    };
+
+    useChange = (callback: ChangeCallback<V>): void => {
         useEffect(() => this.onChange(callback), []);
     };
+
+    //
+    // branching
+    //
 
     branch<K1 extends keyof V, K2 extends keyof V[K1], K3 extends keyof V[K1][K2], K4 extends keyof V[K1][K2][K3]>(path: [K1, K2, K3, K4]): Dendriform<V[K1][K2][K3][K4],C>;
     branch<K1 extends keyof V, K2 extends keyof V[K1], K3 extends keyof V[K1][K2]>(path: [K1, K2, K3]): Dendriform<V[K1][K2][K3],C>;

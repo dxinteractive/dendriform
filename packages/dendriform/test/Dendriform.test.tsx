@@ -50,6 +50,18 @@ describe(`Dendriform`, () => {
             expect(form.value).toBe(2);
             expect(form.id).toBe(0);
         });
+
+        // test(`buffering multiple sets`, () => {
+        //     const form = new Dendriform(1);
+
+        //     form.set(draft => draft + 1);
+        //     form.set(draft => draft + 1);
+        //     form.set(draft => draft + 1);
+        //     form.core.changeBuffer.flush();
+
+        //     expect(form.value).toBe(4);
+        //     expect(form.id).toBe(0);
+        // });
     });
 
     describe('useDendriform() and .useValue()', () => {
@@ -74,6 +86,26 @@ describe(`Dendriform`, () => {
             });
             // should have updated from top down (same result)
             expect(result.current[0]).toBe(456);
+        });
+    });
+
+    describe('useDendriform() and .useChange()', () => {
+        test(`should provide value and produce an update`, () => {
+
+            const firstHook = renderHook(() => useDendriform(() => 123));
+            const callback = jest.fn();
+
+            const form = firstHook.result.current;
+            const {result} = renderHook(() => form.useValue());
+            renderHook(() => form.useChange(callback));
+
+            act(() => {
+                result.current[1](456);
+                form.core.changeBuffer.flush();
+            });
+
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback.mock.calls[0][0]).toBe(456);
         });
     });
 
