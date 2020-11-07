@@ -15,14 +15,14 @@ type MyComponentProps<V> = {
     form: Dendriform<V>;
 };
 
-type NotSetTestValue = {
-    foo?: string;
-    bar?: string;
-};
+// type NotSetTestValue = {
+//     foo?: string;
+//     bar?: string;
+// };
 
 describe(`Dendriform`, () => {
 
-    describe(`without branching`, () => {
+    describe(`value and change`, () => {
 
         test(`should contain value`, () => {
             const form = new Dendriform(123);
@@ -109,6 +109,80 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe(`history`, () => {
+
+        test(`should undo`, () => {
+            const form = new Dendriform(123);
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            form.set(789);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(789);
+
+            form.undo();
+
+            expect(form.value).toBe(456);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+        });
+
+        test(`should redo`, () => {
+            const form = new Dendriform(123);
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(456);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.redo();
+
+            expect(form.value).toBe(456);
+
+            form.redo();
+
+            expect(form.value).toBe(456);
+        });
+
+        test(`should replace redo stack after change after an undo`, () => {
+            const form = new Dendriform(123);
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(456);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.set(789);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(789);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.redo();
+
+            expect(form.value).toBe(789);
+        });
+    });
+
     describe(`.branch()`, () => {
 
         test(`should get child value`, () => {
@@ -152,28 +226,28 @@ describe(`Dendriform`, () => {
             expect(form.branch(1)).toBe(form.branch(1));
         });
 
-        describe('not set values', () => {
-            test(`should get child value`, () => {
-                const form = new Dendriform<NotSetTestValue>({foo: 'a'});
+        // describe('not set values', () => {
+        //     test(`should get child value`, () => {
+        //         const form = new Dendriform<NotSetTestValue>({foo: 'a'});
 
-                const bForm = form.branch('bar');
+        //         const bForm = form.branch('bar');
 
-                expect(bForm.value).toBe(undefined);
-                expect(bForm.id).toBe(2);
-            });
+        //         expect(bForm.value).toBe(undefined);
+        //         expect(bForm.id).toBe(2);
+        //     });
 
-            test(`should produce child value with new value`, () => {
-                const form = new Dendriform<NotSetTestValue>({foo: 'a'});
+        //     test(`should produce child value with new value`, () => {
+        //         const form = new Dendriform<NotSetTestValue>({foo: 'a'});
 
-                const bForm = form.branch('bar');
-                const nodesBefore = form.core.nodes;
-                bForm.set('B!');
-                form.core.changeBuffer.flush();
+        //         const bForm = form.branch('bar');
+        //         const nodesBefore = form.core.nodes;
+        //         bForm.set('B!');
+        //         form.core.changeBuffer.flush();
 
-                expect(form.value).toEqual({foo: 'a', bar: 'B!'});
-                expect(form.core.nodes).toEqual(nodesBefore);
-            });
-        });
+        //         expect(form.value).toEqual({foo: 'a', bar: 'B!'});
+        //         expect(form.core.nodes).toEqual(nodesBefore);
+        //     });
+        // });
     });
 
     describe(`.branch() deep`, () => {
