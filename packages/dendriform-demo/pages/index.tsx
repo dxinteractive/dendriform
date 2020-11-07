@@ -78,9 +78,12 @@ export default function Main(): React.ReactElement {
         });
     });
 
-    form.useOnChange(thing => {
-        router.push(`?text=${thing.text}`)
+    form.useChange(() => {
+        // TODO - this messes up history
+        //router.push(`?text=${thing.text}`)
     });
+
+    // TODO - .push(), undo(), redo() causes an error!
 
     const {text} = router.query;
     useEffect(() => {
@@ -104,9 +107,12 @@ export default function Main(): React.ReactElement {
             <Box p={2}>
                 Tick: {tick} seconds
             </Box>
-
-
-
+            {form.render(form => {
+                return <Box p={2}>
+                    <button onClick={() => form.undo()}>Undo</button>
+                    <button onClick={() => form.redo()}>Redo</button>
+                </Box>;
+            })}
             <Box p={2}>
                 <strong>Text inputs with debounce</strong><br/>
             </Box>

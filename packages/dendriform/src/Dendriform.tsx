@@ -159,17 +159,20 @@ class Core<C> {
     };
 
     historyPush = (historyItem: HistoryItem) => {
+        console.log('historyItem', historyItem);
         this.historyStack.length = this.historyIndex;
         this.historyStack.push(historyItem);
         this.historyIndex++;
     };
 
     undo = (): void => {
+        console.log('undo', this.historyStack, this.historyIndex);
         if(this.historyIndex === 0) return;
         this.applyChanges(this.historyStack[--this.historyIndex].undo);
     };
 
     redo = (): void => {
+        console.log('redo', this.historyStack, this.historyIndex);
         if(this.historyIndex === this.historyStack.length) return;
         this.applyChanges(this.historyStack[this.historyIndex++].do);
     };
@@ -232,6 +235,8 @@ export class Dendriform<V,C=V> {
     core: Core<C>;
 
     id: number;
+
+    // TODO have a temporary value for incrementing between multiple updates before applying()
 
     constructor(initialValue: V|DendriformBranch<C>) {
 
