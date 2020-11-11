@@ -622,11 +622,11 @@ describe(`Nodes`, () => {
                     getNodeByPath(nodes, newNodeCreator, value, [1]);
                     getNodeByPath(nodes, newNodeCreator, value, [2]);
 
-                    expect(nodes['0'].childKeysCached).toBe(undefined);
+                    // expect(nodes['0'].childKeysCached).toBe(undefined);
 
                     const path = getPath(nodes, 2);
                     expect(path).toEqual([1]);
-                    expect(nodes['0'].childKeysCached).toBe(true);
+                    // expect(nodes['0'].childKeysCached).toBe(true);
                 }
 
                 const patches = [
@@ -635,12 +635,12 @@ describe(`Nodes`, () => {
 
                 const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
 
-                expect(newNodes['0'].childKeysCached).toBe(false);
+                // expect(newNodes['0'].childKeysCached).toBe(false);
 
                 const path2 = getPath(newNodes, 2);
                 expect(path2).toEqual([0]);
 
-                expect(newNodes['0'].childKeysCached).toBe(true);
+                // expect(newNodes['0'].childKeysCached).toBe(true);
             });
         });
 

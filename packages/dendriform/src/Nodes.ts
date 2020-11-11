@@ -10,30 +10,24 @@ setAutoFreeze(false);
 export type NodeObject<D> = {
     type: typeof OBJECT;
     child?: {[key: string]: number};
-    childKeysCached?: boolean;
     id: number;
     parentId: number;
-    cachedKey?: number|string;
     data: D;
 };
 
 export type NodeArray<D> = {
     type: typeof ARRAY;
     child?: number[];
-    childKeysCached?: boolean;
     id: number;
     parentId: number;
-    cachedKey?: number|string;
     data: D;
 };
 
 export type NodeBasic<D> = {
     type: typeof BASIC;
     child: undefined;
-    childKeysCached?: boolean;
     id: number;
     parentId: number;
-    cachedKey?: number|string;
     data: D;
 };
 
@@ -119,21 +113,14 @@ export const getNodeByPath = <D,P = unknown>(
     return node;
 };
 
-export const _getKey = <D>(
-    nodes: Nodes<D>,
-    parentNode: NodeAny<D>,
-    childNode: NodeAny<D>
-): number|string => {
-
-    if(!parentNode.childKeysCached) {
-        each(parentNode.child, (value, key) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            getNode(nodes, value)!.cachedKey = key;
-        });
-        parentNode.childKeysCached = true;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return childNode.cachedKey!;
+export const _getKey = <D>(parentNode: NodeAny<D>, childNode: NodeAny<D>): number|string|undefined => {
+    let key = undefined;
+    each(parentNode.child, (childId, childKey) => {
+        if(childId === childNode.id) {
+            key = childKey;
+        }
+    });
+    return key;
 };
 
 export const getPath = <D>(nodes: Nodes<D>, id: number): Path|undefined => {
@@ -144,7 +131,9 @@ export const getPath = <D>(nodes: Nodes<D>, id: number): Path|undefined => {
     while(node && node.parentId !== -1) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const parentNode: NodeAny<D> = get(nodes, node.parentId)!;
-        const key = _getKey<D>(nodes, parentNode, node);
+        const key = _getKey<D>(parentNode, node);
+        if(key === undefined) return undefined;
+
         path.unshift(key);
         node = parentNode;
     }
@@ -206,8 +195,6 @@ export const produceNodePatches = <D>(
             );
 
             if(!parentNode) return;
-
-            parentNode.childKeysCached = false;
 
             const basePath = [`${parentNode.id}`, 'child'];
             const key = path[path.length - 1];
