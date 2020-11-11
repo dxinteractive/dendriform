@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0-alpha.0",
   "license": "MIT",
   "main": "dist/index.js",
   "description": "Lets you build flexible and powerful data-editing React UIs with better performance and much less code.",
@@ -20,7 +20,7 @@
     "prepare": "tsdx build"
   },
   "dependencies": {
-    "dendriform-immer-patch-optimiser": "0.0.0",
+    "dendriform-immer-patch-optimiser": "^1.0.0-alpha.0",
     "immer": "7.0.8",
     "shallow-equal": "1.2.1"
   },
@@ -68,10 +68,10 @@
     "eslint-plugin-react": "^7.20.6",
     "husky": "^4.2.5",
     "react": "^16.13.1",
-    "react-test-renderer": "^16.13.1",
     "react-docgen-typescript-loader": "^3.7.2",
     "react-dom": "^16.13.1",
     "react-is": "^16.13.1",
+    "react-test-renderer": "^16.13.1",
     "size-limit": "^4.5.7",
     "ts-loader": "^8.0.3",
     "tsdx": "^0.13.3",
