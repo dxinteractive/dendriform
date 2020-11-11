@@ -289,6 +289,7 @@ const TEXT = `
 - opt-in es6 class compatibility ✅
 - onChange ✅
 - ability to be controlled by higher up data sources ✅
+- undo / redo ✅
 
 // DEV WORK
 - re-add buffered multicalls to .set() even outside of hook usage
@@ -308,7 +309,6 @@ const TEXT = `
 - provide modifiers somehow to translate data from one format to another
 - arbitrary metadata per field / path
 - ability to rebase actions onto new source data 🚀
-- undo / redo 🚀
 - better focus control
 - better integration with existing validation libs like yup
 - chain a small form off a big one for submittable sub-forms
