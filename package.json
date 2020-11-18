@@ -1,11 +1,11 @@
 {
   "private": true,
   "scripts": {
-    "test": "cd packages/dendriform && yarn test",
-    "lint": "cd packages/dendriform && yarn lint",
-    "build": "cd packages/dendriform && yarn build",
-    "size": "cd packages/dendriform && yarn size",
-    "build-docs": "cp README.md packages/dendriform/README.md && cd packages/dendriform-docs && yarn build && yarn export",
+    "test": "yarn lerna run test",
+    "lint": "yarn lerna run lint",
+    "build": "yarn lerna run build",
+    "size": "yarn lerna run size",
+    "build-docs": "cp README.md packages/dendriform/README.md && yarn lerna run build-docs",
     "prep": "yarn && yarn lerna bootstrap",
     "bump": "yarn lerna publish -m \"build: publish\"",
     "reinstall": "rm -rf node_modules && rm -rf packages/*/node_modules && yarn prep"

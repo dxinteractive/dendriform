@@ -23,13 +23,13 @@ jobs:
         env:
           CI: true
 
-      - name: Test
-        run: yarn test --ci --coverage --maxWorkers=2
+      - name: Build
+        run: yarn build
         env:
           CI: true
 
-      - name: Build
-        run: yarn build
+      - name: Test
+        run: yarn test
         env:
           CI: true
 

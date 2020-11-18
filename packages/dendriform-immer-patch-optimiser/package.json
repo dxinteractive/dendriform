@@ -1,5 +1,5 @@
 {
-  "version": "0.0.0",
+  "version": "1.0.0-alpha.0",
   "license": "MIT",
   "main": "dist/index.js",
   "description": "Immer patch optimisation to add \"move\" operations.",
@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "tsdx watch",
     "build": "tsdx build",
-    "test": "tsdx test --passWithNoTests --coverage",
+    "test": "tsdx test --passWithNoTests --coverage --maxWorkers=2",
     "lint": "yarn eslint src/**/* --ext .js,.ts,.jsx,.tsx",
     "size": "yarn size-limit",
     "prepare": "tsdx build"
