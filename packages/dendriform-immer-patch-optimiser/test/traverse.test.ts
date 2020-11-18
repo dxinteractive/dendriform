@@ -26,8 +26,6 @@ describe(`get`, () => {
     });
 
     test(`should work with object and miss`, () => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(get({foo: 123}, 'bar')).toBe(undefined);
     });
 
@@ -40,15 +38,9 @@ describe(`get`, () => {
     });
 
     test(`should error on basic types`, () => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(() => get(100, 4)).toThrow(`Cant access property 4 of 100`);
         expect(() => get("str", 4)).toThrow(`Cant access property 4 of str`);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(() => get(null, 4)).toThrow(`Cant access property 4 of null`);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(() => get(undefined, 4)).toThrow(`Cant access property 4 of undefined`);
     });
 });
@@ -89,17 +81,9 @@ describe(`set`, () => {
     });
 
     test(`should error on basic types`, () => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(() => set(100, 4, 4)).toThrow(`Cant access property 4 of 100`);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(() => set("str", 4, 4)).toThrow(`Cant access property 4 of str`);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(() => set(null, 4, 4)).toThrow(`Cant access property 4 of null`);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
         expect(() => set(undefined, 4, 4)).toThrow(`Cant access property 4 of undefined`);
     });
 });

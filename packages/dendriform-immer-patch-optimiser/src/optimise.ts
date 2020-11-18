@@ -33,7 +33,7 @@ export const optimise = <B,>(base: B, patches: ImmerPatch[]): DendriformPatch[] 
 
     // check path is array (memoised)
     let lastResult: CheckPathResult|undefined;
-    const checkPathIsArray = <B,>(base: B, path: unknown[]): boolean => {
+    const checkPathIsArray = <B,>(base: B, path: PropertyKey[]): boolean => {
         const pathString = JSON.stringify(path);
         if(lastResult && lastResult[1] === pathString) return lastResult[0];
         const isArray = Array.isArray(getIn(base, path));
@@ -51,7 +51,7 @@ export const optimise = <B,>(base: B, patches: ImmerPatch[]): DendriformPatch[] 
             const baseAtPath = getIn(base, currentPath);
             const patchesAtPath = zoomInPatches<ImmerPatch>(currentPath, buffer);
             // optimise patches
-            const optimisedPatches = optimiseArray(baseAtPath, patchesAtPath);
+            const optimisedPatches = optimiseArray(baseAtPath as unknown[], patchesAtPath);
             const zoomedOutPatches = zoomOutPatches<DendriformPatch>(currentPath, optimisedPatches);
             newPatches = newPatches.concat(zoomedOutPatches);
         } else {
