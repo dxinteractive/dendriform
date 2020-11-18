@@ -18,6 +18,19 @@ export function getType(thing: unknown): typeof ARRAY|typeof OBJECT|typeof BASIC
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+export function has(thing: any, key: PropertyKey): boolean {
+    const type = getType(thing);
+    if(type === OBJECT) {
+        return key in thing;
+    }
+    if(type === ARRAY) {
+        const index = key as number;
+        return index < thing.length && index > -1;
+    }
+    throw cantAccess(thing, key);
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function get(thing: any, key: PropertyKey): unknown {
     assertCollection(thing, key);
     return thing[key];
@@ -48,4 +61,12 @@ export function each(thing: any, callback: EachCallback): void {
     if(type === ARRAY) {
         thing.forEach(callback);
     }
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+export function clone(thing: any): any {
+    const type = getType(thing);
+    if(type === OBJECT) return {...thing};
+    if(type === ARRAY) return thing.slice();
+    return thing;
 }
