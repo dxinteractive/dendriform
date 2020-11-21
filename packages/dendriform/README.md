@@ -71,6 +71,8 @@ npm install --save dendriform
 
 Create a new dendriform form using `new Dendriform()`, or by using the `useDendriform()` hook if you're inside a React component's render method.
 
+The `useDendriform()` hook on its own will never cause a stateful update to the component it's in; the hook just returns an unchanging reference to a Dendriform instance.
+
 ```js
 import {Dendriform, useDendriform} from 'dendriform';
 // ...
@@ -86,7 +88,7 @@ function MyComponent(props) {
 
 ### Values
 
-Access your form's value using `.value`, or by using the `.useValue()` hook if you're inside a React component's render method.
+Access your form's value using `.value`, or by using the `.useValue()` hook if you're inside a React component's render method. The `.useValue()` hook will cause a component update whenever the value changes.
 
 ```js
 const form = new Dendriform({name: 'Bill'});
@@ -140,7 +142,9 @@ function MyComponent(props) {
 
 ### Rendering
 
-The `.render()` function allows you to branch off and render a deep value in a React component. It's optimised for performance and by default it only ever updates if the deep value changes.
+The `.render()` function allows you to branch off and render a deep value in a React component.
+
+The `.render()` function's callback is rendered as it's own component instance, so you can use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. 
 
 ```js
 function MyComponent(props) {
