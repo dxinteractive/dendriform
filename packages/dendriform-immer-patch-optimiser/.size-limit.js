@@ -2,7 +2,7 @@ module.exports = [
     {
         name: 'everything combined',
         path: "dist/dendriform-immer-patch-optimiser.esm.js",
-        limit: "1.1 KB",
+        limit: "1.2 KB",
         ignore: ['immer']
     },
     {
