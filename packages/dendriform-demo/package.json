@@ -1,10 +1,10 @@
 {
-  "name": "dendriform-docs",
-  "version": "0.1.4",
+  "name": "dendriform-demo",
+  "version": "0.1.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build-docs": "next build && yarn export",
     "export": "next export",
     "start": "next start",
     "lint": "yarn eslint pages/**/*",
@@ -13,9 +13,9 @@
   "dependencies": {
     "date-fns": "^2.11.1",
     "dcme-style": "^1.1.11",
+    "dendriform": "^2.0.0-alpha.0",
     "gray-matter": "^4.0.2",
-    "dendriform": "^0.0.0",
-    "next": "9.3.5",
+    "next": "9.5.3",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "remark": "^12.0.0",
@@ -33,9 +33,5 @@
     "eslint-config-blueflag": "^0.11.1",
     "eslint-plugin-react": "^7.20.6",
     "typescript": "^4.0.2"
-  },
-  "resolutions": {
-    "**/react": "16.13.1",
-    "**/react-dom": "16.13.1"
   }
 }

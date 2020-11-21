@@ -1,0 +1,180 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/* your custom css */
+
+html, body {
+  font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+  text-rendering: optimizelegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+hr {
+    margin: 3em 0;
+}
+
+.mainContainer h1,
+.mainContainer h2,
+.mainContainer h3,
+.mainContainer h4,
+.mainContainer h5 {
+    letter-spacing: -.04em;
+    font-family: $monoFont;
+    font-weight: 700;
+    margin: 3em 0 1em;
+}
+
+.mainContainer h1 {
+    font-size: 42px;
+}
+
+.mainContainer h2 {
+    font-size: 30px;
+}
+
+.mainContainer h3 {
+    font-size: 23px;
+}
+
+.mainContainer h1 + h2,
+.mainContainer h2 + h3,
+.mainContainer h3 + h4 {
+    margin-top: 2em;
+}
+
+.mainContainer .wrapper .post .postHeaderTitle {
+    margin-top: 1rem;
+}
+
+.fixedHeaderContainer header .headerTitle {
+    font-family: $monoFont;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.nav-site {
+    font-family: $monoFont;
+}
+
+/*.onPageNav ul li {
+    font-size: 16px;
+}
+
+.toc .toggleNav ul li a {
+    font-size: 16px;
+}*/
+
+.navigationSlider .slidingNav ul a[href*=github]:before {
+    content: "";
+    width: 32px;
+    height: 32px;
+    background: url(/dendriform/img/github-brand.svg);
+}
+
+.navigationSlider .slidingNav ul a[href*=github] {
+    font-size: 0;
+}
+
+article p img {
+    display: inline;
+}
+
+@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+}
+
+@media only screen and (min-width: 1024px) {
+}
+
+@media only screen and (max-width: 1023px) {
+}
+
+@media only screen and (min-width: 1400px) {
+}
+
+@media only screen and (min-width: 1500px) {
+}
+
+.fixedHeaderContainer {
+    background: #0b2033;
+}
+
+.navigationSlider .slidingNav ul li > a:focus,
+.navigationSlider .slidingNav ul li > a:hover,
+.navigationSlider .slidingNav ul li.siteNavItemActive > a,
+.navigationSlider .slidingNav ul li.siteNavGroupActive > a {
+    background: none;
+}
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  background: #0b2033;
+  -webkit-font-smoothing: auto;
+  margin-bottom: 2rem;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link {
+  color: #e83827;
+}
+
+.hljs-function .hljs-keyword {
+  color: #FFFF00;
+}
+
+.hljs,
+.hljs-subst {
+  color: #FFFFFF;
+}
+
+.hljs-string,
+.hljs-number,
+.hljs-title,
+.hljs-name,
+.hljs-type,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition,
+.hljs-variable,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: #46bbef;
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-deletion,
+.hljs-meta {
+  color: #9480a2;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-title,
+.hljs-section,
+.hljs-doctag,
+.hljs-type,
+.hljs-name,
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-built_in,
+.hljs-bullet,
+.hljs-code,
+.hljs-addition {
+  color: #FFFFFF;
+}
