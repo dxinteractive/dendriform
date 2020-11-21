@@ -86,7 +86,7 @@ function MyComponent(props) {
 
 ### Values
 
-Access your form's value using `.value`, or by using the `useValue()` hook if you're inside a React component's render method.
+Access your form's value using `.value`, or by using the `.useValue()` hook if you're inside a React component's render method.
 
 ```js
 const form = new Dendriform({name: 'Bill'});
@@ -155,7 +155,7 @@ function MyComponent(props) {
 }
 ```
 
-The `renderAll()` function works in the same way, but repeats for all elements in an array. React keying is taken care of for you.
+The `.renderAll()` function works in the same way, but repeats for all elements in an array. React keying is taken care of for you.
 
 ```js
 function MyComponent(props) {
@@ -279,7 +279,7 @@ function MyComponent(props) {
 
 ### Form inputs
 
-You can easily bind parts of your data to form inputs using `useInput` and `useCheckbox`. The props they return can be spread onto form elements. A debounce value (milliseconds) can also be provided to `useInput` to prevent too many updates happening in a short space of time.
+You can easily bind parts of your data to form inputs using `useInput()` and `useCheckbox()`. The props they return can be spread onto form elements. A debounce value (milliseconds) can also be provided to `useInput()` to prevent too many updates happening in a short space of time.
 
 Internally these function use React hooks, so also must follow React's rules of hooks.
 
@@ -321,7 +321,7 @@ function MyComponent(props) {
 };
 ```
 
-## Subscribing to changes
+### Subscribing to changes
 
 You can subscribe to changes using `.onChange`, or by using the `.useChange()` hook if you're inside a React component's render method.
 
@@ -387,7 +387,6 @@ function MyComponent(props) {
     </div>;
 };
 ```
-
 
 
 ## Development
