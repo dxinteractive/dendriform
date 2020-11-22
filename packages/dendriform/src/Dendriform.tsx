@@ -39,8 +39,11 @@ type ChangeCallbackDetails = {
 };
 type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
 
+type ChangeTypeValue = 'value';
+type ChangeTypeIndex = 'index';
+type ChangeType = ChangeTypeValue|ChangeTypeIndex;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ChangeCallbackRef = [number, ChangeCallback<any>, any];
+type ChangeCallbackRef = [ChangeType, number, ChangeCallback<any>, any];
 
 type HistoryPatch = {
     value: DendriformPatch[];
@@ -93,6 +96,14 @@ class Core<C> {
         const path = this.getPath(id);
         if(!path) return undefined;
         return getIn(this.value, path);
+    };
+
+    getIndex = (id: number): number => {
+        const path = this.getPath(id);
+        if(!path) return -1;
+        const [key] = path.slice(-1);
+        if(typeof key !== 'number') die(3, path);
+        return key;
     };
 
     createForm = (node: NodeAny): Dendriform<unknown,C> => {
@@ -166,7 +177,11 @@ class Core<C> {
 
         // update all callbacks
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
-            const nextValue = this.getValue(changeCallbackRef[0]);
+            const [changeType, id] = changeCallbackRef;
+            const nextValue = changeType === 'index'
+                ? this.getIndex(id)
+                : this.getValue(id);
+
             this.updateChangeCallback(changeCallbackRef, nextValue, {
                 patches: historyPatch.value
             });
@@ -179,10 +194,10 @@ class Core<C> {
         details: ChangeCallbackDetails
     ): void => {
         // only update a callback if it is not equal to the previous value
-        const [, callback, prevValue] = changeCallbackRef;
+        const [,, callback, prevValue] = changeCallbackRef;
         if(!Object.is(nextValue, prevValue)) {
             callback(nextValue, details);
-            changeCallbackRef[2] = nextValue;
+            changeCallbackRef[3] = nextValue;
         }
     };
 }
@@ -261,6 +276,7 @@ export class Dendriform<V,C=V> {
         return this.core.getValue(this.id) as V;
     }
 
+    // must be an arrow function as this is plucked off the Dendriform instances when used via useValue()
     set = (toProduce: ToProduce<V>): void => {
         this.core.set(this.id, toProduce);
     };
@@ -271,25 +287,37 @@ export class Dendriform<V,C=V> {
         this.core.set(parent.id, childToProduce(basePath[basePath.length - 1]));
     };
 
-    onChange = (callback: ChangeCallback<V>): (() => void) => {
-        const changeCallback: ChangeCallbackRef = [this.id, callback, this.value];
+    onChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): (() => void);
+    onChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): (() => void);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+    onChange(callback:any, changeType: any): any {
+        const changeCallback: ChangeCallbackRef = [changeType || 'value', this.id, callback, this.value];
         this.core.changeCallbackRefs.add(changeCallback);
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
-    };
+    }
 
     //
     // hooks
     //
 
-    useValue = (): [V, ProduceValue<V>] => {
+    useValue(): [V, ProduceValue<V>] {
         const [value, setValue] = useState<V>(() => this.value);
         this.useChange(setValue);
         return [value, this.set];
-    };
+    }
 
-    useChange = (callback: ChangeCallback<V>): void => {
-        useEffect(() => this.onChange(callback), []);
-    };
+    useIndex(): number {
+        const [index, setIndex] = useState<number>(() => this.core.getIndex(this.id));
+        this.useChange(setIndex, 'index');
+        return index;
+    }
+
+    useChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): void;
+    useChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+    useChange(callback: any, changeType: any): any {
+        useEffect(() => this.onChange(callback, changeType || 'value'), []);
+    }
 
     //
     // branching

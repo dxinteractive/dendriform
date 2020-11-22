@@ -93,6 +93,37 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe('useDendriform() and .useIndex()', () => {
+        test(`should provide index and produce an update`, () => {
+
+            const firstHook = renderHook(() => useDendriform(['a','b','c']));
+
+            const form = firstHook.result.current;
+            const {result} = renderHook(() => form.branch(0).useIndex());
+            expect(result.current).toBe(0);
+
+            act(() => {
+                form.set(draft => {
+                    draft.unshift('x');
+                });
+                form.core.changeBuffer.flush();
+            });
+
+            // should have updated index
+            expect(result.current).toBe(1);
+
+            act(() => {
+                form.set(draft => {
+                    draft.push('y');
+                });
+                form.core.changeBuffer.flush();
+            });
+
+            // should not have updated index
+            expect(result.current).toBe(1);
+        });
+    });
+
     describe('useDendriform() and .useChange()', () => {
         test(`should provide value and produce an update`, () => {
 
