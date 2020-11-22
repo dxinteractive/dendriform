@@ -76,7 +76,7 @@ export default function Main(): React.ReactElement {
                 {name: 'oh noo!'}
             ]
         });
-    });
+    }, {history: 100});
 
     form.useChange((value, details) => {
         // eslint-disable-next-line no-console
@@ -107,6 +107,13 @@ export default function Main(): React.ReactElement {
             <Box p={2}>
                 Tick: {tick} seconds
             </Box>
+            {form.render(form => {
+                const {canUndo, canRedo} = form.useHistory();
+                return <Box p={2}>
+                    <button onClick={() => form.undo()} disabled={!canUndo}>Undo</button>
+                    <button onClick={() => form.redo()} disabled={!canRedo}>Redo</button>
+                </Box>;
+            })}
             <Box p={2}>
                 <strong>Text inputs with debounce</strong><br/>
             </Box>
@@ -284,6 +291,7 @@ const TEXT = `
 - opt-in es6 class compatibility ✅
 - onChange ✅
 - ability to be controlled by higher up data sources ✅
+- undo / redo ✅
 - allow multiple sets in a row to be squashed together ✅
 - array element mutations ✅
 - able to output JSON patches for proper concurrent editing ✅
@@ -291,7 +299,6 @@ const TEXT = `
 
 // SOON
 
-- undo / redo
 - derived data computation
 - validation
   - need to make it possible to prefill errors from back end response
