@@ -99,7 +99,8 @@ describe(`Dendriform`, () => {
             const firstHook = renderHook(() => useDendriform(['a','b','c']));
 
             const form = firstHook.result.current;
-            const {result} = renderHook(() => form.branch(0).useIndex());
+            const elementForm = form.branch(0);
+            const {result} = renderHook(() => elementForm.useIndex());
             expect(result.current).toBe(0);
 
             act(() => {
@@ -111,6 +112,7 @@ describe(`Dendriform`, () => {
 
             // should have updated index
             expect(result.current).toBe(1);
+            expect(elementForm.index).toBe(1);
 
             act(() => {
                 form.set(draft => {
