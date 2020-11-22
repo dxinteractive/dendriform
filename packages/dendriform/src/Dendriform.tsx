@@ -361,9 +361,7 @@ export class Dendriform<V,C=V> {
             return array.map((_element, index): React.ReactElement => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const child = form.branch(index as any);
-                return <div key={child.id}>
-                    {child.id}: <Branch renderer={() => renderer(child)} deps={deps} />
-                </div>;
+                return <Branch key={child.id} renderer={() => renderer(child)} deps={deps} />;
             });
         };
 
