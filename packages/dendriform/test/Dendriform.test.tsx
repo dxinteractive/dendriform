@@ -178,6 +178,19 @@ describe(`Dendriform`, () => {
                 expect(form.core.nodes).toEqual(nodesBefore);
             });
         });
+
+        test(`should produce parent value with setParent`, () => {
+            const form = new Dendriform(['A','B','C']);
+
+            const update = jest.fn((_key) => ['X']);
+
+            form.branch(2).setParent(update);
+            form.core.changeBuffer.flush();
+
+            expect(update).toHaveBeenCalledTimes(1);
+            expect(update.mock.calls[0][0]).toBe(2);
+            expect(form.value).toEqual(['X']);
+        });
     });
 
     describe(`.branch() deep`, () => {

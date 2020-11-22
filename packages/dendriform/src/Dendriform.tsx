@@ -221,6 +221,8 @@ type DendriformBranch<C> = {
 
 type Renderer<D> = (form: D) => React.ReactElement;
 
+type ChildToProduce<V> = (key: PropertyKey) => ToProduce<V>;
+
 export class Dendriform<V,C=V> {
 
     // dev notes:
@@ -261,6 +263,12 @@ export class Dendriform<V,C=V> {
 
     set = (toProduce: ToProduce<V>): void => {
         this.core.set(this.id, toProduce);
+    };
+
+    setParent = (childToProduce: ChildToProduce<unknown>): void => {
+        const basePath = this.core.getPathOrError(this.id);
+        const parent = this.core.getFormAt(basePath.slice(0,-1));
+        this.core.set(parent.id, childToProduce(basePath[basePath.length - 1]));
     };
 
     onChange = (callback: ChangeCallback<V>): (() => void) => {
