@@ -88,7 +88,7 @@ function MyComponent(props) {
 
 ### Values
 
-Access your form's value using `.value`, or by using the `.useValue()` hook if you're inside a React component's render method. The `.useValue()` hook will cause a component update whenever the value changes.
+Access your form's value using `.value`, or by using the `.useValue()` hook if you're inside a React component's render method. The `.useValue()` hook will cause a component to update whenever the value changes. Using the hook essentially allows your components to "opt in" to respond to specific value changes, which means that unnecessary component updates can be easily avoided, and is a large part of what makes Dendriform so performant.
 
 ```js
 const form = new Dendriform({name: 'Bill'});
