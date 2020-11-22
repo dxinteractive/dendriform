@@ -194,6 +194,27 @@ function MyComponent(props) {
 }
 ```
 
+Array element forms can also opt-in to updates regarding their indexes using the `.useIndex()` hook.
+
+If you'll be allowing users to re-order items in an array, then please note that you'll get better performance if array element components don't know about their indexes. If the `.useIndex()` hook is used, a element that has moved its position inside of its parent array will need to update, even if it is otherwise unchanged.
+
+```js
+function MyComponent(props) {
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    return <div>
+        {form.renderAll('colours', form => {
+            const [colour, setColour] = form.useValue();
+            const index = form.useIndex();
+
+            return <div>Colour: {colour}, index: {index}</div>;
+        })}
+    </div>;
+}
+```
+
 Branch and render functions can all accept arrays of properties to dive deeply into data structures.
 
 ```js
@@ -469,6 +490,8 @@ function MyComponent(props) {
     </div>;
 }
 ```
+
+
 
 
 
