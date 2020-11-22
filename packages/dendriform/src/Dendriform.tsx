@@ -41,21 +41,36 @@ type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
 
 type ChangeTypeValue = 'value';
 type ChangeTypeIndex = 'index';
-type ChangeType = ChangeTypeValue|ChangeTypeIndex;
+type ChangeTypeHistory = 'history';
+type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ChangeCallbackRef = [ChangeType, number, ChangeCallback<any>, any];
+
+type HistoryItem = {
+    do: HistoryPatch;
+    undo: HistoryPatch;
+};
 
 type HistoryPatch = {
     value: DendriformPatch[];
     nodes: DendriformPatch[];
 };
 
+type HistoryState = {
+    canUndo: boolean;
+    canRedo: boolean;
+};
+
 //
 // core
 //
+export type Options = {
+    history?: number;
+};
 
 type CoreConfig<C> = {
     initialValue: C;
+    options: Options;
 };
 
 class Core<C> {
@@ -76,10 +91,18 @@ class Core<C> {
     nodeCountRef: CountRef = {current: 0};
     newNodeCreator: NewNodeCreator = newNode(this.nodeCountRef);
 
+    // history
+    historyIndex = 0;
+    historyStack: HistoryItem[] = [];
+    historyLimit: number;
+    historyState: HistoryState = {canUndo: false, canRedo: false};
+
     constructor(config: CoreConfig<C>) {
         this.value = config.initialValue;
         // create a root node for the value
         addNode(this.nodes, this.newNodeCreator(this.value, -1));
+
+        this.historyLimit = config.options.history || 0;
     }
 
     getPath = (id: number): Path|undefined => {
@@ -104,6 +127,13 @@ class Core<C> {
         const [key] = path.slice(-1);
         if(typeof key !== 'number') die(3, path);
         return key;
+    };
+
+    valueGettersByType: {[key in ChangeType]: (id: number) => unknown} = {
+        value: this.getValue,
+        index: this.getIndex,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        history: (_id) => this.historyState
     };
 
     createForm = (node: NodeAny): Dendriform<unknown,C> => {
@@ -131,15 +161,16 @@ class Core<C> {
             : this.getValue(id);
 
         // produce patches that describe the change
-        const [newValue, valuePatches] = producePatches(value, toProduce);
+        const [newValue, valuePatches, valuePatchesInv] = producePatches(value, toProduce);
         this.dendriformsWorkingValues.set(id, newValue);
 
         // transform patches so they have absolute paths
         const valuePatchesZoomed = zoomOutPatches(path, valuePatches);
+        const valuePatchesInvZoomed = zoomOutPatches(path, valuePatchesInv);
 
         // produce node patches, so that changes in the value
         // are accompanied by corresponding changes in the nodes
-        const [, nodesPatches] = produceNodePatches(
+        const [, nodesPatches, nodesPatchesInv] = produceNodePatches(
             this.nodes,
             this.newNodeCreator,
             this.value,
@@ -148,26 +179,38 @@ class Core<C> {
 
         // add patches into the change buffer
         this.changeBuffer.push({
-            value: valuePatchesZoomed,
-            nodes: nodesPatches
+            do: {
+                value: valuePatchesZoomed,
+                nodes: nodesPatches
+            },
+            undo: {
+                value: valuePatchesInvZoomed,
+                nodes: nodesPatchesInv
+            }
         });
     };
 
-    handleBufferChange = (patches: HistoryPatch[]): void => {
+    handleBufferChange = (items: HistoryItem[]): void => {
 
-        const historyItem: HistoryPatch = {value: [], nodes: []};
+        const historyItem: HistoryItem = {
+            do: {value: [], nodes: []},
+            undo: {value: [], nodes: []}
+        };
 
         // squash together buffered changes
-        patches.forEach((item: HistoryPatch) => {
-            historyItem.value.push(...item.value);
-            historyItem.nodes.push(...item.nodes);
+        items.forEach((item: HistoryItem) => {
+            historyItem.do.value.push(...item.do.value);
+            historyItem.do.nodes.push(...item.do.nodes);
+            historyItem.undo.value.unshift(...item.undo.value);
+            historyItem.undo.nodes.unshift(...item.undo.nodes);
         });
 
-        // apply changes
-        this.applyChanges(historyItem);
+        // add changes to history, and also apply them
+        this.historyPush(historyItem);
+        this.applyChanges(historyItem.do);
     };
 
-    changeBuffer = new BufferTime<HistoryPatch>(this.handleBufferChange);
+    changeBuffer = new BufferTime<HistoryItem>(this.handleBufferChange);
 
     applyChanges = (historyPatch: HistoryPatch): void => {
         // apply changes to value and nodes
@@ -178,14 +221,46 @@ class Core<C> {
         // update all callbacks
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
             const [changeType, id] = changeCallbackRef;
-            const nextValue = changeType === 'index'
-                ? this.getIndex(id)
-                : this.getValue(id);
+            const nextValue = this.valueGettersByType[changeType](id);
 
             this.updateChangeCallback(changeCallbackRef, nextValue, {
                 patches: historyPatch.value
             });
         });
+    };
+
+    updateHistoryState = () => {
+        const canUndo = this.historyIndex > 0;
+        const canRedo = this.historyIndex < this.historyStack.length;
+        if(canUndo !== this.historyState.canUndo || canRedo !== this.historyState.canRedo) {
+            this.historyState = {canUndo, canRedo};
+        }
+    };
+
+    historyPush = (historyItem: HistoryItem) => {
+        this.historyStack.length = this.historyIndex;
+        this.historyStack.push(historyItem);
+
+        if(this.historyStack.length > this.historyLimit) {
+            this.historyStack.shift();
+        } else {
+            this.historyIndex++;
+        }
+        this.updateHistoryState();
+    };
+
+    undo = (): void => {
+        if(!this.historyState.canUndo) return;
+        this.historyIndex--;
+        this.updateHistoryState();
+        this.applyChanges(this.historyStack[this.historyIndex].undo);
+    };
+
+    redo = (): void => {
+        if(!this.historyState.canRedo) return;
+        this.historyIndex++;
+        this.updateHistoryState();
+        this.applyChanges(this.historyStack[this.historyIndex - 1].do);
     };
 
     updateChangeCallback = (
@@ -249,7 +324,7 @@ export class Dendriform<V,C=V> {
     core: Core<C>;
     id: number;
 
-    constructor(initialValue: V|DendriformBranch<C>) {
+    constructor(initialValue: V|DendriformBranch<C>, options: Options = {}) {
 
         // if branching off an existing form, pass id and core along
         if(initialValue instanceof Object && (initialValue as DendriformBranch<C>).__branch) {
@@ -264,7 +339,8 @@ export class Dendriform<V,C=V> {
         this.core = new Core<C>({
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            initialValue: initialValue as C
+            initialValue: initialValue as C,
+            options
         });
     }
 
@@ -274,6 +350,14 @@ export class Dendriform<V,C=V> {
 
     get value(): V {
         return this.core.getValue(this.id) as V;
+    }
+
+    get index(): number {
+        return this.core.getIndex(this.id);
+    }
+
+    get history(): HistoryState {
+        return this.core.historyState;
     }
 
     // must be an arrow function as this is plucked off the Dendriform instances when used via useValue()
@@ -288,6 +372,7 @@ export class Dendriform<V,C=V> {
     };
 
     onChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): (() => void);
+    onChange(callback: ChangeCallback<HistoryState>, changeType: ChangeTypeHistory): (() => void);
     onChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): (() => void);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     onChange(callback:any, changeType: any): any {
@@ -295,6 +380,10 @@ export class Dendriform<V,C=V> {
         this.core.changeCallbackRefs.add(changeCallback);
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
     }
+
+    undo = (): void => this.core.undo();
+
+    redo = (): void => this.core.redo();
 
     //
     // hooks
@@ -313,10 +402,17 @@ export class Dendriform<V,C=V> {
     }
 
     useChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): void;
+    useChange(callback: ChangeCallback<HistoryState>, changeType: ChangeTypeHistory): void;
     useChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     useChange(callback: any, changeType: any): any {
         useEffect(() => this.onChange(callback, changeType || 'value'), []);
+    }
+
+    useHistory(): HistoryState {
+        const [historyState, setHistoryState] = useState<HistoryState>(this.core.historyState);
+        this.useChange(setHistoryState, 'history');
+        return historyState;
     }
 
     //
@@ -403,13 +499,13 @@ export class Dendriform<V,C=V> {
 
 type UseDendriformValue<V> = (() => V)|V;
 
-export const useDendriform = <V,C=V>(initialValue: UseDendriformValue<V>): Dendriform<V,C> => {
+export const useDendriform = <V,C=V>(initialValue: UseDendriformValue<V>, options: Options = {}): Dendriform<V,C> => {
     const [form] = useState(() => {
         const value = typeof initialValue === 'function'
             ? (initialValue as (() => V))()
             : initialValue;
 
-        return new Dendriform<V,C>(value as V);
+        return new Dendriform<V,C>(value as V, options);
     });
     return form;
 };

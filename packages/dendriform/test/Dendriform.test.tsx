@@ -144,6 +144,197 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe(`history`, () => {
+
+        test(`should undo`, () => {
+            const form = new Dendriform(123, {history: 100});
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            form.set(789);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(789);
+
+            form.undo();
+
+            expect(form.value).toBe(456);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+        });
+
+        test(`should not undo if no history is configured`, () => {
+            const form = new Dendriform(123);
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            form.set(789);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(789);
+
+            form.undo();
+
+            expect(form.value).toBe(789);
+        });
+
+        test(`should undo a limited number of times`, () => {
+            const form = new Dendriform(123, {history: 1});
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            form.set(789);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(789);
+
+            form.undo();
+
+            expect(form.value).toBe(456);
+
+            form.undo();
+
+            expect(form.value).toBe(456);
+        });
+
+        test(`should redo`, () => {
+            const form = new Dendriform(123, {history: 100});
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(456);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.redo();
+
+            expect(form.value).toBe(456);
+
+            form.redo();
+
+            expect(form.value).toBe(456);
+        });
+
+        test(`should replace redo stack after change after an undo`, () => {
+            const form = new Dendriform(123, {history: 100});
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(456);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.set(789);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(789);
+
+            form.undo();
+
+            expect(form.value).toBe(123);
+
+            form.redo();
+
+            expect(form.value).toBe(789);
+        });
+
+        test(`should undo merged changes`, () => {
+            const form = new Dendriform(0, {history: 100});
+
+            form.set(draft => draft + 1);
+            form.set(draft => draft + 1);
+            form.set(draft => draft + 1);
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe(3);
+
+            form.undo();
+
+            expect(form.value).toBe(0);
+
+            form.redo();
+
+            expect(form.value).toBe(3);
+        });
+
+        describe('useHistory()', () => {
+            test(`should provide history state`, () => {
+
+                const firstHook = renderHook(() => useDendriform(123, {history: 100}));
+
+                const form = firstHook.result.current;
+                const {result} = renderHook(() => form.useHistory());
+                expect(result.current).toEqual({
+                    canUndo: false,
+                    canRedo: false
+                });
+
+                act(() => {
+                    form.set(456);
+                    form.core.changeBuffer.flush();
+                });
+
+                const result2 = result.current;
+
+                expect(result.current).toEqual({
+                    canUndo: true,
+                    canRedo: false
+                });
+
+                expect(form.history).toEqual({
+                    canUndo: true,
+                    canRedo: false
+                });
+
+                act(() => {
+                    form.set(789);
+                    form.core.changeBuffer.flush();
+                });
+
+                expect(result.current).toEqual({
+                    canUndo: true,
+                    canRedo: false
+                });
+
+                // should be exactly the same
+                expect(result.current).toBe(result2);
+
+                act(() => {
+                    form.undo();
+                });
+
+                expect(result.current).toEqual({
+                    canUndo: true,
+                    canRedo: true
+                });
+
+                act(() => {
+                    form.undo();
+                });
+
+                expect(result.current).toEqual({
+                    canUndo: false,
+                    canRedo: true
+                });
+            });
+        });
+    });
+
     describe(`.branch()`, () => {
 
         test(`should get child value`, () => {
@@ -749,6 +940,23 @@ describe(`Dendriform`, () => {
             form.set(458);
             form.core.changeBuffer.flush();
             expect(callback).toHaveBeenCalledTimes(2);
+        });
+
+        test(`should be called when value is undone`, () => {
+            const callback = jest.fn();
+            const form = new Dendriform(123, {history: 100});
+            form.onChange(callback);
+
+            form.set(456);
+            form.core.changeBuffer.flush();
+
+            form.undo();
+
+            expect(callback).toHaveBeenCalledTimes(2);
+            expect(callback.mock.calls[1][0]).toBe(123);
+            expect(callback.mock.calls[1][1]).toEqual({
+                patches: [{op: 'replace', path: [], value: 123}]
+            });
         });
 
     });
