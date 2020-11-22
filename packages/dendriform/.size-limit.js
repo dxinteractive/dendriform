@@ -6,6 +6,13 @@ module.exports = [
         ignore: ['react', 'react-dom']
     },
     {
+        name: 'array',
+        path: "dist/dendriform.esm.js",
+        import: "{ array }",
+        limit: "0.4 KB",
+        ignore: ['react', 'react-dom', 'immer', 'shallow-equals']
+    },
+    {
         name: 'Dendriform',
         path: "dist/dendriform.esm.js",
         import: "{ Dendriform }",
