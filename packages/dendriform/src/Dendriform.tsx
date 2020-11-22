@@ -125,7 +125,7 @@ class Core<C> {
         const path = this.getPath(id);
         if(!path) return -1;
         const [key] = path.slice(-1);
-        if(typeof key !== 'number') die(3, path);
+        if(typeof key !== 'number') die(4, path);
         return key;
     };
 

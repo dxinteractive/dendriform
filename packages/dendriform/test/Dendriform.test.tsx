@@ -93,7 +93,7 @@ describe(`Dendriform`, () => {
         });
     });
 
-    describe('useDendriform() and .useIndex()', () => {
+    describe('.index and .useIndex()', () => {
         test(`should provide index and produce an update`, () => {
 
             const firstHook = renderHook(() => useDendriform(['a','b','c']));
@@ -124,6 +124,20 @@ describe(`Dendriform`, () => {
             // should not have updated index
             expect(result.current).toBe(1);
         });
+
+        test(`.index should not work on non-indexed form`, () => {
+            const form = new Dendriform(123);
+            expect(() => form.index).toThrow(`[Dendriform] useIndex() can only be called on array element forms, can't be called at path []`);
+        });
+
+        test(`.useIndex() should not work on non-indexed form`, () => {
+
+            const firstHook = renderHook(() => useDendriform(123));
+
+            const form = firstHook.result.current;
+            const {result} = renderHook(() => form.useIndex());
+            expect(result.error.message).toBe(`[Dendriform] useIndex() can only be called on array element forms, can't be called at path []`);
+        });
     });
 
     describe('useDendriform() and .useChange()', () => {
@@ -151,8 +165,18 @@ describe(`Dendriform`, () => {
         test(`should undo`, () => {
             const form = new Dendriform(123, {history: 100});
 
+            expect(form.history).toEqual({
+                canUndo: false,
+                canRedo: false
+            });
+
             form.set(456);
             form.core.changeBuffer.flush();
+
+            expect(form.history).toEqual({
+                canUndo: true,
+                canRedo: false
+            });
 
             form.set(789);
             form.core.changeBuffer.flush();
@@ -162,14 +186,26 @@ describe(`Dendriform`, () => {
             form.undo();
 
             expect(form.value).toBe(456);
+            expect(form.history).toEqual({
+                canUndo: true,
+                canRedo: true
+            });
 
             form.undo();
 
             expect(form.value).toBe(123);
+            expect(form.history).toEqual({
+                canUndo: false,
+                canRedo: true
+            });
 
             form.undo();
 
             expect(form.value).toBe(123);
+            expect(form.history).toEqual({
+                canUndo: false,
+                canRedo: true
+            });
         });
 
         test(`should not undo if no history is configured`, () => {
@@ -294,11 +330,6 @@ describe(`Dendriform`, () => {
                 const result2 = result.current;
 
                 expect(result.current).toEqual({
-                    canUndo: true,
-                    canRedo: false
-                });
-
-                expect(form.history).toEqual({
                     canUndo: true,
                     canRedo: false
                 });
