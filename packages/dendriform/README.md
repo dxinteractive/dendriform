@@ -69,7 +69,7 @@ npm install --save dendriform
 
 ### Creation
 
-Create a new dendriform form using `new Dendriform()`, or by using the `useDendriform()` hook if you're inside a React component's render method.
+Create a new dendriform form using `new Dendriform()`, or by using the `useDendriform()` hook if you're inside a React component's render method. Pass it your initial value, or a function that returns your initial value.
 
 The `useDendriform()` hook on its own will never cause a stateful update to the component it's in; the hook just returns an unchanging reference to a Dendriform instance.
 
