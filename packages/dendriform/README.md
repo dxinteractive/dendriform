@@ -1,6 +1,6 @@
 # dendriform
 
-[![npm](https://img.shields.io/npm/v/dendriform.svg)](https://www.npmjs.com/package/dendriform) ![Master build](https://github.com/92green/dendriform/workflows/CI/badge.svg?branch=master) ![Coverage 100%](https://img.shields.io/badge/coverage-100%25-green) ![Maturity: Early Days](https://img.shields.io/badge/Maturity-Early%20days-yellow) ![Coolness Reasonable](https://img.shields.io/badge/Coolness-Reasonable-blue) 
+[![npm](https://img.shields.io/npm/v/dendriform.svg)](https://www.npmjs.com/package/dendriform) ![Master build](https://github.com/92green/dendriform/workflows/CI/badge.svg?branch=master) ![Maturity: Early Days](https://img.shields.io/badge/Maturity-Early%20days-yellow) ![Coolness Reasonable](https://img.shields.io/badge/Coolness-Reasonable-blue) 
 
 Build feature-rich data-editing React UIs with great performance and not much code.
 
@@ -69,7 +69,9 @@ npm install --save dendriform
 
 ### Creation
 
-Create a new dendriform form using `new Dendriform()`, or by using the `useDendriform()` hook if you're inside a React component's render method.
+Create a new dendriform form using `new Dendriform()`, or by using the `useDendriform()` hook if you're inside a React component's render method. Pass it the initial value to put in the form, or a function that returns your initial value.
+
+The `useDendriform()` hook on its own will never cause a stateful update to the component it's in; the hook just returns an unchanging reference to a Dendriform instance.
 
 ```js
 import {Dendriform, useDendriform} from 'dendriform';
@@ -84,9 +86,25 @@ function MyComponent(props) {
 }
 ```
 
+If you're using Typescript you can pass type information in here.
+
+```js
+type FormValue = {
+    name?: string;
+};
+
+const form = new Dendriform<FormValue>({name: 'Bill'});
+// ...
+
+function MyComponent(props) {
+    const form = useDendriform<FormValue>({name: 'Ben'});
+    // ...
+}
+```
+
 ### Values
 
-Access your form's value using `.value`, or by using the `useValue()` hook if you're inside a React component's render method.
+Access your form's value using `.value`, or by using the `.useValue()` hook if you're inside a React component's render method. The `.useValue()` hook will cause a component to update whenever the value changes. Using the hook essentially allows your components to "opt in" to respond to specific value changes, which means that unnecessary component updates can be easily avoided, and is a large part of what makes Dendriform so performant.
 
 ```js
 const form = new Dendriform({name: 'Bill'});
@@ -107,10 +125,10 @@ You can instanciate forms outside of React, and access them and change them insi
 The only difference is that the lifespan of forms instanciated inside React components will be tied to the lifespan of the component instances they appear in.
 
 ```js
-const form = new Dendriform({name: 'Bill'});
+const persistentForm = new Dendriform({name: 'Bill'});
 
 function MyComponent(props) {
-    const [value, setValue] = form.useValue();
+    const [value, setValue] = persistentForm.useValue();
     // value is {name: 'Bill'}
     // ...
 }
@@ -140,7 +158,9 @@ function MyComponent(props) {
 
 ### Rendering
 
-The `.render()` function allows you to branch off and render a deep value in a React component. It's optimised for performance and by default it only ever updates if the deep value changes.
+The `.render()` function allows you to branch off and render a deep value in a React component.
+
+The `.render()` function's callback is rendered as it's own component instance, so you can use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. 
 
 ```js
 function MyComponent(props) {
@@ -155,7 +175,7 @@ function MyComponent(props) {
 }
 ```
 
-The `renderAll()` function works in the same way, but repeats for all elements in an array. React keying is taken care of for you.
+The `.renderAll()` function works in the same way, but repeats for all elements in an array. React keying is taken care of for you.
 
 ```js
 function MyComponent(props) {
@@ -279,7 +299,7 @@ function MyComponent(props) {
 
 ### Form inputs
 
-You can easily bind parts of your data to form inputs using `useInput` and `useCheckbox`. The props they return can be spread onto form elements. A debounce value (milliseconds) can also be provided to `useInput` to prevent too many updates happening in a short space of time.
+You can easily bind parts of your data to form inputs using `useInput()` and `useCheckbox()`. The props they return can be spread onto form elements. A debounce value (milliseconds) can also be provided to `useInput()` to prevent too many updates happening in a short space of time.
 
 Internally these function use React hooks, so also must follow React's rules of hooks.
 
@@ -321,7 +341,7 @@ function MyComponent(props) {
 };
 ```
 
-## Subscribing to changes
+### Subscribing to changes
 
 You can subscribe to changes using `.onChange`, or by using the `.useChange()` hook if you're inside a React component's render method.
 
@@ -387,7 +407,6 @@ function MyComponent(props) {
     </div>;
 };
 ```
-
 
 
 ## Development
