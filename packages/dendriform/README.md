@@ -408,7 +408,6 @@ function MyComponent(props) {
 };
 ```
 
-
 ## Development
 
 This library is written and maintained by [Damien Clarke](https://damienclarke.me/), with feedback from others at [92green](https://github.com/92green). All online library discussion happens over on [Github](https://github.com/92green/dendriform).
