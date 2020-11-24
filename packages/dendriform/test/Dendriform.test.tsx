@@ -291,6 +291,58 @@ describe(`Dendriform`, () => {
             expect(form.value).toBe(789);
         });
 
+        test(`should go`, () => {
+            const form = new Dendriform(['a'], {history: 100});
+
+            form.set(draft => void draft.push('b'));
+            form.core.changeBuffer.flush();
+
+            form.set(draft => void draft.push('c'));
+            form.core.changeBuffer.flush();
+
+            form.set(draft => void draft.push('d'));
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toEqual(['a','b','c','d']);
+
+            form.go(-1);
+
+            expect(form.value).toEqual(['a','b','c']);
+
+            form.go(-2);
+
+            expect(form.value).toEqual(['a']);
+
+            form.go(1);
+
+            expect(form.value).toEqual(['a','b']);
+
+            form.go(2);
+
+            expect(form.value).toEqual(['a','b','c','d']);
+
+            form.go(-100);
+
+            expect(form.value).toEqual(['a']);
+
+            form.go(100);
+
+            expect(form.value).toEqual(['a','b','c','d']);
+        });
+
+        test(`should go nowhere`, () => {
+            const form = new Dendriform('a', {history: 100});
+
+            form.set('b');
+            form.core.changeBuffer.flush();
+
+            expect(form.value).toBe('b');
+
+            form.go(0);
+
+            expect(form.value).toBe('b');
+        });
+
         test(`should undo merged changes`, () => {
             const form = new Dendriform(0, {history: 100});
 

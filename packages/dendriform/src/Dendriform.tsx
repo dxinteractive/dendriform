@@ -249,18 +249,31 @@ class Core<C> {
         this.updateHistoryState();
     };
 
-    undo = (): void => {
-        if(!this.historyState.canUndo) return;
-        this.historyIndex--;
-        this.updateHistoryState();
-        this.applyChanges(this.historyStack[this.historyIndex].undo);
-    };
+    go = (offset: number): void => {
+        if(offset === 0) return;
 
-    redo = (): void => {
-        if(!this.historyState.canRedo) return;
-        this.historyIndex++;
+        const newIndex = Math.min(
+            Math.max(0, this.historyIndex + offset),
+            this.historyStack.length
+        );
+
+        const historyPatches: HistoryPatch[] = offset > 0
+            ? this.historyStack
+                .slice(this.historyIndex, newIndex)
+                .map(item => item.do)
+            : this.historyStack.slice(newIndex, this.historyIndex)
+                .reverse()
+                .map(item => item.undo);
+
+        const historyPatch: HistoryPatch = {value: [], nodes: []};
+        historyPatches.forEach((thisPatch) => {
+            historyPatch.value.push(...thisPatch.value);
+            historyPatch.nodes.push(...thisPatch.nodes);
+        });
+
+        this.historyIndex = newIndex;
         this.updateHistoryState();
-        this.applyChanges(this.historyStack[this.historyIndex - 1].do);
+        this.applyChanges(historyPatch);
     };
 
     updateChangeCallback = (
@@ -381,9 +394,11 @@ export class Dendriform<V,C=V> {
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
     }
 
-    undo = (): void => this.core.undo();
+    go = (offset: number): void => this.core.go(offset);
 
-    redo = (): void => this.core.redo();
+    undo = (): void => this.go(-1);
+
+    redo = (): void => this.go(1);
 
     //
     // hooks

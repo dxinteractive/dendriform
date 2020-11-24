@@ -527,6 +527,15 @@ function MyComponent(props) {
 };
 ```
 
+The `.go()` function can also be used to perform undo and repo operations.
+
+```js
+form.go(-1); // equivalent to form.undo()
+form.go(1); // equivalent to form.redo()
+form.go(-3); // equivalent to form.undo() called 3 times in a row
+form.go(0); // does nothing
+```
+
 You can find if the form is able to undo or redo using `.history`, or by using the `.useHistory()` hook if you're inside a React component's render method. These both return an object `{canUndo: boolean, canRedo: boolean}`. This can be used to disable undo and redo buttons.
 
 ```js
