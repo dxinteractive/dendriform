@@ -443,6 +443,7 @@ const offsetElement = (form, offset) => {
 };
 
 function MyComponent(props) {
+
     const form = useDendriform({
         colours: ['Red', 'Green', 'Blue']
     });
@@ -450,17 +451,9 @@ function MyComponent(props) {
     return <div>
         {form.renderAll('colours', form => {
 
-            const remove = useCallback(() => {
-                form.set(array.remove());
-            }, []);
-
-            const moveDown = useCallback(() => {
-                offsetElement(form, 1);
-            }, []);
-
-            const moveUp = useCallback(() => {
-                offsetElement(form, -1);
-            }, []);
+            const remove = useCallback(() => form.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(form, 1), []);
+            const moveUp = useCallback(() => offsetElement(form, -1), []);
 
             return <div>
                 <label>colour: <input {...useInput(form, 150)} /></label>
