@@ -286,7 +286,7 @@ const TEXT = `
 - getIn() ✅
 - batch changes ✅
 - memoized branch creation ✅
-- can instanciate forms outside of react ✅
+- can instantiate forms outside of react ✅
 - autokeyed children / rearrange arrays with immer and keep meta associated ✅
 - opt-in es6 class compatibility ✅
 - onChange ✅
