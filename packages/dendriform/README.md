@@ -120,9 +120,9 @@ function MyComponent(props) {
 }
 ```
 
-You can instanciate forms outside of React, and access them and change them inside React components - they work in just the same way.
+You can instantiate forms outside of React, and access them and change them inside React components - they work in just the same way.
 
-The only difference is that the lifespan of forms instanciated inside React components will be tied to the lifespan of the component instances they appear in.
+The only difference is that the lifespan of forms instantiated inside React components will be tied to the lifespan of the component instances they appear in.
 
 ```js
 const persistentForm = new Dendriform({name: 'Bill'});
