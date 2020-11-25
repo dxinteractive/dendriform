@@ -507,7 +507,7 @@ History can be navigated by calling `.undo()` and `.redo()` on any form. It does
 ```js
 function MyComponent(props) {
 
-    const form = useDendriform(() => ({name: 'Ben'});
+    const form = useDendriform(() => ({name: 'Ben'}));
 
     return <div>
         {form.render('name', form => (
@@ -534,7 +534,7 @@ You can find if the form is able to undo or redo using `.history`, or by using t
 ```js
 function MyComponent(props) {
 
-    const form = useDendriform(() => ({name: 'Ben'});
+    const form = useDendriform(() => ({name: 'Ben'}));
 
     return <div>
         {form.render('name', form => (
