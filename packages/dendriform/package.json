@@ -1,8 +1,8 @@
 {
-  "version": "0.0.0",
+  "version": "2.0.0-alpha.0",
   "license": "MIT",
   "main": "dist/index.js",
-  "description": "...",
+  "description": "Build feature-rich data-editing React UIs with great performance and not much code.",
   "typings": "dist/index.d.ts",
   "files": [
     "dist",
@@ -14,12 +14,15 @@
   "scripts": {
     "dev": "tsdx watch",
     "build": "tsdx build",
-    "test": "tsdx test --passWithNoTests --coverage",
+    "test": "tsdx test --passWithNoTests --coverage --maxWorkers=2",
     "lint": "yarn eslint src/**/* --ext .js,.ts,.jsx,.tsx",
     "size": "yarn size-limit",
-    "prepare": "tsdx build",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "prepare": "tsdx build"
+  },
+  "dependencies": {
+    "dendriform-immer-patch-optimiser": "^1.0.0-alpha.0",
+    "immer": "7.0.8",
+    "shallow-equal": "1.2.1"
   },
   "peerDependencies": {
     "react": ">=16.8.0"
@@ -50,12 +53,7 @@
     "@babel/core": "^7.11.4",
     "@babel/plugin-transform-runtime": "^7.11.0",
     "@size-limit/preset-small-lib": "^4.5.7",
-    "@storybook/addon-actions": "^6.0.17",
-    "@storybook/addon-docs": "^6.0.17",
-    "@storybook/addon-info": "^5.3.19",
-    "@storybook/addon-links": "^6.0.17",
-    "@storybook/addons": "^6.0.17",
-    "@storybook/react": "^6.0.17",
+    "@testing-library/react-hooks": "^3.4.2",
     "@types/enzyme": "^3.10.5",
     "@types/enzyme-adapter-react-16": "^1.0.6",
     "@types/react": "^16.9.47",
@@ -73,6 +71,7 @@
     "react-docgen-typescript-loader": "^3.7.2",
     "react-dom": "^16.13.1",
     "react-is": "^16.13.1",
+    "react-test-renderer": "^16.13.1",
     "size-limit": "^4.5.7",
     "ts-loader": "^8.0.3",
     "tsdx": "^0.13.3",

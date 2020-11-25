@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, getType, get, getIn, set, each} from '../src/index';
+import {BASIC, OBJECT, ARRAY, getType, has, get, getIn, set, each, clone} from '../src/index';
 
 describe(`getType`, () => {
     test(`should identify basics`, () => {
@@ -17,6 +17,26 @@ describe(`getType`, () => {
 
     test(`should identify array`, () => {
         expect(getType([])).toBe(ARRAY);
+    });
+});
+
+describe(`has`, () => {
+    test(`should work with object`, () => {
+        expect(has({foo: 123}, 'foo')).toBe(true);
+        expect(has({foo: 123}, 'bar')).toBe(false);
+    });
+
+    test(`should work with array`, () => {
+        expect(has(['a','b'], 1)).toBe(true);
+        expect(has(['a','b'], 4)).toBe(false);
+        expect(has(['a','b'], -1)).toBe(false);
+    });
+
+    test(`should error on basic types`, () => {
+        expect(() => has(100, 4)).toThrow(`Cant access property 4 of 100`);
+        expect(() => has("str", 4)).toThrow(`Cant access property 4 of str`);
+        expect(() => has(null, 4)).toThrow(`Cant access property 4 of null`);
+        expect(() => has(undefined, 4)).toThrow(`Cant access property 4 of undefined`);
     });
 });
 
@@ -127,5 +147,27 @@ describe(`each`, () => {
         expect(() => each(undefined, callback)).toThrow(`Cant access property any of undefined`);
 
         expect(callback).toHaveBeenCalledTimes(0);
+    });
+});
+
+describe(`clone`, () => {
+    test(`should work with basic`, () => {
+        expect(clone('???')).toBe('???');
+    });
+
+    test(`should work with object`, () => {
+        const obj = {foo: 1, bar: 2};
+        const cloned = clone(obj);
+
+        expect(cloned).not.toBe(obj);
+        expect(cloned).toEqual(obj);
+    });
+
+    test(`should work with array`, () => {
+        const arr = [1,2,3];
+        const cloned = clone(arr);
+
+        expect(cloned).not.toBe(arr);
+        expect(cloned).toEqual(arr);
     });
 });
