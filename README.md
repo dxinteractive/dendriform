@@ -198,6 +198,8 @@ Array element forms can also opt-in to updates regarding their indexes using the
 
 If you'll be allowing users to re-order items in an array, then please note that you'll get better performance if array element components don't know about their indexes. If the `.useIndex()` hook is used, a element that has moved its position inside of its parent array will need to update, even if it is otherwise unchanged.
 
+The `.index` property is available for usages outside of React.
+
 ```js
 function MyComponent(props) {
     const form = useDendriform({
@@ -484,9 +486,72 @@ function MyComponent(props) {
 }
 ```
 
+### History
 
+Dendriform can keep track of the history of changes and supports undo and redo. Activate this by specifying the maximum number of undos you would like to allow in the options object when creating a form.
 
+History items consist of immer patches that have been optimised, so they take up very little memory in comparison to full state snapshots.
 
+```js
+const form = new Dendriform({name: 'Bill'}, {history: 50});
+// ...
+
+function MyComponent(props) {
+    const form = useDendriform({name: 'Ben'}, {history: 50});
+    // ...
+}
+```
+
+History can be navigated by calling `.undo()` and `.redo()` on any form. It does not matter if you are calling these on the top level form or any branched form, the effect will be the same.
+
+```js
+function MyComponent(props) {
+
+    const form = useDendriform(() => ({name: 'Ben'});
+
+    return <div>
+        {form.render('name', form => (
+            <label>name: <input {...useInput(form, 150)} /></label>
+        ))}
+
+        <button onClick={form.undo}>Undo</button>
+        <button onClick={form.redo}>Redo</button>
+    </div>;
+};
+```
+
+The `.go()` function can also be used to perform undo and repo operations.
+
+```js
+form.go(-1); // equivalent to form.undo()
+form.go(1); // equivalent to form.redo()
+form.go(-3); // equivalent to form.undo() called 3 times in a row
+form.go(0); // does nothing
+```
+
+You can find if the form is able to undo or redo using `.history`, or by using the `.useHistory()` hook if you're inside a React component's render method. These both return an object `{canUndo: boolean, canRedo: boolean}`. This can be used to disable undo and redo buttons.
+
+```js
+function MyComponent(props) {
+
+    const form = useDendriform(() => ({name: 'Ben'});
+
+    return <div>
+        {form.render('name', form => (
+            <label>name: <input {...useInput(form, 150)} /></label>
+        ))}
+
+        {form.render(form => {
+            const {canUndo, canRedo} = form.useHistory();
+            // this function will only re-render if canUndo or canRedo changes
+            return <>
+                <button onClick={form.undo} disable={!canUndo}>Undo</button>
+                <button onClick={form.redo} disable={!canRedo}>Redo</button>
+            </>;
+        })}
+    </div>;
+};
+```
 
 ## Development
 
