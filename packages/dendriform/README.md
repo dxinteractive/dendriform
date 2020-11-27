@@ -120,9 +120,9 @@ function MyComponent(props) {
 }
 ```
 
-You can instanciate forms outside of React, and access them and change them inside React components - they work in just the same way.
+You can instantiate forms outside of React, and access them and change them inside React components - they work in just the same way.
 
-The only difference is that the lifespan of forms instanciated inside React components will be tied to the lifespan of the component instances they appear in.
+The only difference is that the lifespan of forms instantiated inside React components will be tied to the lifespan of the component instances they appear in.
 
 ```js
 const persistentForm = new Dendriform({name: 'Bill'});
@@ -177,6 +177,8 @@ function MyComponent(props) {
 
 The `.renderAll()` function works in the same way, but repeats for all elements in an array. React keying is taken care of for you.
 
+See [Array operations](#Array operations) for convenient ways to let the user manipulate arrays of items.
+
 ```js
 function MyComponent(props) {
     const form = useDendriform({
@@ -187,6 +189,27 @@ function MyComponent(props) {
         {form.renderAll('colours', form => {
             const [colour, setColour] = form.useValue();
             return <div>Colour: {colour}</div>;
+        })}
+    </div>;
+}
+```
+
+Array element forms can also opt-in to updates regarding their indexes using the `.useIndex()` hook.
+
+If you'll be allowing users to re-order items in an array, then please note that you'll get better performance if array element components don't know about their indexes. If the `.useIndex()` hook is used, a element that has moved its position inside of its parent array will need to update, even if it is otherwise unchanged.
+
+```js
+function MyComponent(props) {
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    return <div>
+        {form.renderAll('colours', form => {
+            const [colour, setColour] = form.useValue();
+            const index = form.useIndex();
+
+            return <div>Colour: {colour}, index: {index}</div>;
         })}
     </div>;
 }
@@ -407,6 +430,63 @@ function MyComponent(props) {
     </div>;
 };
 ```
+
+### Array operations
+
+Common array operations can be performed using `array`.
+
+```js
+import {useDendriform, useInput, array} from 'dendriform';
+
+const offsetElement = (form, offset) => {
+    return form.setParent(index => array.move(index, index + offset));
+};
+
+function MyComponent(props) {
+
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    return <div>
+        {form.renderAll('colours', form => {
+
+            const remove = useCallback(() => form.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(form, 1), []);
+            const moveUp = useCallback(() => offsetElement(form, -1), []);
+
+            return <div>
+                <label>colour: <input {...useInput(form, 150)} /></label>
+
+                <button onClick={remove}>remove</button>
+                <button onClick={moveDown}>down</button>
+                <button onClick={moveUp}>up</button>
+            </div>;
+        })}
+
+        {form.render('colours', form => {
+
+            const shift = useCallback(() => form.set(array.shift()), []);
+            const pop = useCallback(() => form.set(array.pop()), []);
+            const unshift = useCallback(() => form.set(array.unshift('New')), []);
+            const push = useCallback(() => form.set(array.push('New colour')), []);
+            const move = useCallback(() => form.set(array.move(-1,0)), []);
+
+            return <>
+                <button onClick={shift}>shift</button>
+                <button onClick={pop}>pop</button>
+                <button onClick={unshift}>unshift</button>
+                <button onClick={push}>push</button>
+                <button onClick={move}>move last to first</button>
+            </>;
+        })}
+    </div>;
+}
+```
+
+
+
+
 
 ## Development
 

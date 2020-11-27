@@ -30,7 +30,7 @@ export const Absolute = styled.div({position: 'absolute'}, styledProps);
 //
 
 import {useEffect, useState, useCallback} from 'react';
-import {useDendriform, useInput, useCheckbox} from 'dendriform';
+import {useDendriform, useInput, useCheckbox, array} from 'dendriform';
 import {immerable} from 'immer';
 
 class MyValue {
@@ -99,12 +99,6 @@ export default function Main(): React.ReactElement {
         return () => clearInterval(interval);
     }, []);
 
-    const addPet = useCallback(() => {
-        form.branch('pets').set(draft => {
-            draft.push({name: 'new pet'});
-        });
-    }, []);
-
     return <Layout>
         <RenderRegion>
             <Box p={2}>
@@ -167,20 +161,46 @@ export default function Main(): React.ReactElement {
                 <strong>Array of fields</strong>
             </Box>
             <Box p={2}>
+                {/*form.renderAll('pets', form => {
+                    //const [pets, setPets] = form.useValue();
 
-                {form.renderAll('pets', form => {
                     return <RenderRegion p={2}>
-                        {form.render('name', name => {
+                        {form.render('name', form => {
                             return <RenderRegion p={2}>
-                                <input {...useInput(name, 150)} />
-                                {`${name.value}`}
+                                <input {...useInput(form, 150)} />
                             </RenderRegion>;
                         })}
-                        {`${form.value.name}`}
+                    </RenderRegion>;
+                })*/}
+
+                {form.render('pets', form => {
+                    return <RenderRegion p={2}>
+                        {form.renderAll(form => {
+                            //const [pets, setPets] = pet.useValue();
+
+                            return <RenderRegion p={2}>
+                                {form.render('name', name => {
+                                    return <RenderRegion p={2}>
+                                        <input {...useInput(name, 150)} />
+                                        {`${name.value}`}
+                                    </RenderRegion>;
+                                })}
+                                {`${form.value.name}`}
+                                <p>
+                                    <span onClick={() => form.set(array.remove())}>X </span>
+                                    <span onClick={() => form.setParent(index => array.move(index, index + 1))}>V </span>
+                                    <span onClick={() => form.setParent(index => array.move(index, index - 1))}>^ </span>
+                                </p>
+                            </RenderRegion>;
+                        })}
                     </RenderRegion>;
                 })}
 
-                <button onClick={addPet}>Add pet</button>
+                <p onClick={() => form.branch('pets').set(array.unshift({name: 'new pet'}))}>unshift()</p>
+                <p onClick={() => form.branch('pets').set(array.shift())}>shift()</p>
+                <p onClick={() => form.branch('pets').set(array.push({name: 'new pet'}))}>push()</p>
+                <p onClick={() => form.branch('pets').set(array.pop())}>pop()</p>
+                <p onClick={() => form.branch('pets').set(array.move(1,2))}>swap 1 and 2()</p>
             </Box>
 
 
@@ -256,22 +276,22 @@ const TEXT = `
 - non "inner platform" syntax for editing deep objects (immer) ✅
 - helpers for binding to inputs ✅
 - debounce changes ✅
-- getIn() style data traversal ✅
+- getIn() ✅
 - batch changes ✅
 - memoized branch creation ✅
-- can instanciate forms outside of react ✅
-- autokeyed children / rearrange arrays with immer and keep data uniquely identifiable ✅
+- can instantiate forms outside of react ✅
+- autokeyed children / rearrange arrays with immer and keep meta associated ✅
 - opt-in es6 class compatibility ✅
 - onChange ✅
 - ability to be controlled by higher up data sources ✅
 - allow multiple sets in a row to be squashed together ✅
+- array element mutations ✅
 - able to output JSON patches for proper concurrent editing ✅
 - full error messages only on prod ✅
 
 // SOON
 
 - undo / redo
-- array element mutations
 - derived data computation
 - validation
   - need to make it possible to prefill errors from back end response

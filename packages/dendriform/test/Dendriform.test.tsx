@@ -93,6 +93,37 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe('useDendriform() and .useIndex()', () => {
+        test(`should provide index and produce an update`, () => {
+
+            const firstHook = renderHook(() => useDendriform(['a','b','c']));
+
+            const form = firstHook.result.current;
+            const {result} = renderHook(() => form.branch(0).useIndex());
+            expect(result.current).toBe(0);
+
+            act(() => {
+                form.set(draft => {
+                    draft.unshift('x');
+                });
+                form.core.changeBuffer.flush();
+            });
+
+            // should have updated index
+            expect(result.current).toBe(1);
+
+            act(() => {
+                form.set(draft => {
+                    draft.push('y');
+                });
+                form.core.changeBuffer.flush();
+            });
+
+            // should not have updated index
+            expect(result.current).toBe(1);
+        });
+    });
+
     describe('useDendriform() and .useChange()', () => {
         test(`should provide value and produce an update`, () => {
 
@@ -177,6 +208,19 @@ describe(`Dendriform`, () => {
                 expect(form.value).toEqual({foo: 'a', bar: 'B!'});
                 expect(form.core.nodes).toEqual(nodesBefore);
             });
+        });
+
+        test(`should produce parent value with setParent`, () => {
+            const form = new Dendriform(['A','B','C']);
+
+            const update = jest.fn((_key) => ['X']);
+
+            form.branch(2).setParent(update);
+            form.core.changeBuffer.flush();
+
+            expect(update).toHaveBeenCalledTimes(1);
+            expect(update.mock.calls[0][0]).toBe(2);
+            expect(form.value).toEqual(['X']);
         });
     });
 

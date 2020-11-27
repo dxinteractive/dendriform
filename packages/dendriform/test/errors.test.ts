@@ -6,6 +6,7 @@ describe(`die`, () => {
         expect(() => die(1, ['a',1])).toThrow(`[Dendriform] Cannot find node at path ["a",1]`);
         expect(() => die(2)).toThrow(`[Dendriform] branchAll() can only be called on forms containing arrays`);
         expect(() => die(3)).toThrow(`[Dendriform] renderAll() can only be called on forms containing arrays`);
+        expect(() => die(4, ['foo'])).toThrow(`[Dendriform] useIndex() can only be called on array element forms, can't be called at path [\"foo\"]`);
     });
 
     test(`should throw unknown errors`, () => {
