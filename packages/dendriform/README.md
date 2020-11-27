@@ -520,7 +520,7 @@ function MyComponent(props) {
 };
 ```
 
-The `.go()` function can also be used to perform undo and repo operations.
+The `.go()` function can also be used to perform undo and redo operations.
 
 ```js
 form.go(-1); // equivalent to form.undo()
