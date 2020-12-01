@@ -4,7 +4,7 @@ const errors = {
     2: 'branchAll() can only be called on forms containing arrays',
     3: 'renderAll() can only be called on forms containing arrays',
     4: (path: unknown[]) => `useIndex() can only be called on array element forms, can't be called at path ${path.map(a => JSON.stringify(a)).join('","')}`,
-    5: `sync() forms must have the same number of history items configured`
+    5: `sync() forms must have the same maximum number of history items configured`
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

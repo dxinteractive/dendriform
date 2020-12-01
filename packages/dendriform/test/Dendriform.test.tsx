@@ -1815,7 +1815,7 @@ describe(`Dendriform`, () => {
                     const form = new Dendriform('1', {history: 1000});
                     const form2 = new Dendriform('', {history: 100});;
 
-                    expect(() => sync(form, form2)).toThrow('[Dendriform] sync() forms must have the same number of history items configured');
+                    expect(() => sync(form, form2)).toThrow('[Dendriform] sync() forms must have the same maximum number of history items configured');
                 });
             });
         });
