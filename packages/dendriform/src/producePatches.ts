@@ -36,6 +36,8 @@ export const patches = <V,>(patches: DendriformPatch[]|PatchCreator<V>, patchesI
     };
 };
 
+export const noChange = patches([], []);
+
 export const producePatches = <V>(base: V, toProduce: ToProduce<V>): [V, DendriformPatch[], DendriformPatch[]] => {
     if(isPatchPair(toProduce)) {
         const patches = toProduce.__patches(base);
