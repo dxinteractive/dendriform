@@ -616,7 +616,7 @@ form.set('c');
 
 ## Deriving data
 
-When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, and then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, before `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
+When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, and then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, after which `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
 
 The `.onDerive()` method returns an unsubscribe function you can call to stop deriving. The `.useDerive()` hook automatically unsubscribes when the component unmounts, so it returns nothing.
 
@@ -638,7 +638,7 @@ const unsubscribe = form.onDerive(newValue => {
 function MyComponent(props) {
     const form = useDendriform({name: 'Ben'});
 
-    form.useChange(newValue => {
+    form.useDerive(newValue => {
         form.branch('sum').set(newValue.a + newValue.b);
     });
 
@@ -669,7 +669,7 @@ It is also possible to make changes in other forms in `.onDerive()`'s callback.
 
 ```js
 const form = new Dendriform({name: 'Bill'});
-const validation = new Dendriform({
+const validState = new Dendriform({
     nameError: '',
     valid: true
 });
@@ -677,8 +677,8 @@ const validation = new Dendriform({
 form.onDerive(newValue => {
     const valid = newValue.name.trim().length > 0;
     const nameError = valid ? '' : 'Name must not be blank';
-    validation.branch('valid').set(valid);
-    validation.branch('nameError').set(nameError);
+    validState.branch('valid').set(valid);
+    validState.branch('nameError').set(nameError);
 });
 ```
 
@@ -696,9 +696,9 @@ const addressForm = new Dendriform({street: 'Cool St'}, {history: 100});
 
 sync(nameForm, addressForm);
 
-// if nameForm.undo() is called, addressForm.undo() is also called
-// if nameForm.redo() is called, addressForm.redo() is also called
-// if nameForm.go() is called, addressForm.go() is also called
+// if nameForm.undo() is called, addressForm.undo() is also called, and vice versa
+// if nameForm.redo() is called, addressForm.redo() is also called, and vice versa
+// if nameForm.go() is called, addressForm.go() is also called, and vice versa
 ```
 
 The `.sync()` function can also accept a deriver to derive data in one direction.
