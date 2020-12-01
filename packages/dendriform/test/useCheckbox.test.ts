@@ -20,7 +20,7 @@ describe(`useCheckbox`, () => {
             } as ChangeEvent<HTMLInputElement>;
 
             result.current.onChange(event);
-            form.core.changeBuffer.flush();
+            form.core.flush();
         });
 
         // the same callback should be provided even after hook update
