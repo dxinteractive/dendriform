@@ -60,15 +60,14 @@ type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ChangeCallbackRef = [ChangeType, number, ChangeCallback<any>, any];
 
-export type DeriveCallbackDetails<V> = {
+export type DeriveCallbackDetails = {
     go: number;
     replace: boolean;
-    form: Dendriform<V>;
     patches: HistoryPatch
 };
-export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails<V>) => void;
+export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DeriveCallbackRef = [DeriveCallback<any>, Dendriform<any>];
+type DeriveCallbackRef = [DeriveCallback<any>];
 
 //
 // core
@@ -281,10 +280,10 @@ class Core<C> {
         replace: boolean
     ): void => {
         if(this.deriving) return;
-        const [deriveCallback, form] = deriveCallbackRef;
+        const [deriveCallback] = deriveCallbackRef;
         this.deriving = true;
         const patches = this.changeBuffer ?? emptyHistoryPatch();
-        deriveCallback(this.value, {go, replace, form, patches});
+        deriveCallback(this.value, {go, replace, patches});
         this.deriving = false;
     };
 
@@ -527,7 +526,7 @@ export class Dendriform<V,C=V> {
     }
 
     onDerive(callback: DeriveCallback<V>): (() => void) {
-        const deriveCallback: DeriveCallbackRef = [callback, this];
+        const deriveCallback: DeriveCallbackRef = [callback];
         this.core.deriveCallbackRefs.add(deriveCallback);
         // call immediately, and dont add to history
         this.replace();

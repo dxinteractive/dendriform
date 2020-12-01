@@ -2,28 +2,26 @@ import {noChange} from './index';
 import type {Dendriform, DeriveCallback, DeriveCallbackDetails} from './index';
 
 export const sync = <V,S>(
-    otherForm: Dendriform<S>,
+    masterForm: Dendriform<V>,
+    slaveForm: Dendriform<S>,
     derive?: DeriveCallback<V>
-): DeriveCallback<V> => {
-    let derivedBack = false;
-    return (newValue: V, details: DeriveCallbackDetails<V>) => {
-        const {go, replace, form} = details;
-        // if form calls go(), other form calls go()
-        if(go) return otherForm.go(go);
-        // if form is going to replace(), other form will replace()
-        otherForm.replace(replace);
-        derive ? derive(newValue, details) : otherForm.set(noChange);
+): void => {
 
-        if(!derivedBack) {
-            derivedBack = true;
-            otherForm.onDerive((_newValue: S, details: DeriveCallbackDetails<S>) => {
-                const {go, replace} = details;
-                // if other form calls go(), form calls go()
-                if(go) return form.go(go);
-                // if other form is going to replace(), form will replace()
-                if(replace) form.replace();
-                form.set(noChange);
-            });
-        }
-    };
+    masterForm.onDerive((newValue: V, details: DeriveCallbackDetails) => {
+        const {go, replace} = details;
+        // if master form calls go(), slave form calls go()
+        if(go) return slaveForm.go(go);
+        // if master form is going to replace(), slave form will replace()
+        slaveForm.replace(replace);
+        derive ? derive(newValue, details) : slaveForm.set(noChange);
+    });
+
+    slaveForm.onDerive((_newValue: S, details: DeriveCallbackDetails) => {
+        const {go, replace} = details;
+        // if slave form calls go(), master form calls go()
+        if(go) return masterForm.go(go);
+        // if slave form is going to replace(), master form will replace()
+        if(replace) masterForm.replace();
+        masterForm.set(noChange);
+    });
 };

@@ -694,7 +694,7 @@ import {sync} from 'dendriform';
 const nameForm = new Dendriform({name: 'Bill'}, {history: 100});
 const addressForm = new Dendriform({street: 'Cool St'}, {history: 100});
 
-nameForm.onDerive(sync(addressForm));
+sync(nameForm, addressForm);
 
 // if nameForm.undo() is called, addressForm.undo() is also called
 // if nameForm.redo() is called, addressForm.redo() is also called
@@ -707,14 +707,15 @@ The `.sync()` function can also accept a deriver to derive data in one direction
 import {sync} from 'dendriform';
 
 const namesForm = new Dendriform(['Bill', 'Ben', 'Bob'], {history: 100});
+
 const addressForm = new Dendriform({
     street: 'Cool St',
     occupants: 0
 }, {history: 100});
 
-namesForm.onDerive(sync(addressForm, newValue => {
+sync(nameForm, addressForm, newValue => {
     addressForm.branch('occupants').set(newValue.length);
-}));
+});
 ```
 
 ## Development

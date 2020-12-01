@@ -1186,7 +1186,6 @@ describe(`Dendriform`, () => {
             });
             expect(deriver1.mock.calls[0][1].go).toBe(0);
             expect(deriver1.mock.calls[0][1].replace).toBe(true);
-            expect(deriver1.mock.calls[0][1].form).toBe(form);
             expect(deriver1.mock.calls[0][1].patches).toEqual({value: [], nodes: []});
 
             // add deriver 2 and check that it was called immediately
@@ -1208,7 +1207,6 @@ describe(`Dendriform`, () => {
             });
             expect(deriver2.mock.calls[0][1].go).toBe(0);
             expect(deriver2.mock.calls[0][1].replace).toBe(true);
-            expect(deriver2.mock.calls[0][1].form).toBe(form);
             expect(deriver2.mock.calls[0][1].patches.value).toEqual([]);
 
             // make explicit change and check for derive calls
@@ -1560,9 +1558,9 @@ describe(`Dendriform`, () => {
                     const changer2 = jest.fn();
                     form.onChange(changer2);
 
-                    form.onDerive(sync(form2, (value) => {
+                    sync(form, form2, (value) => {
                         form2.set(value + '?');
-                    }));
+                    });
 
                     form.core.flush();
                     form2.core.flush();
@@ -1659,7 +1657,7 @@ describe(`Dendriform`, () => {
                     const form = new Dendriform('', {history: 1000});
                     const form2 = new Dendriform('', {history: 1000});
 
-                    form.onDerive(sync(form2));
+                    sync(form, form2);
 
                     form.core.flush();
                     form2.core.flush();
@@ -1735,9 +1733,9 @@ describe(`Dendriform`, () => {
                     const changer2 = jest.fn();
                     form.onChange(changer2);
 
-                    form.onDerive(sync(form2, (value) => {
+                    sync(form, form2, (value) => {
                         form2.set(value + '?');
-                    }));
+                    });
 
                     form.core.flush();
                     form2.core.flush();
