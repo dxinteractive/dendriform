@@ -616,9 +616,9 @@ form.set('c');
 
 ## Deriving data
 
-When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, andd then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, before `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
+When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, and then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, before `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
 
-The `.onDerive()` method returns an unsubscribe function you can call to stop derivie to changes. The `.useDerive()` hook automatically unsubscribes when the component unmounts, so it returns nothing.
+The `.onDerive()` method returns an unsubscribe function you can call to stop deriving. The `.useDerive()` hook automatically unsubscribes when the component unmounts, so it returns nothing.
 
 ```js
 const form = new Dendriform({
@@ -684,7 +684,7 @@ form.onDerive(newValue => {
 
 ## Synchronising forms
 
-You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
+You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
 
 Please make sure all synchronised forms have the same number of history items configured.
 
