@@ -322,6 +322,16 @@ function MyComponent(props) {
 }
 ```
 
+It can also be called multiple times in a row.
+
+```js
+const form = new Dendriform(0);
+form.set(draft => draft + 1);
+form.set(draft => draft + 1);
+form.set(draft => draft + 1);
+// form.value will update to become 3
+```
+
 ### Form inputs
 
 You can easily bind parts of your data to form inputs using `useInput()` and `useCheckbox()`. The props they return can be spread onto form elements. A debounce value (milliseconds) can also be provided to `useInput()` to prevent too many updates happening in a short space of time.
@@ -520,7 +530,7 @@ function MyComponent(props) {
 };
 ```
 
-The `.go()` function can also be used to perform undo and repo operations.
+The `.go()` function can also be used to perform undo and redo operations.
 
 ```js
 form.go(-1); // equivalent to form.undo()
@@ -551,6 +561,160 @@ function MyComponent(props) {
         })}
     </div>;
 };
+```
+
+You can also control how changes are grouped in the history stack.
+
+The `.replace()` function can be used to prevent a new history item, effectively merging changes together. Once called, subsequent calls to `.set()` within the current update will be applied to the current history item, instead of creating a new history item.
+
+```js
+const form = new Dendriform('a', {history: 50});
+
+form.set('b');
+// form will contain 'b' as a new history item
+// if undo() is called, form will contain 'a' again
+
+// ...after some time...
+
+form.replace();
+form.set('c');
+// form will contain 'c' by updating the current history item
+// if undo() is called, form will contain 'a' again
+```
+
+The `.replace()` function can also take a boolean for convenience.
+
+```js
+form.replace(true);
+// equivalent to form.replace();
+
+form.replace(false);
+// equivalent to not calling form.replace() at all
+```
+
+Conversely, `.done()` can be used to split changes into separate history items.
+
+```js
+const form = new Dendriform('a', {history: 50});
+
+// calling .set() multiple times in the same update
+form.set('b');
+form.set('c');
+
+// form will contain 'c'
+// if undo is called, form will contain 'a' again
+
+// calling .set() multiple times in the same update
+form.set('b');
+form.done();
+form.set('c');
+
+// form will contain 'c'
+// if undo is called, form will contain 'b'
+// if undo is called a second time, form will contain 'a'
+```
+
+## Deriving data
+
+When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, andd then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, before `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
+
+The `.onDerive()` method returns an unsubscribe function you can call to stop derivie to changes. The `.useDerive()` hook automatically unsubscribes when the component unmounts, so it returns nothing.
+
+```js
+const form = new Dendriform({
+    a: 1,
+    b: 2,
+    sum: 0
+});
+
+const unsubscribe = form.onDerive(newValue => {
+    form.branch('sum').set(newValue.a + newValue.b);
+});
+
+// now form.value is {a:1, b:2, sum:3}
+
+// call unsubscribe() to unsubscribe
+
+function MyComponent(props) {
+    const form = useDendriform({name: 'Ben'});
+
+    form.useChange(newValue => {
+        form.branch('sum').set(newValue.a + newValue.b);
+    });
+
+    // if form.branch('a').set(2); is called
+    // the deriver function will be called
+    // and form.value will contain {a:2, b:2, sum:4}
+}
+```
+
+Deriving data can be useful for implementing validation.
+
+```js
+const form = new Dendriform({
+    name: 'Bill',
+    nameError: '',
+    valid: true
+});
+
+form.onDerive(newValue => {
+    const valid = newValue.name.trim().length > 0;
+    const nameError = valid ? '' : 'Name must not be blank';
+    form.branch('valid').set(valid);
+    form.branch('nameError').set(nameError);
+});
+```
+
+It is also possible to make changes in other forms in `.onDerive()`'s callback.
+
+```js
+const form = new Dendriform({name: 'Bill'});
+const validation = new Dendriform({
+    nameError: '',
+    valid: true
+});
+
+form.onDerive(newValue => {
+    const valid = newValue.name.trim().length > 0;
+    const nameError = valid ? '' : 'Name must not be blank';
+    validation.branch('valid').set(valid);
+    validation.branch('nameError').set(nameError);
+});
+```
+
+## Synchronising forms
+
+You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
+
+Please make sure all synchronised forms have the same number of history items configured.
+
+```js
+import {sync} from 'dendriform';
+
+const nameForm = new Dendriform({name: 'Bill'}, {history: 100});
+const addressForm = new Dendriform({street: 'Cool St'}, {history: 100});
+
+nameForm.onDerive(sync(addressForm));
+
+// if nameForm.undo() is called, addressForm.undo() is also called
+// if nameForm.redo() is called, addressForm.redo() is also called
+// if nameForm.go() is called, addressForm.go() is also called
+```
+
+The `.sync()` function can also accept a deriver to derive data in one direction.
+
+```js
+import {sync} from 'dendriform';
+
+const namesForm = new Dendriform(['Bill', 'Ben', 'Bob'], {history: 100});
+const addressForm = new Dendriform({
+    street: 'Cool St',
+    occupants: 0
+}, {history: 100});
+
+namesForm.onDerive(sync(addressForm, newValue => {
+    addressForm.branch('occupants').set(newValue.length);
+}));
 ```
 
 ## Development
