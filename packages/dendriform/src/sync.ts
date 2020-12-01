@@ -1,11 +1,16 @@
 import {noChange} from './index';
 import type {Dendriform, DeriveCallback, DeriveCallbackDetails} from './index';
+import {die} from './errors';
 
 export const sync = <V,S>(
     masterForm: Dendriform<V>,
     slaveForm: Dendriform<S>,
     derive?: DeriveCallback<V>
 ): void => {
+
+    if(masterForm.core.historyLimit !== slaveForm.core.historyLimit) {
+        die(5);
+    }
 
     masterForm.onDerive((newValue: V, details: DeriveCallbackDetails) => {
         const {go, replace} = details;

@@ -686,7 +686,7 @@ form.onDerive(newValue => {
 
 You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
 
-Please make sure all synchronised forms have the same number of history items configured.
+Synchronised forms must have the same number of history items configured.
 
 ```js
 import {sync} from 'dendriform';

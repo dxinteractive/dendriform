@@ -1809,6 +1809,14 @@ describe(`Dendriform`, () => {
                     expect(form.core.historyIndex).toBe(0);
                     expect(form2.core.historyIndex).toBe(0);
                 });
+
+                test(`should error if synced forms do not have the same history items`, () => {
+
+                    const form = new Dendriform('1', {history: 1000});
+                    const form2 = new Dendriform('', {history: 100});;
+
+                    expect(() => sync(form, form2)).toThrow('[Dendriform] sync() forms must have the same number of history items configured');
+                });
             });
         });
 
