@@ -24,7 +24,6 @@ import {getIn, applyPatches, zoomOutPatches} from 'dendriform-immer-patch-optimi
 import type {DendriformPatch, Path} from 'dendriform-immer-patch-optimiser';
 import {producePatches} from './producePatches';
 import type {ToProduce} from './producePatches';
-import {BufferTime} from './BufferTime';
 import {die} from './errors';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './Nodes';
 import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
@@ -34,17 +33,6 @@ import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
 //
 
 type ProduceValue<V> = (toProduce: ToProduce<V>) => void;
-type ChangeCallbackDetails = {
-    patches: DendriformPatch[]
-};
-type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
-
-type ChangeTypeValue = 'value';
-type ChangeTypeIndex = 'index';
-type ChangeTypeHistory = 'history';
-type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ChangeCallbackRef = [ChangeType, number, ChangeCallback<any>, any];
 
 type HistoryItem = {
     do: HistoryPatch;
@@ -61,11 +49,33 @@ type HistoryState = {
     canRedo: boolean;
 };
 
+type ChangeCallbackDetails = {
+    patches: HistoryPatch
+};
+type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
+type ChangeTypeValue = 'value';
+type ChangeTypeIndex = 'index';
+type ChangeTypeHistory = 'history';
+type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ChangeCallbackRef = [ChangeType, number, ChangeCallback<any>, any];
+
+export type DeriveCallbackDetails = {
+    go: number;
+    replace: boolean;
+    patches: HistoryPatch
+};
+export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails) => void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DeriveCallbackRef = [DeriveCallback<any>];
+
 //
 // core
 //
+
 export type Options = {
     history?: number;
+    replace?: boolean;
 };
 
 type CoreConfig<C> = {
@@ -73,15 +83,17 @@ type CoreConfig<C> = {
     options: Options;
 };
 
+const emptyHistoryPatch = (): HistoryPatch => ({value: [], nodes: []});
+
 class Core<C> {
 
     // the value in the form
     value: C;
     // cached Dendriform instances
     dendriforms = new Map<number,Dendriform<unknown,C>>();
-    // transient working values, to allow multiple set() calls to be called in rapid succession
-    dendriformsWorkingValues = new Map<number,unknown>();
-    // callback refs, will be called when their values change
+    // derive callback refs, will be called while values are changing and require data to be derived
+    deriveCallbackRefs = new Set<DeriveCallbackRef>();
+    // change callback refs, will be called when values are to be pushed out to subscribers
     changeCallbackRefs = new Set<ChangeCallbackRef>();
 
     // nodes
@@ -91,19 +103,18 @@ class Core<C> {
     nodeCountRef: CountRef = {current: 0};
     newNodeCreator: NewNodeCreator = newNode(this.nodeCountRef);
 
-    // history
-    historyIndex = 0;
-    historyStack: HistoryItem[] = [];
-    historyLimit: number;
-    historyState: HistoryState = {canUndo: false, canRedo: false};
-
     constructor(config: CoreConfig<C>) {
         this.value = config.initialValue;
         // create a root node for the value
         addNode(this.nodes, this.newNodeCreator(this.value, -1));
 
         this.historyLimit = config.options.history || 0;
+        this.replaceByDefault = !!config.options.replace;
     }
+
+    //
+    // data access
+    //
 
     getPath = (id: number): Path|undefined => {
         return getPath(this.nodes, id);
@@ -151,18 +162,22 @@ class Core<C> {
         return this.dendriforms.get(node.id) || this.createForm(node);
     };
 
+    //
+    // setting data
+    //
+
+    // if setBuffer exists, then new changes will be merged onto it
+    // if not, a new change will push a new history item
+    setBuffer?: HistoryPatch;
+    silenceChanges = false;
+    replaceByDefault = false;
+
     set = (id: number, toProduce: unknown): void => {
         const path = this.getPath(id);
         if(!path) return;
 
-        // get the current value, or working copy value if it exists
-        const value = this.dendriformsWorkingValues.has(id)
-            ? this.dendriformsWorkingValues.get(id)
-            : this.getValue(id);
-
         // produce patches that describe the change
-        const [newValue, valuePatches, valuePatchesInv] = producePatches(value, toProduce);
-        this.dendriformsWorkingValues.set(id, newValue);
+        const [, valuePatches, valuePatchesInv] = producePatches(this.getValue(id), toProduce);
 
         // transform patches so they have absolute paths
         const valuePatchesZoomed = zoomOutPatches(path, valuePatches);
@@ -177,8 +192,8 @@ class Core<C> {
             valuePatchesZoomed
         );
 
-        // add patches into the change buffer
-        this.changeBuffer.push({
+        // create history item
+        const historyItem: HistoryItem = {
             do: {
                 value: valuePatchesZoomed,
                 nodes: nodesPatches
@@ -187,55 +202,142 @@ class Core<C> {
                 value: valuePatchesInvZoomed,
                 nodes: nodesPatchesInv
             }
-        });
-    };
-
-    handleBufferChange = (items: HistoryItem[]): void => {
-
-        const historyItem: HistoryItem = {
-            do: {value: [], nodes: []},
-            undo: {value: [], nodes: []}
         };
 
-        // squash together buffered changes
-        items.forEach((item: HistoryItem) => {
-            historyItem.do.value.push(...item.do.value);
-            historyItem.do.nodes.push(...item.do.nodes);
-            historyItem.undo.value.unshift(...item.undo.value);
-            historyItem.undo.nodes.unshift(...item.undo.nodes);
-        });
-
-        // add changes to history, and also apply them
-        this.historyPush(historyItem);
+        // apply changes to .value and .nodes
         this.applyChanges(historyItem.do);
+
+        // if we're in the middle of calling go(), dont bother with buffers or deriving
+        if(this.going) return;
+
+        const replace = !!this.setBuffer;
+
+        // push new history item, or replace last history item
+        if(replace) {
+            this.historyReplace(historyItem);
+        } else {
+            this.historyPush(historyItem);
+        }
+
+        this.setBuffer = {
+            value: (this.setBuffer?.value || []).concat(historyItem.do.value),
+            nodes: (this.setBuffer?.nodes || []).concat(historyItem.do.nodes)
+        };
+
+        if(!this.silenceChanges) {
+            this.scheduleChange();
+        }
+
+        // derive everything if there are any patches
+        if(historyItem.do.value.length > 0) {
+            this.sendDerive(0, replace);
+        }
     };
 
-    changeBuffer = new BufferTime<HistoryItem>(this.handleBufferChange);
-
     applyChanges = (historyPatch: HistoryPatch): void => {
-        // apply changes to value and nodes
+        // apply changes to .value and .nodes
         this.value = applyPatches(this.value, historyPatch.value);
         this.nodes = applyPatches(this.nodes, historyPatch.nodes);
-        this.dendriformsWorkingValues.clear();
 
-        // update all callbacks
+        // add changes to change buffer
+        if(!this.silenceChanges) {
+            this.changeBuffer = {
+                value: (this.changeBuffer?.value || []).concat(historyPatch.value),
+                nodes: (this.changeBuffer?.nodes || []).concat(historyPatch.nodes)
+            };
+        }
+    };
+
+    replace = (replace: boolean) => {
+        if(!replace) {
+            this.setBuffer = undefined;
+        } else if(!this.setBuffer) {
+            this.setBuffer = emptyHistoryPatch();
+        }
+    };
+
+    done = () => {
+        this.setBuffer = this.replaceByDefault
+            ? emptyHistoryPatch()
+            : undefined;
+    };
+
+    //
+    // derive
+    //
+
+    deriving = false;
+
+    sendDerive = (go: number, replace: boolean): void => {
+        this.deriveCallbackRefs.forEach((deriveCallbackRef) => {
+            this.derive(deriveCallbackRef, go, replace);
+        });
+    };
+
+    derive = (
+        deriveCallbackRef: DeriveCallbackRef,
+        go: number,
+        replace: boolean
+    ): void => {
+        if(this.deriving) return;
+        const [deriveCallback] = deriveCallbackRef;
+        this.deriving = true;
+        const patches = this.changeBuffer ?? emptyHistoryPatch();
+        deriveCallback(this.value, {go, replace, patches});
+        this.deriving = false;
+    };
+
+    //
+    // change
+    //
+
+    changeBuffer?: HistoryPatch;
+    scheduledChangeTimer = -1;
+
+    scheduleChange = () => {
+        if(this.scheduledChangeTimer !== -1) return;
+        this.scheduledChangeTimer = window.setTimeout(this.sendChange, 0);
+    };
+
+    flush = () => {
+        if(this.scheduledChangeTimer === -1) return;
+        window.clearTimeout(this.scheduledChangeTimer);
+        this.sendChange();
+    };
+
+    sendChange = (): void => {
+        this.done();
+        this.scheduledChangeTimer = -1;
+        if(!this.changeBuffer) return;
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
             const [changeType, id] = changeCallbackRef;
             const nextValue = this.valueGettersByType[changeType](id);
-
-            this.updateChangeCallback(changeCallbackRef, nextValue, {
-                patches: historyPatch.value
-            });
+            this.change(changeCallbackRef, nextValue, this.changeBuffer as HistoryPatch);
         });
+        this.changeBuffer = undefined;
     };
 
-    updateHistoryState = () => {
-        const canUndo = this.historyIndex > 0;
-        const canRedo = this.historyIndex < this.historyStack.length;
-        if(canUndo !== this.historyState.canUndo || canRedo !== this.historyState.canRedo) {
-            this.historyState = {canUndo, canRedo};
+    change = (
+        changeCallbackRef: ChangeCallbackRef,
+        nextValue: unknown,
+        patches: HistoryPatch
+    ): void => {
+        // only update a callback if it is not equal to the previous value
+        const [,, changeCallback, prevValue] = changeCallbackRef;
+        if(!Object.is(nextValue, prevValue)) {
+            changeCallback(nextValue, {patches});
+            changeCallbackRef[3] = nextValue;
         }
     };
+
+    //
+    // history
+    //
+
+    historyIndex = 0;
+    historyStack: HistoryItem[] = [];
+    historyLimit: number;
+    historyState: HistoryState = {canUndo: false, canRedo: false};
 
     historyPush = (historyItem: HistoryItem) => {
         this.historyStack.length = this.historyIndex;
@@ -249,8 +351,30 @@ class Core<C> {
         this.updateHistoryState();
     };
 
+    historyReplace = (historyItem: HistoryItem) => {
+        if(this.historyIndex === 0) return;
+        this.historyStack.length = this.historyIndex;
+
+        const last = this.historyStack[this.historyIndex - 1];
+
+        this.historyStack[this.historyIndex - 1] = {
+            do: {
+                value: last.do.value.concat(historyItem.do.value),
+                nodes: last.do.nodes.concat(historyItem.do.nodes)
+            },
+            undo: {
+                value: historyItem.undo.value.concat(last.undo.value),
+                nodes: historyItem.undo.nodes.concat(last.undo.nodes)
+            }
+        };
+    };
+
+    going = false;
+
     go = (offset: number): void => {
-        if(offset === 0) return;
+        if(offset === 0 || this.going) return;
+
+        this.going = true;
 
         const newIndex = Math.min(
             Math.max(0, this.historyIndex + offset),
@@ -265,27 +389,33 @@ class Core<C> {
                 .reverse()
                 .map(item => item.undo);
 
-        const historyPatch: HistoryPatch = {value: [], nodes: []};
+        const buffer: HistoryPatch = emptyHistoryPatch();
         historyPatches.forEach((thisPatch) => {
-            historyPatch.value.push(...thisPatch.value);
-            historyPatch.nodes.push(...thisPatch.nodes);
+            buffer.value.push(...thisPatch.value);
+            buffer.nodes.push(...thisPatch.nodes);
         });
 
         this.historyIndex = newIndex;
+
         this.updateHistoryState();
-        this.applyChanges(historyPatch);
+
+        // apply changes to .value and .nodes
+        this.applyChanges(buffer);
+
+        // call derive callbacks
+        this.sendDerive(offset, false);
+
+        // schedule change
+        this.scheduleChange();
+
+        this.going = false;
     };
 
-    updateChangeCallback = (
-        changeCallbackRef: ChangeCallbackRef,
-        nextValue: unknown,
-        details: ChangeCallbackDetails
-    ): void => {
-        // only update a callback if it is not equal to the previous value
-        const [,, callback, prevValue] = changeCallbackRef;
-        if(!Object.is(nextValue, prevValue)) {
-            callback(nextValue, details);
-            changeCallbackRef[3] = nextValue;
+    updateHistoryState = () => {
+        const canUndo = this.historyIndex > 0;
+        const canRedo = this.historyIndex < this.historyStack.length;
+        if(canUndo !== this.historyState.canUndo || canRedo !== this.historyState.canRedo) {
+            this.historyState = {canUndo, canRedo};
         }
     };
 }
@@ -391,14 +521,32 @@ export class Dendriform<V,C=V> {
     onChange(callback:any, changeType: any): any {
         const changeCallback: ChangeCallbackRef = [changeType || 'value', this.id, callback, this.value];
         this.core.changeCallbackRefs.add(changeCallback);
+        // return unsubscriber
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
     }
 
+    onDerive(callback: DeriveCallback<V>): (() => void) {
+        const deriveCallback: DeriveCallbackRef = [callback];
+        this.core.deriveCallbackRefs.add(deriveCallback);
+        // call immediately, and dont add to history
+        this.replace();
+        this.core.silenceChanges = true;
+        this.core.derive(deriveCallback, 0, true);
+        this.core.silenceChanges = false;
+        this.done();
+        // return unsubscriber
+        return () => void this.core.deriveCallbackRefs.delete(deriveCallback);
+    }
+
+    undo = (): void => this.core.go(-1);
+
+    redo = (): void => this.core.go(1);
+
     go = (offset: number): void => this.core.go(offset);
 
-    undo = (): void => this.go(-1);
+    replace = (replace = true): void => this.core.replace(replace);
 
-    redo = (): void => this.go(1);
+    done = (): void => this.core.done();
 
     //
     // hooks
@@ -422,6 +570,10 @@ export class Dendriform<V,C=V> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     useChange(callback: any, changeType: any): any {
         useEffect(() => this.onChange(callback, changeType || 'value'), []);
+    }
+
+    useDerive(callback: DeriveCallback<V>): void {
+        useEffect(() => this.onDerive(callback), []);
     }
 
     useHistory(): HistoryState {
