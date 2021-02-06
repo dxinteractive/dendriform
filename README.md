@@ -177,7 +177,7 @@ function MyComponent(props) {
 
 The `.renderAll()` function works in the same way, but repeats for all elements in an array. React keying is taken care of for you.
 
-See [Array operations](#Array operations) for convenient ways to let the user manipulate arrays of items.
+See [Array operations](#array-operations) for convenient ways to let the user manipulate arrays of items.
 
 ```js
 function MyComponent(props) {
