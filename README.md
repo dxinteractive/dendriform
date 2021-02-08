@@ -57,6 +57,10 @@ function MyComponent(props) {
 };
 ```
 
+- [Installation](#installation)
+- [Usage and API](#usage-and-api)
+- [Development](#development)
+
 ## Installation
 
 ```bash
@@ -66,6 +70,18 @@ npm install --save dendriform
 ```
 
 ## Usage and API
+
+- [Creation](#creation)
+- [Values](#values)
+- [Branching](#branching)
+- [Rendering](#rendering)
+- [Rendering arrays](#rendering-arrays)
+- [Setting data](#setting-data)
+- [Form inputs](#form-inputs)
+- [Subscribing to changes](#subscribing-to-changes)
+- [Array operations](#array-operations)
+- [History](#history)
+- [Synchronising forms](#synchronising-forms)
 
 ### Creation
 
@@ -175,7 +191,42 @@ function MyComponent(props) {
 }
 ```
 
-The `.renderAll()` function works in the same way, but repeats for all elements in an array. React keying is taken care of for you.
+As the callback of `.render()` becomes it's own `React.memo`-ized React component, you may sometimes need to force it to update in reponse to other pieces of data using the last argument "dependencies".
+
+```js
+function MyComponent(props) {
+    const form = useDendriform({name: 'Ben'});
+    const [className] = useState('darkMode');
+
+    return <div>
+        {form.render('name', form => {
+            const [name, setName] = form.useValue();
+            return <div className={className}>My name is {name}</div>;
+        }, [className])}
+    </div>;
+}
+```
+
+The `.render()` function can also be called without branching, to simply re-render when there are any changes to the entire form.
+
+```js
+function MyComponent(props) {
+    const form = useDendriform({name: 'Ben'});
+
+    return <div>
+        {form.render(form => {
+            const [user, setUser] = form.useValue();
+            return <div>My name is {user.name}</div>;
+        })}
+    </div>;
+}
+```
+
+This can also accept the "dependencies" argument to force it to update.
+
+### Rendering arrays
+
+The `.renderAll()` function works in the same way as `.render()`, but repeats for all elements in an array. React keying is taken care of for you.
 
 See [Array operations](#array-operations) for convenient ways to let the user manipulate arrays of items.
 
@@ -614,7 +665,7 @@ form.set('c');
 // if undo is called a second time, form will contain 'a'
 ```
 
-## Deriving data
+### Deriving data
 
 When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, and then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, after which `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
 
@@ -682,7 +733,7 @@ form.onDerive(newValue => {
 });
 ```
 
-## Synchronising forms
+### Synchronising forms
 
 You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
 
