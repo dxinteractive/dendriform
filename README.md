@@ -176,7 +176,7 @@ function MyComponent(props) {
 
 The `.render()` function allows you to branch off and render a deep value in a React component.
 
-The `.render()` function's callback is rendered as it's own component instance, so you can use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. 
+The `.render()` function's callback is rendered as it's own component instance, so you can use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. This keeps component updates to a minimum.
 
 ```js
 function MyComponent(props) {
@@ -191,7 +191,7 @@ function MyComponent(props) {
 }
 ```
 
-As the callback of `.render()` becomes it's own `React.memo`-ized React component, you may sometimes need to force it to update in reponse to other pieces of data using the last argument "dependencies".
+As the callback of `.render()` doesn't update in response to changes in the parent's props, you may sometimes need to force it to update using the last argument `dependencies`.
 
 ```js
 function MyComponent(props) {
@@ -207,7 +207,7 @@ function MyComponent(props) {
 }
 ```
 
-The `.render()` function can also be called without branching, to simply re-render when there are any changes to the entire form.
+The `.render()` function can also be called without branching. As with the above this can also accept a `dependencies` argument to force it to update.
 
 ```js
 function MyComponent(props) {
@@ -221,8 +221,6 @@ function MyComponent(props) {
     </div>;
 }
 ```
-
-This can also accept the "dependencies" argument to force it to update.
 
 ### Rendering arrays
 
