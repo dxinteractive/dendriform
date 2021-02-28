@@ -4983,6 +4983,15 @@ delegates@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
 
+dendriform@^2.0.1-alpha.0:
+  version "2.0.1-alpha.0"
+  resolved "https://registry.yarnpkg.com/dendriform/-/dendriform-2.0.1-alpha.0.tgz#da0dddccaf6a72468930a13aa1ae93e86ee1f257"
+  integrity sha512-XJqOfOuuYGXo+gjfAQPpYaHOeiwYHopqgH1m9jMkoJpUK7bNwjdIO4XWjFgu8EyJaKNXoPWVezbhOr7hvd6h7A==
+  dependencies:
+    dendriform-immer-patch-optimiser "^1.0.0-alpha.1"
+    immer "7.0.8"
+    shallow-equal "1.2.1"
+
 depd@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/depd/-/depd-1.1.2.tgz#9bcd52e14c097763e749b274c4346ed2e560b5a9"
