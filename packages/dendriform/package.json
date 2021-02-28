@@ -1,5 +1,5 @@
 {
-  "version": "2.0.1-alpha.0",
+  "version": "2.0.0-alpha.2",
   "license": "MIT",
   "main": "dist/index.js",
   "description": "Build feature-rich data-editing React UIs with great performance and not much code.",
