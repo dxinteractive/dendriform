@@ -19,7 +19,7 @@ describe(`useInput`, () => {
                 target: {
                     value: 'hello'
                 }
-            } as ChangeEvent<HTMLInputElement|HTMLSelectElement>;
+            } as ChangeEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>;
 
             result.current.onChange(event);
         });
@@ -53,7 +53,7 @@ describe(`useInput`, () => {
                 target: {
                     value: 'hello'
                 }
-            } as ChangeEvent<HTMLInputElement|HTMLSelectElement>;
+            } as ChangeEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>;
 
             result.current.onChange(event);
 
@@ -71,7 +71,7 @@ describe(`useInput`, () => {
                 target: {
                     value: 'hello!'
                 }
-            } as ChangeEvent<HTMLInputElement|HTMLSelectElement>;
+            } as ChangeEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>;
 
             result.current.onChange(event);
 

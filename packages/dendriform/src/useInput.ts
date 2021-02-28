@@ -19,13 +19,13 @@ type UseInputResult = {
 export const useInput = <V extends string|null|undefined,C>(form: Dendriform<V,C>, debounce = 0): UseInputResult => {
     const useValue = form.useValue();
     const formValue: string = (useValue[0] || '') as string;
+    const [lastFormValue, setLastFormValue] = useState(formValue);
     const [localValue, setLocalValue] = useState(formValue);
 
-    const lastFormValue = useRef<string>(formValue);
-    if(lastFormValue.current !== formValue) {
+    if(formValue !== lastFormValue) {
+        setLastFormValue(formValue);
         setLocalValue(formValue);
     }
-    lastFormValue.current = formValue;
 
     const onChangeDebounced = useDebounceCallback(debounce, (value: V) => {
         useValue[1](value);
