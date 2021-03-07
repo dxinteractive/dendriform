@@ -1,4 +1,4 @@
-<img align="left" width="100" height="100" src="https://user-images.githubusercontent.com/345320/110258298-09524100-7ff6-11eb-84b1-468e747d1261.png">
+<img align="left" width="80" height="80" src="https://user-images.githubusercontent.com/345320/110258298-09524100-7ff6-11eb-84b1-468e747d1261.png">
 
 
 # dendriform
@@ -8,6 +8,8 @@
 
 
 Build feature-rich data-editing React UIs with great performance and not much code.
+
+*Not yet available on npm unless you use the @next tag. All docs refer to the upcoming version 2.0.0.*
 
 ```js
 import React, {useCallback} from 'react';
