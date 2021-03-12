@@ -757,7 +757,7 @@ sync(nameForm, addressForm);
 // if nameForm.go() is called, addressForm.go() is also called, and vice versa
 ```
 
-The `.sync()` function can also accept a deriver to derive data in one direction.
+The `sync()` function can also accept a deriver to derive data in one direction.
 
 ```js
 import {sync} from 'dendriform';
@@ -769,8 +769,8 @@ const addressForm = new Dendriform({
     occupants: 0
 }, {history: 100});
 
-sync(nameForm, addressForm, newValue => {
-    addressForm.branch('occupants').set(newValue.length);
+sync(nameForm, addressForm, names => {
+    addressForm.branch('occupants').set(names.length);
 });
 ```
 
