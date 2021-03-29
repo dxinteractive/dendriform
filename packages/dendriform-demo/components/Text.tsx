@@ -1,4 +1,6 @@
 import styled from 'styled-components';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// @ts-ignore
 import {space, textStyle, color, fontSize} from 'styled-system';
 
 export const Text = styled.span`
