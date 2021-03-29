@@ -1,10 +1,11 @@
-name: Build and Deploy
+name: Build and Deploy Demo
 on:
   push:
     branches:
       - master
+      - feature/async-fix
 jobs:
-  build-and-deploy-docs:
+  build-and-deploy-demo:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -12,9 +13,9 @@ jobs:
       with:
         persist-credentials: false
     - name: Build
-      run: yarn prep && yarn build && yarn build-docs
+      run: yarn prep && yarn build && yarn build-demo
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
         deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        publish_dir: ./packages/dendriform-docs/out
+        publish_dir: ./packages/dendriform-demo/out

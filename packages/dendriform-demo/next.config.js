@@ -4,7 +4,6 @@
 var path = require('path');
 
 module.exports = {
-    basePath: '/dendriform',
     webpack: function (config) {
         // config.resolve.alias['immer'] = path.resolve('../dendriform/node_modules/immer');
         return config;

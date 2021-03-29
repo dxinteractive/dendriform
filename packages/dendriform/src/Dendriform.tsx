@@ -166,6 +166,7 @@ class Core<C> {
 
     // if setBuffer exists, then new changes will be merged onto it
     // if not, a new change will push a new history item
+    bufferingChanges = false;
     setBuffer?: HistoryPatch;
     silenceChanges = false;
     replaceByDefault = false;
@@ -223,7 +224,7 @@ class Core<C> {
         };
 
         if(!this.silenceChanges) {
-            this.scheduleChange();
+            this.requestChange();
         }
 
         // derive everything if there are any patches
@@ -254,7 +255,7 @@ class Core<C> {
         }
     };
 
-    done = () => {
+    newHistoryItem = () => {
         this.setBuffer = this.replaceByDefault
             ? emptyHistoryPatch()
             : undefined;
@@ -290,22 +291,34 @@ class Core<C> {
     //
 
     changeBuffer?: HistoryPatch;
-    scheduledChangeTimer = -1;
+    //doubleSetWarningTimer = -1;
 
-    scheduleChange = () => {
-        if(this.scheduledChangeTimer !== -1) return;
-        this.scheduledChangeTimer = window.setTimeout(this.sendChange, 0);
+    requestChange = () => {
+        if(!this.bufferingChanges) {
+            this.sendChange();
+            return;
+        }
+
+
+        //if(this.doubleSetWarningTimer !== -1) return;
+        //this.doubleSetWarningTimer = window.setTimeout(this.sendChange, 0);
     };
 
-    flush = () => {
-        if(this.scheduledChangeTimer === -1) return;
-        window.clearTimeout(this.scheduledChangeTimer);
+    done = () => {
+        //if(this.doubleSetWarningTimer === -1) return;
+        //window.clearTimeout(this.doubleSetWarningTimer);
         this.sendChange();
+        this.bufferingChanges = false;
+    };
+
+    buffer = (): void => {
+        this.bufferingChanges = true;
+        this.newHistoryItem();
     };
 
     sendChange = (): void => {
-        this.done();
-        this.scheduledChangeTimer = -1;
+        this.newHistoryItem();
+        //this.doubleSetWarningTimer = -1;
         if(!this.changeBuffer) return;
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
             const [changeType, id] = changeCallbackRef;
@@ -403,8 +416,8 @@ class Core<C> {
         // call derive callbacks
         this.sendDerive(offset, false);
 
-        // schedule change
-        this.scheduleChange();
+        // request change
+        this.requestChange();
 
         this.going = false;
     };
@@ -531,7 +544,7 @@ export class Dendriform<V,C=V> {
         this.core.silenceChanges = true;
         this.core.derive(deriveCallback, 0, true);
         this.core.silenceChanges = false;
-        this.done();
+        this.core.newHistoryItem();
         // return unsubscriber
         return () => void this.core.deriveCallbackRefs.delete(deriveCallback);
     }
@@ -543,6 +556,8 @@ export class Dendriform<V,C=V> {
     go = (offset: number): void => this.core.go(offset);
 
     replace = (replace = true): void => this.core.replace(replace);
+
+    buffer = (): void => this.core.buffer();
 
     done = (): void => this.core.done();
 

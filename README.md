@@ -248,7 +248,7 @@ function MyComponent(props) {
 
 ### Setting data
 
-You can set data directly using `.set()`. This accepts the new value for the form. When called, changes will momentarily be applied to the data in the form and any relevant `.useValue()` hooks and `.render()` methods will be updated.
+You can set data directly using `.set()`. This accepts the new value for the form. When called, changes will immediately be applied to the data in the form and any relevant `.useValue()` hooks and `.render()` methods will be scheduled to update by React.
 
 ```js
 const form = new Dendriform('Foo');
@@ -322,13 +322,15 @@ function MyComponent(props) {
 }
 ```
 
-It can also be called multiple times in a row.
+To call it multiple times in a row, use `buffer()` to begin buffering changes and `done()` to apply the changes. These will affect the entire form including all branches, so `form.buffer()` has the same effect as `form.branch('example').buffer()`.
 
 ```js
 const form = new Dendriform(0);
+form.buffer();
 form.set(draft => draft + 1);
 form.set(draft => draft + 1);
 form.set(draft => draft + 1);
+form.done();
 // form.value will update to become 3
 ```
 
@@ -565,7 +567,7 @@ function MyComponent(props) {
 
 You can also control how changes are grouped in the history stack.
 
-The `.replace()` function can be used to prevent a new history item, effectively merging changes together. Once called, subsequent calls to `.set()` within the current update will be applied to the current history item, instead of creating a new history item.
+The `.replace()` function can be used to prevent a new history item being created for the next `.set()`.
 
 ```js
 const form = new Dendriform('a', {history: 50});
@@ -592,22 +594,47 @@ form.replace(false);
 // equivalent to not calling form.replace() at all
 ```
 
-Conversely, `.done()` can be used to split changes into separate history items.
+Buffering multiple changes also works with `.replace()`.
+
+```js
+const form = new Dendriform(1, {history: 50});
+
+form.set(2);
+// form will contain 2 as a new history item
+// if undo() is called, form will contain 1 again
+
+// ...after some time...
+
+form.replace();
+form.buffer();
+form.set(num => num + 1);
+form.set(num => num + 1);
+form.done();
+
+// form will contain 4 by updating the current history item
+// if undo() is called, form will contain 1 again
+```
+
+The `.buffer()` function can also be called again while buffering to add subsequent changes to a new history item. The changes still will not be applied until `.done()` is called.
 
 ```js
 const form = new Dendriform('a', {history: 50});
 
 // calling .set() multiple times in the same update
+form.buffer();
 form.set('b');
 form.set('c');
+form.done();
 
 // form will contain 'c'
 // if undo is called, form will contain 'a' again
 
 // calling .set() multiple times in the same update
+form.buffer();
 form.set('b');
-form.done();
+form.buffer();
 form.set('c');
+form.done();
 
 // form will contain 'c'
 // if undo is called, form will contain 'b'

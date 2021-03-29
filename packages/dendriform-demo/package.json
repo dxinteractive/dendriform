@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build-docs": "next build && yarn export",
+    "build-demo": "next build && yarn export",
     "export": "next export",
     "start": "next start",
     "lint": "yarn eslint pages/**/*",
@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "date-fns": "^2.11.1",
-    "dcme-style": "^1.1.11",
     "dendriform": "^2.0.0-alpha.1",
     "gray-matter": "^4.0.2",
     "next": "9.5.3",

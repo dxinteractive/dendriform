@@ -5,6 +5,7 @@
     "lint": "yarn lerna run lint",
     "build": "yarn lerna run build",
     "size": "yarn lerna run size",
+    "build-demo": "yarn lerna run build-demo",
     "build-docs": "cp README.md packages/dendriform/README.md",
     "prep": "yarn && yarn lerna bootstrap",
     "bump": "yarn lerna publish -m \"build: publish\"",
