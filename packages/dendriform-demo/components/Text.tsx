@@ -1,6 +1,4 @@
 import styled from 'styled-components';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import {space, textStyle, color, fontSize} from 'styled-system';
 import type {ThemeProps} from '../pages/_app';
 

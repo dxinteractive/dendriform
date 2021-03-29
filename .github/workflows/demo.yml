@@ -13,7 +13,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Build
-      run: yarn prep && yarn build && yarn lint-demo && yarn build-demo
+      run: yarn prep && yarn lint-demo && yarn build-demo
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
