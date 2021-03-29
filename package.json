@@ -3,6 +3,7 @@
   "scripts": {
     "test": "yarn lerna run test",
     "lint": "yarn lerna run lint",
+    "lint-demo": "yarn lerna run lint-demo",
     "build": "yarn lerna run build",
     "size": "yarn lerna run size",
     "build-demo": "yarn lerna run build-demo",
