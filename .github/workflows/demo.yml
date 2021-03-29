@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - feature/async-fix
+      - feature/demo
 jobs:
   build-and-deploy-demo:
     runs-on: ubuntu-latest
