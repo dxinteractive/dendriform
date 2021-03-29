@@ -59,7 +59,7 @@ const GlobalStyle = createGlobalStyle`
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         background-color: #0e151b;
-        color: ${props => props.theme.colors.text};
+        color: ${(props: ThemeProps) => props.theme.colors.text};
 
         font-size: 16px;
 
@@ -126,6 +126,10 @@ export type Theme = {
         big: string;
         bigger: string;
     };
+};
+
+export type ThemeProps = {
+    theme: Theme;
 };
 
 const theme: Theme = {

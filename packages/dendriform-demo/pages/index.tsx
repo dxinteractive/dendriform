@@ -2,6 +2,7 @@
 import styled from 'styled-components';
 import {Box, Flex, Wrapper, FloatZone} from '../components/Layout';
 import {Text, /*H1,*/ Link} from '../components/Text';
+import type {ThemeProps} from '../pages/_app';
 
 /*
 import {space, color, layout, flexbox, position, border, compose, textStyle} from 'styled-system';
@@ -320,11 +321,11 @@ const Logo = styled(Box)`
     font-size: 2.5rem;
     line-height: 2rem;
     margin-bottom: .5rem;
-    color: ${props => props.theme.colors.heading};
+    color: ${(props: ThemeProps) => props.theme.colors.heading};
 `;
 
 /*const Hr = styled.div`
-    border-bottom: 1px solid ${props => props.theme.colors.line};
+    border-bottom: 1px solid ${(props: ThemeProps) => props.theme.colors.line};
     margin: 2rem 0;
 `;*/
 
