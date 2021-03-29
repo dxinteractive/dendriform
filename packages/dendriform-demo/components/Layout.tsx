@@ -21,11 +21,11 @@ const styledProps = compose(
     position
 );
 
-export const Box = styled.div<any>`
+export const Box = styled.div`
     ${styledProps}
 `;
 
-export const Flex = styled.div<any>`
+export const Flex = styled.div`
     display: flex;
     ${styledProps}
 `;

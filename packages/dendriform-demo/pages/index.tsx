@@ -1,7 +1,7 @@
 
 import styled from 'styled-components';
 import {Box, Flex, Wrapper, FloatZone} from '../components/Layout';
-import {Text, H1, Link} from '../components/Text';
+import {Text, /*H1,*/ Link} from '../components/Text';
 
 /*
 import {space, color, layout, flexbox, position, border, compose, textStyle} from 'styled-system';
@@ -323,10 +323,10 @@ const Logo = styled(Box)`
     color: ${props => props.theme.colors.heading};
 `;
 
-const Hr = styled.div`
+/*const Hr = styled.div`
     border-bottom: 1px solid ${props => props.theme.colors.line};
     margin: 2rem 0;
-`;
+`;*/
 
 type BadgeProps = {
     children: string;

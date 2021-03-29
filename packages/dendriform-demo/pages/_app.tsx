@@ -1,5 +1,6 @@
 import {AppProps} from 'next/app';
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import {ThemeProvider, createGlobalStyle} from 'styled-components';
 

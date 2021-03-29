@@ -7,7 +7,7 @@
     "build-demo": "next build && yarn export",
     "export": "next export",
     "start": "next start",
-    "lint": "yarn eslint pages/**/*",
+    "lint-demo": "yarn eslint pages/**/* components/**/*",
     "types": "yarn tsc"
   },
   "dependencies": {
