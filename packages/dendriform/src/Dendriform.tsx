@@ -32,8 +32,6 @@ import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
 // core
 //
 
-type ProduceValue<V> = (toProduce: ToProduce<V>) => void;
-
 type HistoryItem = {
     do: HistoryPatch;
     undo: HistoryPatch;
@@ -552,10 +550,10 @@ export class Dendriform<V,C=V> {
     // hooks
     //
 
-    useValue(): [V, ProduceValue<V>] {
+    useValue(): V {
         const [value, setValue] = useState<V>(() => this.value);
         this.useChange(setValue);
-        return [value, this.set];
+        return value;
     }
 
     useIndex(): number {
@@ -646,7 +644,7 @@ export class Dendriform<V,C=V> {
         const form = aIsRenderer ? this : this.branch(a);
 
         const containerRenderer = (): React.ReactElement[] => {
-            const [array] = form.useValue();
+            const array = form.useValue();
             if(!Array.isArray(array)) die(3);
 
             return array.map((_element, index): React.ReactElement => {

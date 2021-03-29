@@ -7,10 +7,10 @@ type UseCheckboxResult = {
 };
 
 export const useCheckbox = <V extends boolean,C>(form: Dendriform<V,C>): UseCheckboxResult => {
-    const [checked, produceChecked] = form.useValue();
+    const checked = form.useValue();
 
     const onChange = useCallback(event => {
-        produceChecked(event.target.checked);
+        form.set(event.target.checked);
     }, []);
 
     return {

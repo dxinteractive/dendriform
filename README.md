@@ -114,7 +114,7 @@ const value = form.value;
 
 function MyComponent(props) {
     const form = useDendriform({name: 'Ben'});
-    const [value, setValue] = form.useValue();
+    const value = form.useValue();
     // value is {name: 'Ben'}
     // ...
 }
@@ -128,7 +128,7 @@ The only difference is that the lifespan of forms instantiated inside React comp
 const persistentForm = new Dendriform({name: 'Bill'});
 
 function MyComponent(props) {
-    const [value, setValue] = persistentForm.useValue();
+    const value = persistentForm.useValue();
     // value is {name: 'Bill'}
     // ...
 }
@@ -150,7 +150,7 @@ function MyComponent(props) {
     const form = useDendriform({name: 'Ben'});
 
     const nameForm = form.branch('name');
-    const [value, setValue] = nameForm.useValue();
+    const value = nameForm.useValue();
     // value is 'Ben'
     // ...
 }
@@ -168,7 +168,7 @@ function MyComponent(props) {
 
     return <div>
         {form.render('name', form => {
-            const [name, setName] = form.useValue();
+            const name = form.useValue();
             return <div>My name is {name}</div>;
         })}
     </div>;
@@ -187,7 +187,7 @@ function MyComponent(props) {
 
     return <div>
         {form.renderAll('colours', form => {
-            const [colour, setColour] = form.useValue();
+            const colour = form.useValue();
             return <div>Colour: {colour}</div>;
         })}
     </div>;
@@ -208,7 +208,7 @@ function MyComponent(props) {
 
     return <div>
         {form.renderAll('colours', form => {
-            const [colour, setColour] = form.useValue();
+            const colour = form.useValue();
             const index = form.useIndex();
 
             return <div>Colour: {colour}, index: {index}</div>;
@@ -239,7 +239,7 @@ function MyComponent(props) {
 
     return <div>
         {form.render('name', form => {
-            const [name, setName] = form.useValue();
+            const name = form.useValue();
             return <div>My name is {name} and the time is {time}</div>;
         }, [time])}
     </div>;
@@ -256,18 +256,18 @@ form.set('Bar');
 // form.value will update to become 'Bar'
 ```
 
-In a React component, the `.useValue()` hook provides the `.set()` function as the second element of the tuple it returns.
+The usage is the same in a React component
 
 ```js
 function MyComponent(props) {
     const form = useDendriform('Foo');
 
-    const [value, setValue] = name.useValue(); 
+    const name = form.useValue(); 
 
-    const setToBar = useCallback(() => setValue('Bar'), []);
+    const setToBar = useCallback(() => form.set('Bar'), []);
 
     return <div>
-        Current value: {value}
+        Current name: {name}
 
         <button onClick={setToBar}>Set to Bar</button>
     </div>;
@@ -282,9 +282,9 @@ function MyComponent(props) {
 
     return <div>
         {form.render('name', form => {
-            const [name, setName] = form.useValue();
+            const name = form.useValue();
             const setToBill = useCallback(() => {
-                setName('Bill');
+                form.set('Bill');
             }, []);
 
             return <div>
