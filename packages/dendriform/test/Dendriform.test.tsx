@@ -73,20 +73,14 @@ describe(`Dendriform`, () => {
 
             const form = firstHook.result.current;
             const {result} = renderHook(() => form.useValue());
-            expect(result.current[0]).toBe(123);
+            expect(result.current).toBe(123);
 
             act(() => {
-                result.current[1](456);
-            });
-
-            // testing for future optimistic hook updates can be done here
-
-            act(() => {
-                form.core.flush();
+                form.set(456);
             });
 
             // should have updated from top down (same result)
-            expect(result.current[0]).toBe(456);
+            expect(result.current).toBe(456);
         });
     });
 
@@ -143,12 +137,10 @@ describe(`Dendriform`, () => {
             const callback = jest.fn();
 
             const form = firstHook.result.current;
-            const {result} = renderHook(() => form.useValue());
             renderHook(() => form.useChange(callback));
 
             act(() => {
-                result.current[1](456);
-                form.core.flush();
+                form.set(456);
             });
 
             expect(callback).toHaveBeenCalledTimes(1);
