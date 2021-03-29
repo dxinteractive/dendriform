@@ -12,7 +12,8 @@ declare module "styled-system" {
     const border: any;
     const compose: any;
     const textStyle: any;
-    export {space, color, layout, flexbox, position, border, compose, textStyle};
+    const fontSize: any;
+    export {space, color, layout, flexbox, position, border, compose, textStyle, fontSize};
 }
 
 declare module "styled-components" {
