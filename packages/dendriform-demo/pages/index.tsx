@@ -29,6 +29,9 @@ export default function Main(): React.ReactElement {
         <Box mb={3}>
             <H1>Demos</H1>
         </Box>
+        <Box mb={4}>
+            White flashes indicate regions of the page that React has re-rendered. You can see how performant Dendriform&apos;s rendering is by how localised these flashes are.
+        </Box>
         <Box mb={3}>
             <Demos />
         </Box>

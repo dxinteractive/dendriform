@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState, memo} from 'react';
+import {useCallback, useEffect, useState, useRef, memo} from 'react';
 import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2} from '../components/Text';
@@ -34,29 +34,29 @@ function FirstExample(): React.ReactElement {
         });
     }, []);
 
-    return <div>
+    return <Region>
         {form.render('name', form => (
-            <label>name <input {...useInput(form, 150)} /></label>
+            <Region of="label">name <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render(['address', 'street'], street => (
-            <label>street <input {...useInput(street, 150)} /></label>
+            <Region of="label">street <input {...useInput(street, 150)} /></Region>
         ))}
 
         <fieldset>
             <legend>pets</legend>
 
             <ul>
-                {form.renderAll('pets', form => <li>
+                {form.renderAll('pets', form => <Region of="li">
                     {form.render('name', form => (
-                        <label>name <input {...useInput(form, 150)} /></label>
+                        <Region of="label">name <input {...useInput(form, 150)} /></Region>
                     ))}
-                </li>)}
+                </Region>)}
             </ul>
 
             <button onClick={addPet}>Add pet</button>
         </fieldset>
-    </div>;
+    </Region>;
 }
 
 const FirstExampleCode = `
@@ -127,23 +127,25 @@ function OutsideReactContainer(): React.ReactElement {
     const toggleShow = useCallback(() => setShow(s => !s), []);
 
     if(show) {
-        return <div>
+        return <Region>
             <OutsideReact />
             <button onClick={toggleShow}>Unmount</button>
-        </div>;
+        </Region>;
     }
 
-    return <button onClick={toggleShow}>Remount</button>;
+    return <Region>
+        <button onClick={toggleShow}>Remount</button>
+    </Region>;
 }
 
 const OutsideReact = memo(function OutsideReact(): React.ReactElement {
     const value = persistentForm.useValue();
     const addOne = useCallback(() => persistentForm.set(value => value + 1), []);
 
-    return <div>
+    return <Region>
         <code>Value: {value}</code>
         <button onClick={addOne}>Add 1</button>
-    </div>;
+    </Region>;
 });
 
 const OutsideReactCode = `
@@ -198,10 +200,10 @@ function Branching(): React.ReactElement {
     const name = nameForm.useValue();
     const street = streetForm.useValue();
 
-    return <div>
+    return <Region>
         <code>name: {name}</code>
         <code>street: {street}</code>
-    </div>;
+    </Region>;
 }
 
 const BranchingCode = `
@@ -240,20 +242,20 @@ function Rendering(): React.ReactElement {
         }
     });
 
-    return <div>
+    return <Region>
         {form.render(form => {
             const value = form.useValue();
-            return <code>{value.name} from {value.address.street}</code>;
+            return <Region of="code">{value.name} from {value.address.street}</Region>;
         })}
 
         {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render(['address', 'street'], form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+            <Region of="label">street: <input {...useInput(form, 150)} /></Region>
         ))}
-    </div>;
+    </Region>;
 }
 
 const RenderingCode = `
@@ -283,12 +285,12 @@ function RenderingDeps(): React.ReactElement {
         return () => clearInterval(intervalId);
     }, []);
 
-    return <div>
-        {form.render(form => <>
+    return <Region>
+        {form.render(form => <Region>
             <label>name: <input {...useInput(form, 150)} /></label>
             <code>seconds: {seconds}</code>
-        </>, [seconds])}
-    </div>;
+        </Region>, [seconds])}
+    </Region>;
 }
 
 const RenderingDepsCode = `
@@ -331,13 +333,13 @@ function SettingData(): React.ReactElement {
         });
     }, []);
 
-    return <div>
-        {form.render('number', form => <code>{form.useValue()}</code>)}
+    return <Region>
+        {form.render('number', form => <Region of="code">{form.useValue()}</Region>)}
 
         <button onClick={set100}>set value to 100</button>
         <button onClick={add3}>add 3 to value</button>
         <button onClick={add6immer}>add 6 to value with immer producer</button>
-    </div>;
+    </Region>;
 }
 
 const SettingDataCode = `
@@ -394,12 +396,12 @@ function SettingDataBuffer(): React.ReactElement {
         form.done();
     }, []);
 
-    return <div>
-        {form.render(form => <code>{form.useValue()}</code>)}
+    return <Region>
+        {form.render(form => <Region of="code">{form.useValue()}</Region>)}
 
         <button onClick={add3nobuffer}>add 1, 3 times without buffering</button>
         <button onClick={add3buffer}>add 1, 3 times with buffering</button>
-    </div>;
+    </Region>;
 }
 
 const SettingDataBufferCode = `
@@ -445,13 +447,13 @@ function FormInputs(): React.ReactElement {
         comment: ''
     }));
 
-    return <div>
+    return <Region>
         {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render('fruit', form => (
-            <label>
+            <Region of="label">
                 select:
                 <select {...useInput(form)}>
                     <option value="grapefruit">Grapefruit</option>
@@ -459,20 +461,20 @@ function FormInputs(): React.ReactElement {
                     <option value="coconut">Coconut</option>
                     <option value="mango">Mango</option>
                 </select>
-            </label>
+            </Region>
         ))}
 
         {form.render('canSwim', form => (
-            <label>
+            <Region of="label">
                 can you swim?
                 <input type="checkbox" {...useCheckbox(form)} />
-            </label>
+            </Region>
         ))}
 
         {form.render('comment', form => (
-            <label>comment: <textarea {...useInput(form)} /></label>
+            <Region of="label">comment: <textarea {...useInput(form)} /></Region>
         ))}
-    </div>;
+    </Region>;
 }
 
 const FormInputsCode = `
@@ -536,15 +538,15 @@ function Subscribe(): React.ReactElement {
         console.log('Subscribing to changes - last name changed:', newName);
     });
 
-    return <div>
+    return <Region>
         {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">first name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">last name: <input {...useInput(form, 150)} /></Region>
         ))}
-    </div>;
+    </Region>;
 }
 
 const SubscribeCode = `
@@ -588,20 +590,20 @@ function ArrayOperations(): React.ReactElement {
         colours: ['Red', 'Green', 'Blue']
     });
 
-    return <div>
+    return <Region>
         {form.renderAll('colours', form => {
 
             const remove = useCallback(() => form.set(array.remove()), []);
             const moveDown = useCallback(() => offsetElement(form, 1), []);
             const moveUp = useCallback(() => offsetElement(form, -1), []);
 
-            return <div>
+            return <Region>
                 <label>colour: <input {...useInput(form, 150)} /></label>
 
                 <button onClick={remove}>remove</button>
                 <button onClick={moveDown}>down</button>
                 <button onClick={moveUp}>up</button>
-            </div>;
+            </Region>;
         })}
 
         {form.render('colours', form => {
@@ -612,15 +614,15 @@ function ArrayOperations(): React.ReactElement {
             const push = useCallback(() => form.set(array.push('New colour')), []);
             const move = useCallback(() => form.set(array.move(-1,0)), []);
 
-            return <>
+            return <Region>
                 <button onClick={shift}>shift</button>
                 <button onClick={pop}>pop</button>
                 <button onClick={unshift}>unshift</button>
                 <button onClick={push}>push</button>
                 <button onClick={move}>move last to first</button>
-            </>;
+            </Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const ArrayOperationsCode = `
@@ -680,20 +682,20 @@ function ArrayIndexes(): React.ReactElement {
         colours: ['Red', 'Green', 'Blue']
     });
 
-    return <div>
+    return <Region>
         {form.renderAll('colours', form => {
             const colour = form.useValue();
             const index = form.useIndex();
             const moveDown = useCallback(() => offsetElement(form, 1), []);
             const moveUp = useCallback(() => offsetElement(form, -1), []);
 
-            return <div>
+            return <Region>
                 <code>Colour: {colour}, index: {index}</code>
                 <button onClick={moveDown}>down</button>
                 <button onClick={moveUp}>up</button>
-            </div>;
+            </Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const ArrayIndexesCode = `
@@ -727,25 +729,25 @@ function MyComponent(props) {
 function History(): React.ReactElement {
     const form = useDendriform(() => ({name: 'Ben', age: '88'}), {history: 10});
 
-    return <div>
+    return <Region>
         {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render('age', form => (
-            <label>age: <input {...useInput(form, 150)} /></label>
+            <Region of="label">age: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             // this function will only re-render if canUndo or canRedo changes
-            return <>
+            return <Region>
                 <button onClick={form.undo} disabled={!canUndo}>Undo</button>
                 <button onClick={form.redo} disabled={!canRedo}>Redo</button>
                 <button onClick={() => form.go(-3)} disabled={!canUndo}>Undo 3</button>
-            </>;
+            </Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const HistoryCode = `
@@ -803,9 +805,9 @@ function GroupingHistoryItems(): React.ReactElement {
         form.done();
     }, []);
 
-    return <div>
+    return <Region>
         {form.render(form => (
-            <code>value: {form.useValue()}</code>
+            <Region of="code">value: {form.useValue()}</Region>
         ))}
 
         <button onClick={add}>Add history item</button>
@@ -814,12 +816,12 @@ function GroupingHistoryItems(): React.ReactElement {
 
         {form.render(form => {
             const {canUndo, canRedo} = form.useHistory();
-            return <div>
+            return <Region>
                 <button onClick={form.undo} disabled={!canUndo}>Undo</button>
                 <button onClick={form.redo} disabled={!canRedo}>Redo</button>
-            </div>;
+            </Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const GroupingHistoryItemsCode = `
@@ -885,27 +887,27 @@ function Deriving(): React.ReactElement {
         form.branch('fullName').set(`${newValue.firstName} ${newValue.lastName}`);
     });
 
-    return <div>
+    return <Region>
         {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">first name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">last name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {form.render('fullName', form => (
-            <code>full name: {form.useValue()}</code>
+            <Region>full name: {form.useValue()}</Region>
         ))}
 
         {form.render(form => {
             const {canUndo, canRedo} = form.useHistory();
-            return <div>
+            return <Region>
                 <button onClick={form.undo} disabled={!canUndo}>Undo</button>
                 <button onClick={form.redo} disabled={!canRedo}>Redo</button>
-            </div>;
+            </Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const DerivingCode = `
@@ -965,17 +967,17 @@ function DerivingOther(): React.ReactElement {
         validState.branch('nameError').set(nameError);
     });
 
-    return <div>
+    return <Region>
         {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {validState.render(form => {
             const {valid, nameError} = form.useValue();
             const msg = valid ? 'valid' : nameError;
-            return <code>{msg}</code>;
+            return <Region of="code">{msg}</Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const DerivingOtherCode = `
@@ -1019,23 +1021,23 @@ function Sync(): React.ReactElement {
 
     useSync(nameForm, addressForm);
 
-    return <div>
+    return <Region>
         {nameForm.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {addressForm.render('street', form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+            <Region of="label">street: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {nameForm.render(form => {
             const {canUndo, canRedo} = form.useHistory();
-            return <div>
+            return <Region>
                 <button onClick={form.undo} disabled={!canUndo}>Undo</button>
                 <button onClick={form.redo} disabled={!canRedo}>Redo</button>
-            </div>;
+            </Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const SyncCode = `
@@ -1088,33 +1090,33 @@ function SyncDerive(): React.ReactElement {
         });
     }, []);
 
-    return <div>
+    return <Region>
         <fieldset>
             <legend>names</legend>
             <ul>
-                {namesForm.renderAll(form => <li>
+                {namesForm.renderAll(form => <Region of="li">
                     <label><input {...useInput(form, 150)} /></label>
-                </li>)}
+                </Region>)}
             </ul>
             <button onClick={addName}>Add name</button>
         </fieldset>
 
         {addressForm.render('street', form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+            <Region of="label">street: <input {...useInput(form, 150)} /></Region>
         ))}
 
         {addressForm.render('occupants', form => (
-            <code>occupants: {form.useValue()}</code>
+            <Region of="code">occupants: {form.useValue()}</Region>
         ))}
 
         {namesForm.render(form => {
             const {canUndo, canRedo} = form.useHistory();
-            return <div>
+            return <Region>
                 <button onClick={form.undo} disabled={!canUndo}>Undo</button>
                 <button onClick={form.redo} disabled={!canRedo}>Redo</button>
-            </div>;
+            </Region>;
         })}
-    </div>;
+    </Region>;
 }
 
 const SyncDeriveCode = `
@@ -1142,6 +1144,40 @@ function MyComponent(props) {
         })}
     </div>;
 }
+`;
+
+//
+// region
+//
+
+type RegionProps = {
+    children: React.ReactNode;
+    className: string;
+    of?: string;
+};
+
+const MAX_FLASH_CLASSES = 20;
+let flashCss = '';
+for(let i = 0; i < MAX_FLASH_CLASSES; i++) {
+    flashCss += `
+        &.flash${i} {animation: Flash${i} 0.5s linear;}
+        @keyframes Flash${i} {0% { background-color: rgba(255,255,255,0.05); } 100% { background-color: rgba(255,255,255,0);}};
+    `;
+}
+
+const Region = styled((props: RegionProps): React.ReactElement => {
+    const {children, className, of = 'div'} = props;
+
+    const flash = useRef(1);
+    flash.current = (flash.current += 1) % MAX_FLASH_CLASSES;
+
+    const Comp = of || 'div';
+    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return <Comp className={`${className} flash${flash.current}`}>{children}</Comp>;
+})`
+    padding: .25rem;
+    ${flashCss}
 `;
 
 //
