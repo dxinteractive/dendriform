@@ -58,7 +58,7 @@ const GlobalStyle = createGlobalStyle`
         position: relative;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        background-color: #0e151b;
+        background-color: ${(props: ThemeProps) => props.theme.colors.background};
         color: ${(props: ThemeProps) => props.theme.colors.text};
 
         font-size: 16px;
@@ -104,7 +104,9 @@ const colors = {
     text: '#6490b3',
     heading: '#ffffff',
     link: 'rgb(241 67 44)',
-    line: '#1e2c37'
+    line: '#1e2c37',
+    background: '#0e151b',
+    backgroundLight: 'rgb(24 35 45)'
 };
 
 export type Theme = {
@@ -121,6 +123,8 @@ export type Theme = {
         heading: string;
         link: string;
         line: string;
+        background: string;
+        backgroundLight: string;
     };
     fontSizes: {
         big: string;

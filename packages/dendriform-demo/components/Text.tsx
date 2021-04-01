@@ -14,6 +14,11 @@ export const H1 = styled.h1`
     color: ${(props: ThemeProps) => props.theme.colors.heading};
 `;
 
+export const H2 = styled.h2`
+    font-size: ${(props: ThemeProps) => props.theme.fontSizes.big};
+    color: ${(props: ThemeProps) => props.theme.colors.heading};
+`;
+
 export const Link = styled.a`
     color: ${(props: ThemeProps) => props.theme.colors.link};
     text-decoration: none;
