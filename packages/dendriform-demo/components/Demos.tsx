@@ -470,7 +470,7 @@ function FormInputs(): React.ReactElement {
         ))}
 
         {form.render('comment', form => (
-            <label>comment: <textarea {...useCheckbox(form)} /></label>
+            <label>comment: <textarea {...useInput(form)} /></label>
         ))}
     </div>;
 }
@@ -509,7 +509,7 @@ function MyComponent(props) {
         ))}
 
         {form.render('comment', form => (
-            <label>comment: <textarea {...useCheckbox(form)} /></label>
+            <label>comment: <textarea {...useInput(form)} /></label>
         ))}
     </div>;
 }
@@ -578,8 +578,8 @@ function MyComponent(props) {
 // array
 //
 
-const offsetElement = (form, offset) => {
-    return form.setParent(index => array.move(index, index + offset));
+const offsetElement = (form: Dendriform<string, {colours: string[]}>, offset: number): void => {
+    return form.setParent(index => array.move(index as number, index as number + offset));
 };
 
 function ArrayOperations(): React.ReactElement {

@@ -419,7 +419,7 @@ function MyComponent(props) {
         ))}
 
         {form.render('comment', form => (
-            <label>comment: <textarea {...useCheckbox(form)} /></label>
+            <label>comment: <textarea {...useInput(form)} /></label>
         ))}
     </div>;
 };
