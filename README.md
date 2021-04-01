@@ -50,13 +50,11 @@ function MyComponent(props) {
         <fieldset>
             <legend>pets</legend>
             <ul>
-                {form.renderAll('pets', form => (
-                    <li>
-                        {form.render('name', form => (
-                            <label>name <input {...useInput(form, 150)} /></label>
-                        ))}
-                    </li>
-                ))}
+                {form.renderAll('pets', form => <li>
+                    {form.render('name', form => (
+                        <label>name <input {...useInput(form, 150)} /></label>
+                    ))}
+                </li>)}
             </ul>
             <button onClick={addPet}>Add pet</button>
         </fieldset>

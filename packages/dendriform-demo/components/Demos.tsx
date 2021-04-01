@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useState, memo} from 'react';
 import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2} from '../components/Text';
@@ -24,6 +24,7 @@ function FirstExample(): React.ReactElement {
     }));
 
     form.useChange((value) => {
+        // eslint-disable-next-line no-console
         console.log('A quick example - form changed:', value);
     });
 
@@ -46,19 +47,17 @@ function FirstExample(): React.ReactElement {
             <legend>pets</legend>
 
             <ul>
-                {form.renderAll('pets', form => (
-                    <li>
-                        {form.render('name', form => (
-                            <label>name <input {...useInput(form, 150)} /></label>
-                        ))}
-                    </li>
-                ))}
+                {form.renderAll('pets', form => <li>
+                    {form.render('name', form => (
+                        <label>name <input {...useInput(form, 150)} /></label>
+                    ))}
+                </li>)}
             </ul>
 
             <button onClick={addPet}>Add pet</button>
         </fieldset>
     </div>;
-};
+}
 
 const FirstExampleCode = `
 import React, {useCallback} from 'react';
@@ -99,13 +98,11 @@ function MyComponent(props) {
         <fieldset>
             <legend>pets</legend>
             <ul>
-                {form.renderAll('pets', form => (
-                    <li>
-                        {form.render('name', form => (
-                            <label>name <input {...useInput(form, 150)} /></label>
-                        ))}
-                    </li>
-                ))}
+                {form.renderAll('pets', form => <li>
+                    {form.render('name', form => (
+                        <label>name <input {...useInput(form, 150)} /></label>
+                    ))}
+                </li>)}
             </ul>
             <button onClick={addPet}>Add pet</button>
         </fieldset>
@@ -120,6 +117,8 @@ function MyComponent(props) {
 const persistentForm = new Dendriform(1);
 
 if(typeof window !== 'undefined') {
+    // eslint-disable-next-line ban-ts-comment
+    // @ts-ignore
     window.persistentForm = persistentForm;
 }
 
@@ -137,7 +136,7 @@ function OutsideReactContainer(): React.ReactElement {
     return <button onClick={toggleShow}>Remount</button>;
 }
 
-const OutsideReact = React.memo(function OutsideReact(): React.ReactElement {
+const OutsideReact = memo(function OutsideReact(): React.ReactElement {
     const value = persistentForm.useValue();
     const addOne = useCallback(() => persistentForm.set(value => value + 1), []);
 
@@ -377,6 +376,7 @@ function SettingDataBuffer(): React.ReactElement {
     const form = useDendriform(123);
 
     form.useChange(newValue => {
+        // eslint-disable-next-line no-console
         console.log('Setting data with buffering - value changed: ' + newValue);
     });
 
@@ -527,10 +527,12 @@ function Subscribe(): React.ReactElement {
     }));
 
     form.branch('firstName').useChange(newName => {
+        // eslint-disable-next-line no-console
         console.log('Subscribing to changes - first name changed:', newName);
     });
 
     form.branch('lastName').useChange(newName => {
+        // eslint-disable-next-line no-console
         console.log('Subscribing to changes - last name changed:', newName);
     });
 
@@ -780,9 +782,10 @@ function GroupingHistoryItems(): React.ReactElement {
     const form = useDendriform('a', {history: 10});
 
     const add = useCallback(() => {
-        form.set(value => {
-            return (value === value.toLowerCase()) ? value.toUpperCase() : value.toLowerCase()
-        });
+        form.set(value => value === value.toLowerCase()
+            ? value.toUpperCase()
+            : value.toLowerCase()
+        );
     }, []);
 
     const replace = useCallback(() => {
@@ -824,9 +827,10 @@ function MyComponent(props) {
     const form = useDendriform('a', {history: 10});
 
     const add = useCallback(() => {
-        form.set(value => {
-            return (value === value.toLowerCase()) ? value.toUpperCase() : value.toLowerCase()
-        });
+        form.set(value => value === value.toLowerCase()
+            ? value.toUpperCase()
+            : value.toLowerCase()
+        );
     }, []);
 
     const replace = useCallback(() => {
@@ -886,7 +890,7 @@ function Deriving(): React.ReactElement {
             <label>first name: <input {...useInput(form, 150)} /></label>
         ))}
 
-         {form.render('lastName', form => (
+        {form.render('lastName', form => (
             <label>last name: <input {...useInput(form, 150)} /></label>
         ))}
 
@@ -923,7 +927,7 @@ function MyComponent(props) {
             <label>first name: <input {...useInput(form, 150)} /></label>
         ))}
 
-         {form.render('lastName', form => (
+        {form.render('lastName', form => (
             <label>last name: <input {...useInput(form, 150)} /></label>
         ))}
 
@@ -1147,7 +1151,7 @@ function MyComponent(props) {
 type DemoObject = {
     title: string;
     description?: string;
-    Demo: React.ComponentType<{}>;
+    Demo: React.ComponentType<Record<string, unknown>>;
     code: string;
 };
 
@@ -1241,7 +1245,7 @@ const DEMOS: DemoObject[] = [
 
 export function Demos(): React.ReactElement {
     return <Flex flexWrap="wrap">
-        {DEMOS.map(({Demo, title, code}, index) => <Flex key={index} mr={4} mb={4}>
+        {DEMOS.map(({Demo, title}, index) => <Flex key={index} mr={4} mb={4}>
             <DemoStyle>
                 <Box pb={3}>
                     <H2>{title}</H2>
@@ -1330,6 +1334,7 @@ const DemoStyle =  styled.div`
     }
 `;
 
+/*
 type CodeProps = {
     code: string;
 };
@@ -1337,12 +1342,12 @@ type CodeProps = {
 const Code = styled((props: CodeProps): React.ReactElement => {
     const {className, code} = props;
 
-    /*useEffect(() => {
+    useEffect(() => {
         console.log('window.Prism', window.Prism);
         if(typeof window !== 'undefined' && typeof window.Prism !== 'undefined') {
             window.Prism.highlightAll();
         }
-    }, [props.code]);*/
+    }, [props.code]);
 
     return <pre className={`${className} language-jsx`}>
         <code>{code}</code>
@@ -1353,3 +1358,4 @@ const Code = styled((props: CodeProps): React.ReactElement => {
     font-size: .8rem;
     line-height: 1.4em;
 `;
+*/
