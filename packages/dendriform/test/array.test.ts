@@ -33,7 +33,6 @@ describe(`array`, () => {
             expect(form.branch(2).id).toBe(3);
 
             form.set(array.unshift('d'));
-            form.core.flush();
 
             expect(form.value).toEqual(['d','a','b','c']);
             expect(form.branch(0).id).toBe(4);
@@ -52,7 +51,6 @@ describe(`array`, () => {
             });
 
             form.branch('foo').set(array.unshift({name: 'd'}));
-            form.core.flush();
 
             expect(form.value).toEqual({
                 foo: [
@@ -94,7 +92,6 @@ describe(`array`, () => {
             const form = new Dendriform(['a','b','c']);
 
             form.set(array.push('d'));
-            form.core.flush();
 
             expect(form.value).toEqual(['a','b','c','d']);
             expect(form.branch(0).id).toBe(1);
@@ -129,7 +126,6 @@ describe(`array`, () => {
             const form = new Dendriform(['a','b','c']);
 
             form.set(array.pop());
-            form.core.flush();
 
             expect(form.value).toEqual(['a','b']);
             expect(form.branch(0).id).toBe(1);
@@ -161,7 +157,6 @@ describe(`array`, () => {
             const form = new Dendriform(['a','b','c']);
 
             form.set(array.shift());
-            form.core.flush();
 
             expect(form.value).toEqual(['b','c']);
             expect(form.branch(0).id).toBe(2);
@@ -187,7 +182,6 @@ describe(`array`, () => {
             const form = new Dendriform(['a','b','c']);
 
             form.branch(0).set(array.remove());
-            form.core.flush();
 
             expect(form.value).toEqual(['b','c']);
             expect(form.branch(0).id).toBe(2);
@@ -260,7 +254,6 @@ describe(`array`, () => {
             expect(form.branch(3).id).toBe(4);
 
             form.set(array.move(3,1));
-            form.core.flush();
 
             expect(form.value).toEqual(['a','d','b','c']);
             expect(form.branch(0).id).toBe(1);

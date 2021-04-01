@@ -166,8 +166,8 @@ class Core<C> {
 
     // if setBuffer exists, then new changes will be merged onto it
     // if not, a new change will push a new history item
+    bufferingChanges = false;
     setBuffer?: HistoryPatch;
-    silenceChanges = false;
     replaceByDefault = false;
 
     set = (id: number, toProduce: unknown): void => {
@@ -205,12 +205,12 @@ class Core<C> {
         // apply changes to .value and .nodes
         this.applyChanges(historyItem.do);
 
-        // if we're in the middle of calling go(), dont bother with buffers or deriving
-        if(this.going) return;
-
-        const replace = !!this.setBuffer;
+        // if we're in the middle of calling go() or deriving, dont bother with buffers or deriving
+        // derived data shouldn't end up in the history stack, it should always be re-derived
+        if(this.going || this.deriving) return;
 
         // push new history item, or replace last history item
+        const replace = !!this.setBuffer;
         if(replace) {
             this.historyReplace(historyItem);
         } else {
@@ -222,14 +222,15 @@ class Core<C> {
             nodes: (this.setBuffer?.nodes || []).concat(historyItem.do.nodes)
         };
 
-        if(!this.silenceChanges) {
-            this.scheduleChange();
+        // call derive callbacks
+        // but only if there are changes, or else this may be a deliberate noChange
+        // e.g. when sync() deliberately adds empty history items
+        if(historyItem.do.value.length > 0) {
+            this.callAllDeriveCallbacks(0, replace);
         }
 
-        // derive everything if there are any patches
-        if(historyItem.do.value.length > 0) {
-            this.sendDerive(0, replace);
-        }
+        // call change callbacks
+        this.callAllChangeCallbacks();
     };
 
     applyChanges = (historyPatch: HistoryPatch): void => {
@@ -238,12 +239,10 @@ class Core<C> {
         this.nodes = applyPatches(this.nodes, historyPatch.nodes);
 
         // add changes to change buffer
-        if(!this.silenceChanges) {
-            this.changeBuffer = {
-                value: (this.changeBuffer?.value || []).concat(historyPatch.value),
-                nodes: (this.changeBuffer?.nodes || []).concat(historyPatch.nodes)
-            };
-        }
+        this.changeBuffer = {
+            value: (this.changeBuffer?.value || []).concat(historyPatch.value),
+            nodes: (this.changeBuffer?.nodes || []).concat(historyPatch.nodes)
+        };
     };
 
     replace = (replace: boolean) => {
@@ -254,7 +253,7 @@ class Core<C> {
         }
     };
 
-    done = () => {
+    newHistoryItem = () => {
         this.setBuffer = this.replaceByDefault
             ? emptyHistoryPatch()
             : undefined;
@@ -266,7 +265,7 @@ class Core<C> {
 
     deriving = false;
 
-    sendDerive = (go: number, replace: boolean): void => {
+    callAllDeriveCallbacks = (go: number, replace: boolean): void => {
         this.deriveCallbackRefs.forEach((deriveCallbackRef) => {
             this.derive(deriveCallbackRef, go, replace);
         });
@@ -278,10 +277,12 @@ class Core<C> {
         replace: boolean
     ): void => {
         if(this.deriving) return;
-        const [deriveCallback] = deriveCallbackRef;
         this.deriving = true;
+
+        const [deriveCallback] = deriveCallbackRef;
         const patches = this.changeBuffer ?? emptyHistoryPatch();
         deriveCallback(this.value, {go, replace, patches});
+
         this.deriving = false;
     };
 
@@ -290,23 +291,24 @@ class Core<C> {
     //
 
     changeBuffer?: HistoryPatch;
-    scheduledChangeTimer = -1;
 
-    scheduleChange = () => {
-        if(this.scheduledChangeTimer !== -1) return;
-        this.scheduledChangeTimer = window.setTimeout(this.sendChange, 0);
+    buffer = (): void => {
+        this.bufferingChanges = true;
+        this.newHistoryItem();
     };
 
-    flush = () => {
-        if(this.scheduledChangeTimer === -1) return;
-        window.clearTimeout(this.scheduledChangeTimer);
-        this.sendChange();
+    done = () => {
+        this.bufferingChanges = false;
+        this.callAllChangeCallbacks();
     };
 
-    sendChange = (): void => {
-        this.done();
-        this.scheduledChangeTimer = -1;
+    callAllChangeCallbacks = (): void => {
+        // if buffering changes, dont do requested change
+        if(this.bufferingChanges) return;
+
+        this.newHistoryItem();
         if(!this.changeBuffer) return;
+
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
             const [changeType, id] = changeCallbackRef;
             const nextValue = this.valueGettersByType[changeType](id);
@@ -401,10 +403,10 @@ class Core<C> {
         this.applyChanges(buffer);
 
         // call derive callbacks
-        this.sendDerive(offset, false);
+        this.callAllDeriveCallbacks(offset, false);
 
-        // schedule change
-        this.scheduleChange();
+        // call change callbacks
+        this.callAllChangeCallbacks();
 
         this.going = false;
     };
@@ -526,12 +528,11 @@ export class Dendriform<V,C=V> {
     onDerive(callback: DeriveCallback<V>): (() => void) {
         const deriveCallback: DeriveCallbackRef = [callback];
         this.core.deriveCallbackRefs.add(deriveCallback);
+
         // call immediately, and dont add to history
-        this.replace();
-        this.core.silenceChanges = true;
         this.core.derive(deriveCallback, 0, true);
-        this.core.silenceChanges = false;
-        this.done();
+        this.core.callAllChangeCallbacks();
+
         // return unsubscriber
         return () => void this.core.deriveCallbackRefs.delete(deriveCallback);
     }
@@ -543,6 +544,8 @@ export class Dendriform<V,C=V> {
     go = (offset: number): void => this.core.go(offset);
 
     replace = (replace = true): void => this.core.replace(replace);
+
+    buffer = (): void => this.core.buffer();
 
     done = (): void => this.core.done();
 
