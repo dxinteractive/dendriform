@@ -117,7 +117,7 @@ function MyComponent(props) {
 const persistentForm = new Dendriform(1);
 
 if(typeof window !== 'undefined') {
-    // eslint-disable-next-line ban-ts-comment
+    // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
     // @ts-ignore
     window.persistentForm = persistentForm;
 }
