@@ -3,7 +3,9 @@ import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array} from '
 import {Box, Flex} from '../components/Layout';
 import {H2} from '../components/Text';
 import styled from 'styled-components';
-
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
+import type {DropResult} from 'react-beautiful-dnd';
+import type {Draft} from 'immer';
 import type {ThemeProps} from '../pages/_app';
 
 //
@@ -590,6 +592,13 @@ function ArrayOperations(): React.ReactElement {
         colours: ['Red', 'Green', 'Blue']
     });
 
+    const coloursForm = form.branch('colours');
+    const shift = useCallback(() => coloursForm.set(array.shift()), []);
+    const pop = useCallback(() => coloursForm.set(array.pop()), []);
+    const unshift = useCallback(() => coloursForm.set(array.unshift('Puce')), []);
+    const push = useCallback(() => coloursForm.set(array.push('Puce')), []);
+    const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
+
     return <Region>
         {form.renderAll('colours', form => {
 
@@ -605,23 +614,11 @@ function ArrayOperations(): React.ReactElement {
                 <button onClick={moveUp}>up</button>
             </Region>;
         })}
-
-        {form.render('colours', form => {
-
-            const shift = useCallback(() => form.set(array.shift()), []);
-            const pop = useCallback(() => form.set(array.pop()), []);
-            const unshift = useCallback(() => form.set(array.unshift('New colour')), []);
-            const push = useCallback(() => form.set(array.push('New colour')), []);
-            const move = useCallback(() => form.set(array.move(-1,0)), []);
-
-            return <Region>
-                <button onClick={shift}>shift</button>
-                <button onClick={pop}>pop</button>
-                <button onClick={unshift}>unshift</button>
-                <button onClick={push}>push</button>
-                <button onClick={move}>move last to first</button>
-            </Region>;
-        })}
+        <button onClick={shift}>shift</button>
+        <button onClick={pop}>pop</button>
+        <button onClick={unshift}>unshift</button>
+        <button onClick={push}>push</button>
+        <button onClick={move}>move last to first</button>
     </Region>;
 }
 
@@ -635,6 +632,13 @@ function MyComponent(props) {
     const form = useDendriform({
         colours: ['Red', 'Green', 'Blue']
     });
+
+    const coloursForm = form.branch('colours');
+    const shift = useCallback(() => coloursForm.set(array.shift()), []);
+    const pop = useCallback(() => coloursForm.set(array.pop()), []);
+    const unshift = useCallback(() => coloursForm.set(array.unshift('Puce')), []);
+    const push = useCallback(() => coloursForm.set(array.push('Puce')), []);
+    const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <div>
         {form.renderAll('colours', form => {
@@ -652,22 +656,11 @@ function MyComponent(props) {
             </div>;
         })}
 
-        {form.render('colours', form => {
-
-            const shift = useCallback(() => form.set(array.shift()), []);
-            const pop = useCallback(() => form.set(array.pop()), []);
-            const unshift = useCallback(() => form.set(array.unshift('New colour')), []);
-            const push = useCallback(() => form.set(array.push('New colour')), []);
-            const move = useCallback(() => form.set(array.move(-1,0)), []);
-
-            return <>
-                <button onClick={shift}>shift</button>
-                <button onClick={pop}>pop</button>
-                <button onClick={unshift}>unshift</button>
-                <button onClick={push}>push</button>
-                <button onClick={move}>move last to first</button>
-            </>;
-        })}
+        <button onClick={shift}>shift</button>
+        <button onClick={pop}>pop</button>
+        <button onClick={unshift}>unshift</button>
+        <button onClick={push}>push</button>
+        <button onClick={move}>move last to first</button>
     </div>;
 }
 `;
@@ -1147,6 +1140,143 @@ function MyComponent(props) {
 `;
 
 //
+// drag and drop
+//
+
+function dndReorder<V extends unknown[]>(result: DropResult): ((draft: Draft<V>) => void) {
+    return (draft: Draft<V>): void => {
+        if(!result.destination) return;
+
+        const startIndex = result.source.index;
+        const endIndex = result.destination.index;
+        if(endIndex === startIndex) return;
+
+        const [removed] = draft.splice(startIndex, 1);
+        draft.splice(endIndex, 0, removed);
+    };
+}
+
+function DragAndDrop(): React.ReactElement {
+
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    const onDragEnd = useCallback(result => {
+        form.branch('colours').set(dndReorder(result));
+    }, []);
+
+    const onAdd = useCallback(() => {
+        form.branch('colours').set(array.push('Puce'));
+    }, []);
+
+    return <Region>
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="list">
+                {provided => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                        <Region>
+                            <DragAndDropList form={form.branch('colours')} />
+                            {provided.placeholder}
+                        </Region>
+                    </div>
+                )}
+            </Droppable>
+        </DragDropContext>
+        <button onClick={onAdd}>add new</button>
+    </Region>;
+}
+
+type DragAndDropListProps = {
+    form: Dendriform<string[],unknown>;
+};
+
+function DragAndDropList(props: DragAndDropListProps): React.ReactElement {
+    return props.form.renderAll(form => {
+
+        const id = `${form.id}`;
+        const index = form.useIndex();
+        const remove = useCallback(() => form.set(array.remove()), []);
+
+        return <Draggable key={id} draggableId={id} index={index}>
+            {provided => <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+            >
+                <Region>
+                    <label>colour: <input {...useInput(form, 150)} /></label>
+                    <button onClick={remove}>remove</button>
+                </Region>
+            </div>}
+        </Draggable>;
+    });
+}
+
+const DragAndDropCode = `
+const dndReorder = (result) => (draft) => {
+    if(!result.destination) return;
+
+    const startIndex = result.source.index;
+    const endIndex = result.destination.index;
+    if(endIndex === startIndex) return;
+
+    const [removed] = draft.splice(startIndex, 1);
+    draft.splice(endIndex, 0, removed);
+};
+
+function DragAndDrop() {
+
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    const onDragEnd = useCallback(result => {
+        form.branch('colours').set(dndReorder(result));
+    }, []);
+
+    const onAdd = useCallback(() => {
+        form.branch('colours').set(array.push('Puce'));
+    }, []);
+
+    return <div>
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="list">
+                {provided => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                        <DragAndDropList form={form.branch('colours')} />
+                        {provided.placeholder}
+                    </div>
+                )}
+            </Droppable>
+        </DragDropContext>
+
+        <button onClick={push}>add new</button>
+    </div>;
+}
+
+function DragAndDropList(props) {
+    return props.form.renderAll(form => {
+
+        const id = \`$\{form.id}\`;
+        const index = form.useIndex();
+        const remove = useCallback(() => form.set(array.remove()), []);
+
+        return <Draggable key={id} draggableId={id} index={index}>
+            {provided => <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+            >
+                <label>colour: <input {...useInput(form, 150)} /></label>
+                <button onClick={remove}>remove</button>
+            </div>}
+        </Draggable>;
+    });
+}
+`;
+
+//
 // region
 //
 
@@ -1276,6 +1406,11 @@ const DEMOS: DemoObject[] = [
         title: 'Synchronising forms with deriving',
         Demo: SyncDerive,
         code: SyncDeriveCode
+    },
+    {
+        title: 'Drag and drop with react-beautiful-dnd',
+        Demo: DragAndDrop,
+        code: DragAndDropCode
     }
 ];
 

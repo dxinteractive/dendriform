@@ -33,4 +33,18 @@ module.exports = [
         limit: "0.3 KB",
         ignore: ['react', 'react-dom', 'immer', 'shallow-equals']
     },
+    {
+        name: 'sync',
+        path: "dist/dendriform.esm.js",
+        import: "{ sync }",
+        limit: "0.4 KB",
+        ignore: ['react', 'react-dom', 'immer', 'shallow-equals']
+    },
+    {
+        name: 'useSync',
+        path: "dist/dendriform.esm.js",
+        import: "{ useSync }",
+        limit: "0.4 KB",
+        ignore: ['react', 'react-dom', 'immer', 'shallow-equals']
+    }
 ];

@@ -537,6 +537,13 @@ function MyComponent(props) {
         colours: ['Red', 'Green', 'Blue']
     });
 
+    const coloursForm = form.branch('colours');
+    const shift = useCallback(() => coloursForm.set(array.shift()), []);
+    const pop = useCallback(() => coloursForm.set(array.pop()), []);
+    const unshift = useCallback(() => coloursForm.set(array.unshift('Puce')), []);
+    const push = useCallback(() => coloursForm.set(array.push('Puce')), []);
+    const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
+
     return <div>
         {form.renderAll('colours', form => {
 
@@ -553,22 +560,11 @@ function MyComponent(props) {
             </div>;
         })}
 
-        {form.render('colours', form => {
-
-            const shift = useCallback(() => form.set(array.shift()), []);
-            const pop = useCallback(() => form.set(array.pop()), []);
-            const unshift = useCallback(() => form.set(array.unshift('New colour')), []);
-            const push = useCallback(() => form.set(array.push('New colour')), []);
-            const move = useCallback(() => form.set(array.move(-1,0)), []);
-
-            return <>
-                <button onClick={shift}>shift</button>
-                <button onClick={pop}>pop</button>
-                <button onClick={unshift}>unshift</button>
-                <button onClick={push}>push</button>
-                <button onClick={move}>move last to first</button>
-            </>;
-        })}
+        <button onClick={shift}>shift</button>
+        <button onClick={pop}>pop</button>
+        <button onClick={unshift}>unshift</button>
+        <button onClick={push}>push</button>
+        <button onClick={move}>move last to first</button>
     </div>;
 }
 ```
