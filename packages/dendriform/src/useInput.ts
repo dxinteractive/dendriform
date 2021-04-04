@@ -17,8 +17,7 @@ type UseInputResult = {
 };
 
 export const useInput = <V extends string|null|undefined,C>(form: Dendriform<V,C>, debounce = 0): UseInputResult => {
-    const useValue = form.useValue();
-    const formValue: string = (useValue[0] || '') as string;
+    const formValue = (form.useValue() || '') as string;
     const [lastFormValue, setLastFormValue] = useState(formValue);
     const [localValue, setLocalValue] = useState(formValue);
 
@@ -28,7 +27,7 @@ export const useInput = <V extends string|null|undefined,C>(form: Dendriform<V,C
     }
 
     const onChangeDebounced = useDebounceCallback(debounce, (value: V) => {
-        useValue[1](value);
+        form.set(value);
     }, []);
 
     const onChange = useCallback(event => {

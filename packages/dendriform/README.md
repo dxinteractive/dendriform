@@ -1,8 +1,17 @@
+<img align="right" width="100" height="100" src="https://user-images.githubusercontent.com/345320/110258298-09524100-7ff6-11eb-84b1-468e747d1261.png">
+
+
 # dendriform
 
 [![npm](https://img.shields.io/npm/v/dendriform.svg)](https://www.npmjs.com/package/dendriform) ![Master build](https://github.com/92green/dendriform/workflows/CI/badge.svg?branch=master) ![Maturity: Early Days](https://img.shields.io/badge/Maturity-Early%20days-yellow) ![Coolness Reasonable](https://img.shields.io/badge/Coolness-Reasonable-blue) 
 
+
+
 Build feature-rich data-editing React UIs with great performance and not much code.
+
+**[Play with the demos](http://dendriform.xyz)**
+
+*Not yet available on npm unless you use the @next tag. All docs refer to the upcoming version 2.0.0.*
 
 ```js
 import React, {useCallback} from 'react';
@@ -33,33 +42,34 @@ function MyComponent(props) {
 
     return <div>
         {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+            <label>name <input {...useInput(form, 150)} /></label>
         ))}
 
         {form.render(['address', 'street'], street => (
-            <label>street: <input {...useInput(street, 150)} /></label>
+            <label>street <input {...useInput(street, 150)} /></label>
         ))}
 
         <fieldset>
-            <legend>pets:</legend>
-
-            {form.renderAll('pets', form => (
-                <div>
+            <legend>pets</legend>
+            <ul>
+                {form.renderAll('pets', form => <li>
                     {form.render('name', form => (
-                        <label>name: <input {...useInput(form, 150)} /></label>
+                        <label>name <input {...useInput(form, 150)} /></label>
                     ))}
-                </div>
-            ))}
-
+                </li>)}
+            </ul>
             <button onClick={addPet}>Add pet</button>
         </fieldset>
     </div>;
 };
 ```
 
+[Demo](http://dendriform.xyz#example)
+
 - [Installation](#installation)
 - [Usage and API](#usage-and-api)
 - [Development](#development)
+- [Demos](http://dendriform.xyz)
 
 ## Installation
 
@@ -82,6 +92,7 @@ npm install --save dendriform
 - [Array operations](#array-operations)
 - [History](#history)
 - [Synchronising forms](#synchronising-forms)
+- [Drag and drop](#drag-and-drop)
 
 ### Creation
 
@@ -118,6 +129,8 @@ function MyComponent(props) {
 }
 ```
 
+The value can be of any type, however only plain objects and arrays will be able to use [branching](#branching) to access and modify child values.
+
 ### Values
 
 Access your form's value using `.value`, or by using the `.useValue()` hook if you're inside a React component's render method. The `.useValue()` hook will cause a component to update whenever the value changes. Using the hook essentially allows your components to "opt in" to respond to specific value changes, which means that unnecessary component updates can be easily avoided, and is a large part of what makes Dendriform so performant.
@@ -130,7 +143,7 @@ const value = form.value;
 
 function MyComponent(props) {
     const form = useDendriform({name: 'Ben'});
-    const [value, setValue] = form.useValue();
+    const value = form.useValue();
     // value is {name: 'Ben'}
     // ...
 }
@@ -144,7 +157,7 @@ The only difference is that the lifespan of forms instantiated inside React comp
 const persistentForm = new Dendriform({name: 'Bill'});
 
 function MyComponent(props) {
-    const [value, setValue] = persistentForm.useValue();
+    const value = persistentForm.useValue();
     // value is {name: 'Bill'}
     // ...
 }
@@ -166,17 +179,19 @@ function MyComponent(props) {
     const form = useDendriform({name: 'Ben'});
 
     const nameForm = form.branch('name');
-    const [value, setValue] = nameForm.useValue();
+    const value = nameForm.useValue();
     // value is 'Ben'
     // ...
 }
 ```
 
+[Demo](http://dendriform.xyz#branch)
+
 ### Rendering
 
 The `.render()` function allows you to branch off and render a deep value in a React component.
 
-The `.render()` function's callback is rendered as it's own component instance, so you can use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. 
+The `.render()` function's callback is rendered as it's own component instance, so you can use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. This keeps component updates to a minimum.
 
 ```js
 function MyComponent(props) {
@@ -184,14 +199,16 @@ function MyComponent(props) {
 
     return <div>
         {form.render('name', form => {
-            const [name, setName] = form.useValue();
+            const name = form.useValue();
             return <div>My name is {name}</div>;
         })}
     </div>;
 }
 ```
 
-As the callback of `.render()` becomes it's own `React.memo`-ized React component, you may sometimes need to force it to update in reponse to other pieces of data using the last argument "dependencies".
+[Demo](http://dendriform.xyz#render)
+
+As the callback of `.render()` doesn't update in response to changes in the parent's props, you may sometimes need to force it to update using the last argument `dependencies`.
 
 ```js
 function MyComponent(props) {
@@ -207,7 +224,9 @@ function MyComponent(props) {
 }
 ```
 
-The `.render()` function can also be called without branching, to simply re-render when there are any changes to the entire form.
+[Demo](http://dendriform.xyz#renderdeps)
+
+The `.render()` function can also be called without branching. As with the above this can also accept a `dependencies` argument to force it to update.
 
 ```js
 function MyComponent(props) {
@@ -221,8 +240,6 @@ function MyComponent(props) {
     </div>;
 }
 ```
-
-This can also accept the "dependencies" argument to force it to update.
 
 ### Rendering arrays
 
@@ -238,7 +255,7 @@ function MyComponent(props) {
 
     return <div>
         {form.renderAll('colours', form => {
-            const [colour, setColour] = form.useValue();
+            const colour = form.useValue();
             return <div>Colour: {colour}</div>;
         })}
     </div>;
@@ -259,7 +276,7 @@ function MyComponent(props) {
 
     return <div>
         {form.renderAll('colours', form => {
-            const [colour, setColour] = form.useValue();
+            const colour = form.useValue();
             const index = form.useIndex();
 
             return <div>Colour: {colour}, index: {index}</div>;
@@ -281,25 +298,11 @@ const petName = form.branch(['pets', 0, 'name']);
 // petName.value is 'Spike'
 ```
 
-Render functions (`.render()` and `.renderAll()`) can also additionally accept an array of dependencies that will cause them to update in response to prop changes.
-
-```js
-function MyComponent(props) {
-    const {time} = props;
-    const form = useDendriform({name: 'Ben'});
-
-    return <div>
-        {form.render('name', form => {
-            const [name, setName] = form.useValue();
-            return <div>My name is {name} and the time is {time}</div>;
-        }, [time])}
-    </div>;
-}
-```
+Like with `.render()`, the `.renderAll()` function can also additionally accept an array of dependencies that will cause it to update in response to prop changes.
 
 ### Setting data
 
-You can set data directly using `.set()`. This accepts the new value for the form. When called, changes will momentarily be applied to the data in the form and any relevant `.useValue()` hooks and `.render()` methods will be updated.
+You can set data directly using `.set()`. This accepts the new value for the form. When called, changes will immediately be applied to the data in the form and any relevant `.useValue()` hooks and `.render()` methods will be scheduled to update by React.
 
 ```js
 const form = new Dendriform('Foo');
@@ -307,23 +310,25 @@ form.set('Bar');
 // form.value will update to become 'Bar'
 ```
 
-In a React component, the `.useValue()` hook provides the `.set()` function as the second element of the tuple it returns.
+The usage is the same in a React component
 
 ```js
 function MyComponent(props) {
     const form = useDendriform('Foo');
 
-    const [value, setValue] = name.useValue(); 
+    const name = form.useValue(); 
 
-    const setToBar = useCallback(() => setValue('Bar'), []);
+    const setToBar = useCallback(() => form.set('Bar'), []);
 
     return <div>
-        Current value: {value}
+        Current name: {name}
 
         <button onClick={setToBar}>Set to Bar</button>
     </div>;
 }
 ```
+
+[Demo](http://dendriform.xyz#set)
 
 When `.set()` is called on a deep form, the deep value will be updated immutably within its parent data shape. It uses structural sharing, so other parts of the data shape that haven't changed will not be affected.
 
@@ -333,9 +338,9 @@ function MyComponent(props) {
 
     return <div>
         {form.render('name', form => {
-            const [name, setName] = form.useValue();
+            const name = form.useValue();
             const setToBill = useCallback(() => {
-                setName('Bill');
+                form.set('Bill');
             }, []);
 
             return <div>
@@ -373,13 +378,15 @@ function MyComponent(props) {
 }
 ```
 
-It can also be called multiple times in a row.
+To call it multiple times in a row, use `buffer()` to begin buffering changes and `done()` to apply the changes. These will affect the entire form including all branches, so `form.buffer()` has the same effect as `form.branch('example').buffer()`.
 
 ```js
 const form = new Dendriform(0);
+form.buffer();
 form.set(draft => draft + 1);
 form.set(draft => draft + 1);
 form.set(draft => draft + 1);
+form.done();
 // form.value will update to become 3
 ```
 
@@ -397,8 +404,9 @@ function MyComponent(props) {
     const form = useDendriform(() => ({
         name: 'Bill',
         fruit: 'grapefruit',
-        canSwim: true
-    });
+        canSwim: true,
+        comment: ''
+    }));
 
     return <div>
         {form.render('name', form => (
@@ -423,9 +431,15 @@ function MyComponent(props) {
                 <input type="checkbox" {...useCheckbox(form)} />
             </label>
         ))}
+
+        {form.render('comment', form => (
+            <label>comment: <textarea {...useInput(form)} /></label>
+        ))}
     </div>;
 };
 ```
+
+[Demo](http://dendriform.xyz#inputs)
 
 ### Subscribing to changes
 
@@ -453,6 +467,8 @@ function MyComponent(props) {
 }
 ```
 
+[Demo](http://dendriform.xyz#subscribe)
+
 As these functions can be called on any form instance, including branched form instances, you can selectively and independently listen to changes in parts of a form's data shape.
 
 ```js
@@ -461,7 +477,7 @@ function MyComponent(props) {
     const form = useDendriform(() => ({
         firstName: 'Bill',
         lastName: 'Joe'
-    });
+    }));
 
     useEffect(() => {
         const unsub1 = form
@@ -494,13 +510,41 @@ function MyComponent(props) {
 };
 ```
 
+Alternatively you can use the `.useChange()` React hook.
+
+
+```js
+function MyComponent(props) {
+    const form = useDendriform(() => ({
+        firstName: 'Bill',
+        lastName: 'Joe'
+    }));
+
+    form.branch('firstName').useChange(newName => {
+        console.log('Subscribing to changes - first name changed:', newName);
+    });
+
+    form.branch('lastName').useChange(newName => {
+        console.log('Subscribing to changes - last name changed:', newName);
+    });
+
+    return <div>
+        {form.render('firstName', form => (
+            <label>first name: <input {...useInput(form, 150)} /></label>
+        ))}
+
+        {form.render('lastName', form => (
+            <label>last name: <input {...useInput(form, 150)} /></label>
+        ))}
+    </div>;
+}
+```
+
 ### Array operations
 
 Common array operations can be performed using `array`.
 
 ```js
-import {useDendriform, useInput, array} from 'dendriform';
-
 const offsetElement = (form, offset) => {
     return form.setParent(index => array.move(index, index + offset));
 };
@@ -510,6 +554,13 @@ function MyComponent(props) {
     const form = useDendriform({
         colours: ['Red', 'Green', 'Blue']
     });
+
+    const coloursForm = form.branch('colours');
+    const shift = useCallback(() => coloursForm.set(array.shift()), []);
+    const pop = useCallback(() => coloursForm.set(array.pop()), []);
+    const unshift = useCallback(() => coloursForm.set(array.unshift('Puce')), []);
+    const push = useCallback(() => coloursForm.set(array.push('Puce')), []);
+    const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <div>
         {form.renderAll('colours', form => {
@@ -527,25 +578,16 @@ function MyComponent(props) {
             </div>;
         })}
 
-        {form.render('colours', form => {
-
-            const shift = useCallback(() => form.set(array.shift()), []);
-            const pop = useCallback(() => form.set(array.pop()), []);
-            const unshift = useCallback(() => form.set(array.unshift('New')), []);
-            const push = useCallback(() => form.set(array.push('New colour')), []);
-            const move = useCallback(() => form.set(array.move(-1,0)), []);
-
-            return <>
-                <button onClick={shift}>shift</button>
-                <button onClick={pop}>pop</button>
-                <button onClick={unshift}>unshift</button>
-                <button onClick={push}>push</button>
-                <button onClick={move}>move last to first</button>
-            </>;
-        })}
+        <button onClick={shift}>shift</button>
+        <button onClick={pop}>pop</button>
+        <button onClick={unshift}>unshift</button>
+        <button onClick={push}>push</button>
+        <button onClick={move}>move last to first</button>
     </div>;
 }
 ```
+
+[Demo](http://dendriform.xyz#array)
 
 ### History
 
@@ -568,18 +610,26 @@ History can be navigated by calling `.undo()` and `.redo()` on any form. It does
 ```js
 function MyComponent(props) {
 
-    const form = useDendriform(() => ({name: 'Ben'}));
+    const form = useDendriform(() => ({name: 'Ben'}), {history: 100});
 
     return <div>
         {form.render('name', form => (
             <label>name: <input {...useInput(form, 150)} /></label>
         ))}
 
-        <button onClick={form.undo}>Undo</button>
-        <button onClick={form.redo}>Redo</button>
+        {form.render(form => {
+            const {canUndo, canRedo} = form.useHistory();
+            // this function will only re-render if canUndo or canRedo changes
+            return <>
+                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+            </>;
+        })}
     </div>;
-};
+}
 ```
+
+[Demo](http://dendriform.xyz#history)
 
 The `.go()` function can also be used to perform undo and redo operations.
 
@@ -595,7 +645,7 @@ You can find if the form is able to undo or redo using `.history`, or by using t
 ```js
 function MyComponent(props) {
 
-    const form = useDendriform(() => ({name: 'Ben'}));
+    const form = useDendriform(() => ({name: 'Ben'}), {history: 100});
 
     return <div>
         {form.render('name', form => (
@@ -616,7 +666,7 @@ function MyComponent(props) {
 
 You can also control how changes are grouped in the history stack.
 
-The `.replace()` function can be used to prevent a new history item, effectively merging changes together. Once called, subsequent calls to `.set()` within the current update will be applied to the current history item, instead of creating a new history item.
+The `.replace()` function can be used to prevent a new history item being created for the next `.set()`.
 
 ```js
 const form = new Dendriform('a', {history: 50});
@@ -643,27 +693,54 @@ form.replace(false);
 // equivalent to not calling form.replace() at all
 ```
 
-Conversely, `.done()` can be used to split changes into separate history items.
+Buffering multiple changes also works with `.replace()`.
+
+```js
+const form = new Dendriform(1, {history: 50});
+
+form.set(2);
+// form will contain 2 as a new history item
+// if undo() is called, form will contain 1 again
+
+// ...after some time...
+
+form.replace();
+form.buffer();
+form.set(num => num + 1);
+form.set(num => num + 1);
+form.done();
+
+// form will contain 4 by updating the current history item
+// if undo() is called, form will contain 1 again
+```
+
+The `.buffer()` function can also be called again while buffering to add subsequent changes to a new history item. The changes still will not be applied until `.done()` is called.
 
 ```js
 const form = new Dendriform('a', {history: 50});
 
 // calling .set() multiple times in the same update
+form.buffer();
 form.set('b');
 form.set('c');
+form.done();
 
 // form will contain 'c'
 // if undo is called, form will contain 'a' again
 
 // calling .set() multiple times in the same update
+form.buffer();
 form.set('b');
-form.done();
+form.buffer();
 form.set('c');
+form.done();
 
 // form will contain 'c'
 // if undo is called, form will contain 'b'
 // if undo is called a second time, form will contain 'a'
 ```
+
+[Demo](http://dendriform.xyz#historygroup)
 
 ### Deriving data
 
@@ -685,9 +762,11 @@ const unsubscribe = form.onDerive(newValue => {
 // now form.value is {a:1, b:2, sum:3}
 
 // call unsubscribe() to unsubscribe
+```
 
+```js
 function MyComponent(props) {
-    const form = useDendriform({name: 'Ben'});
+    const form = useDendriform({a: 1, b: 2, sum: 0});
 
     form.useDerive(newValue => {
         form.branch('sum').set(newValue.a + newValue.b);
@@ -699,24 +778,11 @@ function MyComponent(props) {
 }
 ```
 
-Deriving data can be useful for implementing validation.
+[Demo](http://dendriform.xyz#derive)
 
-```js
-const form = new Dendriform({
-    name: 'Bill',
-    nameError: '',
-    valid: true
-});
+It is also possible and often preferrable to make changes in other forms in `.onDerive()`'s callback.
 
-form.onDerive(newValue => {
-    const valid = newValue.name.trim().length > 0;
-    const nameError = valid ? '' : 'Name must not be blank';
-    form.branch('valid').set(valid);
-    form.branch('nameError').set(nameError);
-});
-```
-
-It is also possible to make changes in other forms in `.onDerive()`'s callback.
+Here we can see that deriving data can be useful for implementing validation.
 
 ```js
 const form = new Dendriform({name: 'Bill'});
@@ -733,6 +799,8 @@ form.onDerive(newValue => {
 });
 ```
 
+[Demo](http://dendriform.xyz#deriveother)
+
 ### Synchronising forms
 
 You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
@@ -745,14 +813,49 @@ import {sync} from 'dendriform';
 const nameForm = new Dendriform({name: 'Bill'}, {history: 100});
 const addressForm = new Dendriform({street: 'Cool St'}, {history: 100});
 
-sync(nameForm, addressForm);
+const unsync = sync(nameForm, addressForm);
 
 // if nameForm.undo() is called, addressForm.undo() is also called, and vice versa
 // if nameForm.redo() is called, addressForm.redo() is also called, and vice versa
 // if nameForm.go() is called, addressForm.go() is also called, and vice versa
+
+// call unsync() to unsynchronise the forms
 ```
 
-The `.sync()` function can also accept a deriver to derive data in one direction.
+[Demo](http://dendriform.xyz#sync)
+
+Inside of a React component you can use the `useSync()` hook to achieve the same result.
+
+```js
+import {useSync} from 'dendriform';
+
+function MyComponent(props) {
+    const nameForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
+    const addressForm = useDendriform(() => ({street: 'Cool St'}), {history: 100});
+
+    useSync(nameForm, addressForm);
+
+    return <div>
+        {nameForm.render('name', form => (
+            <label>name: <input {...useInput(form, 150)} /></label>
+        ))}
+
+        {addressForm.render('street', form => (
+            <label>street: <input {...useInput(form, 150)} /></label>
+        ))}
+
+        {nameForm.render(form => {
+            const {canUndo, canRedo} = form.useHistory();
+            return <div>
+                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+            </div>;
+        })}
+    </div>;
+}
+```
+
+The `sync()` function can also accept a deriver to derive data in one direction.
 
 ```js
 import {sync} from 'dendriform';
@@ -764,10 +867,83 @@ const addressForm = new Dendriform({
     occupants: 0
 }, {history: 100});
 
-sync(nameForm, addressForm, newValue => {
-    addressForm.branch('occupants').set(newValue.length);
+sync(nameForm, addressForm, names => {
+    addressForm.branch('occupants').set(names.length);
 });
 ```
+
+[Demo](http://dendriform.xyz#syncderive)
+
+## Drag and drop
+
+Drag and drop can be implemented easily with libraries such as (react-beautiful-dnd)[https://github.com/atlassian/react-beautiful-dnd], because dendriform takes care of the unique keying of array elements for you.
+
+```js
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
+
+const dndReorder = (result) => (draft) => {
+    if(!result.destination) return;
+
+    const startIndex = result.source.index;
+    const endIndex = result.destination.index;
+    if(endIndex === startIndex) return;
+
+    const [removed] = draft.splice(startIndex, 1);
+    draft.splice(endIndex, 0, removed);
+};
+
+function DragAndDrop() {
+
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    const onDragEnd = useCallback(result => {
+        form.branch('colours').set(dndReorder(result));
+    }, []);
+
+    const onAdd = useCallback(() => {
+        form.branch('colours').set(array.push('Puce'));
+    }, []);
+
+    return <div>
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="list">
+                {provided => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                        <DragAndDropList form={form.branch('colours')} />
+                        {provided.placeholder}
+                    </div>
+                )}
+            </Droppable>
+        </DragDropContext>
+
+        <button onClick={push}>add new</button>
+    </div>;
+}
+
+function DragAndDropList(props) {
+    return props.form.renderAll(form => {
+
+        const id = \`$\{form.id}\`;
+        const index = form.useIndex();
+        const remove = useCallback(() => form.set(array.remove()), []);
+
+        return <Draggable key={id} draggableId={id} index={index}>
+            {provided => <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+            >
+                <label>colour: <input {...useInput(form, 150)} /></label>
+                <button onClick={remove}>remove</button>
+            </div>}
+        </Draggable>;
+    });
+}
+```
+
+[Demo](http://dendriform.xyz#draganddrop)
 
 ## Development
 
