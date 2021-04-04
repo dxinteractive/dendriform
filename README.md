@@ -9,6 +9,8 @@
 
 Build feature-rich data-editing React UIs with great performance and not much code.
 
+**[Play with the demos](http://dendriform.xyz)**
+
 *Not yet available on npm unless you use the @next tag. All docs refer to the upcoming version 2.0.0.*
 
 ```js
@@ -62,9 +64,12 @@ function MyComponent(props) {
 };
 ```
 
+[Demo](http://dendriform.xyz#example)
+
 - [Installation](#installation)
 - [Usage and API](#usage-and-api)
 - [Development](#development)
+- [Demos](http://dendriform.xyz)
 
 ## Installation
 
@@ -87,6 +92,7 @@ npm install --save dendriform
 - [Array operations](#array-operations)
 - [History](#history)
 - [Synchronising forms](#synchronising-forms)
+- [Drag and drop](#drag-and-drop)
 
 ### Creation
 
@@ -179,6 +185,8 @@ function MyComponent(props) {
 }
 ```
 
+[Demo](http://dendriform.xyz#branch)
+
 ### Rendering
 
 The `.render()` function allows you to branch off and render a deep value in a React component.
@@ -198,6 +206,8 @@ function MyComponent(props) {
 }
 ```
 
+[Demo](http://dendriform.xyz#render)
+
 As the callback of `.render()` doesn't update in response to changes in the parent's props, you may sometimes need to force it to update using the last argument `dependencies`.
 
 ```js
@@ -213,6 +223,8 @@ function MyComponent(props) {
     </div>;
 }
 ```
+
+[Demo](http://dendriform.xyz#renderdeps)
 
 The `.render()` function can also be called without branching. As with the above this can also accept a `dependencies` argument to force it to update.
 
@@ -315,6 +327,8 @@ function MyComponent(props) {
     </div>;
 }
 ```
+
+[Demo](http://dendriform.xyz#set)
 
 When `.set()` is called on a deep form, the deep value will be updated immutably within its parent data shape. It uses structural sharing, so other parts of the data shape that haven't changed will not be affected.
 
@@ -425,6 +439,8 @@ function MyComponent(props) {
 };
 ```
 
+[Demo](http://dendriform.xyz#inputs)
+
 ### Subscribing to changes
 
 You can subscribe to changes using `.onChange`, or by using the `.useChange()` hook if you're inside a React component's render method.
@@ -450,6 +466,8 @@ function MyComponent(props) {
     // ...
 }
 ```
+
+[Demo](http://dendriform.xyz#subscribe)
 
 As these functions can be called on any form instance, including branched form instances, you can selectively and independently listen to changes in parts of a form's data shape.
 
@@ -569,6 +587,8 @@ function MyComponent(props) {
 }
 ```
 
+[Demo](http://dendriform.xyz#array)
+
 ### History
 
 Dendriform can keep track of the history of changes and supports undo and redo. Activate this by specifying the maximum number of undos you would like to allow in the options object when creating a form.
@@ -608,6 +628,8 @@ function MyComponent(props) {
     </div>;
 }
 ```
+
+[Demo](http://dendriform.xyz#history)
 
 The `.go()` function can also be used to perform undo and redo operations.
 
@@ -718,6 +740,8 @@ form.done();
 // if undo is called a second time, form will contain 'a'
 ```
 
+[Demo](http://dendriform.xyz#historygroup)
+
 ### Deriving data
 
 When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, and then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, after which `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
@@ -754,6 +778,8 @@ function MyComponent(props) {
 }
 ```
 
+[Demo](http://dendriform.xyz#derive)
+
 It is also possible and often preferrable to make changes in other forms in `.onDerive()`'s callback.
 
 Here we can see that deriving data can be useful for implementing validation.
@@ -772,6 +798,8 @@ form.onDerive(newValue => {
     validState.branch('nameError').set(nameError);
 });
 ```
+
+[Demo](http://dendriform.xyz#deriveother)
 
 ### Synchronising forms
 
@@ -793,6 +821,8 @@ const unsync = sync(nameForm, addressForm);
 
 // call unsync() to unsynchronise the forms
 ```
+
+[Demo](http://dendriform.xyz#sync)
 
 Inside of a React component you can use the `useSync()` hook to achieve the same result.
 
@@ -841,6 +871,79 @@ sync(nameForm, addressForm, names => {
     addressForm.branch('occupants').set(names.length);
 });
 ```
+
+[Demo](http://dendriform.xyz#syncderive)
+
+## Drag and drop
+
+Drag and drop can be implemented easily with libraries such as (react-beautiful-dnd)[https://github.com/atlassian/react-beautiful-dnd], because dendriform takes care of the unique keying of array elements for you.
+
+```js
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
+
+const dndReorder = (result) => (draft) => {
+    if(!result.destination) return;
+
+    const startIndex = result.source.index;
+    const endIndex = result.destination.index;
+    if(endIndex === startIndex) return;
+
+    const [removed] = draft.splice(startIndex, 1);
+    draft.splice(endIndex, 0, removed);
+};
+
+function DragAndDrop() {
+
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    const onDragEnd = useCallback(result => {
+        form.branch('colours').set(dndReorder(result));
+    }, []);
+
+    const onAdd = useCallback(() => {
+        form.branch('colours').set(array.push('Puce'));
+    }, []);
+
+    return <div>
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="list">
+                {provided => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                        <DragAndDropList form={form.branch('colours')} />
+                        {provided.placeholder}
+                    </div>
+                )}
+            </Droppable>
+        </DragDropContext>
+
+        <button onClick={push}>add new</button>
+    </div>;
+}
+
+function DragAndDropList(props) {
+    return props.form.renderAll(form => {
+
+        const id = \`$\{form.id}\`;
+        const index = form.useIndex();
+        const remove = useCallback(() => form.set(array.remove()), []);
+
+        return <Draggable key={id} draggableId={id} index={index}>
+            {provided => <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+            >
+                <label>colour: <input {...useInput(form, 150)} /></label>
+                <button onClick={remove}>remove</button>
+            </div>}
+        </Draggable>;
+    });
+}
+```
+
+[Demo](http://dendriform.xyz#draganddrop)
 
 ## Development
 

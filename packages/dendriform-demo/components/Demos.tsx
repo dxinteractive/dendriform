@@ -1319,107 +1319,126 @@ type DemoObject = {
     description?: string;
     Demo: React.ComponentType<Record<string, unknown>>;
     code: string;
+    anchor: string;
 };
 
 const DEMOS: DemoObject[] = [
     {
         title: 'A quick example',
         Demo: FirstExample,
-        code: FirstExampleCode
+        code: FirstExampleCode,
+        anchor: 'example'
     },
     {
         title: 'Dendriform instance outside of React',
         Demo: OutsideReactContainer,
-        code: OutsideReactCode
+        code: OutsideReactCode,
+        anchor: 'outside'
     },
     {
         title: 'Branching forms',
         Demo: Branching,
-        code: BranchingCode
+        code: BranchingCode,
+        anchor: 'branch'
     },
     {
         title: 'Rendering fields',
         Demo: Rendering,
-        code: RenderingCode
+        code: RenderingCode,
+        anchor: 'render'
     },
     {
         title: 'Rendering with dependencies',
         Demo: RenderingDeps,
-        code: RenderingDepsCode
+        code: RenderingDepsCode,
+        anchor: 'renderdeps'
     },
     {
         title: 'Setting data',
         Demo: SettingData,
-        code: SettingDataCode
+        code: SettingDataCode,
+        anchor: 'set'
     },
     {
         title: 'Setting data with buffering',
         Demo: SettingDataBuffer,
-        code: SettingDataBufferCode
+        code: SettingDataBufferCode,
+        anchor: 'buffer'
     },
     {
         title: 'Form inputs',
         Demo: FormInputs,
-        code: FormInputsCode
+        code: FormInputsCode,
+        anchor: 'inputs'
     },
     {
         title: 'Subscribing to changes',
         Demo: Subscribe,
-        code: SubscribeCode
+        code: SubscribeCode,
+        anchor: 'subscribe'
     },
     {
         title: 'Array operations',
         Demo: ArrayOperations,
-        code: ArrayOperationsCode
+        code: ArrayOperationsCode,
+        anchor: 'array'
     },
     {
         title: 'Array indexes',
         Demo: ArrayIndexes,
-        code: ArrayIndexesCode
+        code: ArrayIndexesCode,
+        anchor: 'indexes'
     },
     {
         title: 'History',
         Demo: History,
-        code: HistoryCode
+        code: HistoryCode,
+        anchor: 'history'
     },
     {
         title: 'Grouping history items',
         Demo: GroupingHistoryItems,
-        code: GroupingHistoryItemsCode
+        code: GroupingHistoryItemsCode,
+        anchor: 'historygroup'
     },
     {
         title: 'Deriving data in a single form',
         Demo: Deriving,
-        code: DerivingCode
+        code: DerivingCode,
+        anchor: 'derive'
     },
     {
         title: 'Deriving data in another form',
         Demo: DerivingOther,
-        code: DerivingOtherCode
+        code: DerivingOtherCode,
+        anchor: 'deriveother'
     },
     {
         title: 'Synchronising forms',
         Demo: Sync,
-        code: SyncCode
+        code: SyncCode,
+        anchor: 'sync'
     },
     {
         title: 'Synchronising forms with deriving',
         Demo: SyncDerive,
-        code: SyncDeriveCode
+        code: SyncDeriveCode,
+        anchor: 'syncderive'
     },
     {
         title: 'Drag and drop with react-beautiful-dnd',
         Demo: DragAndDrop,
-        code: DragAndDropCode
+        code: DragAndDropCode,
+        anchor: 'draganddrop'
     }
 ];
 
 export function Demos(): React.ReactElement {
     return <Flex flexWrap="wrap">
-        {DEMOS.map(({Demo, title}, index) => <Flex key={index} mr={4} mb={4}>
+        {DEMOS.map(({Demo, title, anchor}, index) => <Flex key={index} mr={4} mb={4}>
             <DemoStyle>
                 <Box pb={3}>
-                    <H2>{title}</H2>
+                    <H2 id={anchor}>{title}</H2>
                 </Box>
                 <Box>
                     <Demo />
