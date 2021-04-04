@@ -1214,6 +1214,8 @@ function DragAndDropList(props: DragAndDropListProps): React.ReactElement {
 }
 
 const DragAndDropCode = `
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
+
 const dndReorder = (result) => (draft) => {
     if(!result.destination) return;
 
