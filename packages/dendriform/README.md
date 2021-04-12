@@ -9,7 +9,7 @@
 
 Build feature-rich data-editing React UIs with great performance and not much code.
 
-**[Play with the demos](http://dendriform.xyz)**
+**[See the demos](http://dendriform.xyz)**
 
 *Not yet available on npm unless you use the @next tag. All docs refer to the upcoming version 2.0.0.*
 
@@ -876,7 +876,7 @@ sync(nameForm, addressForm, names => {
 
 ## Drag and drop
 
-Drag and drop can be implemented easily with libraries such as (react-beautiful-dnd)[https://github.com/atlassian/react-beautiful-dnd], because dendriform takes care of the unique keying of array elements for you.
+Drag and drop can be implemented easily with libraries such as [react-beautiful-dnd](https://github.com/atlassian/react-beautiful-dnd), because dendriform takes care of the unique keying of array elements for you.
 
 ```js
 import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
