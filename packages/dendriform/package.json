@@ -2,7 +2,7 @@
   "version": "2.0.0-alpha.3",
   "license": "MIT",
   "main": "dist/index.js",
-  "description": "Build feature-rich data-editing React UIs with great performance and not much code.",
+  "description": "Build feature-rich data-editing React UIs with great performance and little code.",
   "typings": "dist/index.d.ts",
   "files": [
     "dist",
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "dendriform-immer-patch-optimiser": "^1.0.0-alpha.1",
-    "immer": "7.0.8",
+    "immer": "9.0.1",
     "shallow-equal": "1.2.1"
   },
   "peerDependencies": {

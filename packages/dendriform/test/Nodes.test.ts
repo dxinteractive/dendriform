@@ -1,6 +1,6 @@
 import {newNode, addNode, getNode, getPath, getNodeByPath, updateNode, removeNode, produceNodePatches} from '../src/index';
 import type {Nodes, NodeAny, NewNodeCreator} from '../src/index';
-import {BASIC, OBJECT, ARRAY, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, applyPatches} from 'dendriform-immer-patch-optimiser';
 
 const createNodesFrom = (value: unknown): [Nodes, NewNodeCreator] => {
     const nodes = {};
@@ -77,6 +77,24 @@ describe(`Nodes`, () => {
 
             expect(newNode(countRef)(arr, -1)).toEqual({
                 type: ARRAY,
+                child: undefined,
+                parentId: -1,
+                id: 0
+            });
+        });
+
+        test(`should accept maps`, () => {
+            const countRef = {
+                current: 0
+            };
+
+            const map = new Map<number,string>([
+                [1, 'one'],
+                [2, 'two']
+            ]);
+
+            expect(newNode(countRef)(map, -1)).toEqual({
+                type: MAP,
                 child: undefined,
                 parentId: -1,
                 id: 0

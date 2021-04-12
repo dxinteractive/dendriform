@@ -7,7 +7,7 @@
 
 
 
-Build feature-rich data-editing React UIs with great performance and not much code.
+Build feature-rich data-editing React UIs with great performance and little code.
 
 **[See the demos](http://dendriform.xyz)**
 
@@ -87,6 +87,8 @@ npm install --save dendriform
 - [Rendering](#rendering)
 - [Rendering arrays](#rendering-arrays)
 - [Setting data](#setting-data)
+- [ES6 classes](#es6-classes)
+- [ES6 maps](#es6-maps)
 - [Form inputs](#form-inputs)
 - [Subscribing to changes](#subscribing-to-changes)
 - [Array operations](#array-operations)
@@ -129,7 +131,7 @@ function MyComponent(props) {
 }
 ```
 
-The value can be of any type, however only plain objects and arrays will be able to use [branching](#branching) to access and modify child values.
+The value can be of any type, however only plain objects, arrays, [ES6 classes](#es6-classes) and [ES6 maps](#es6-maps) will be able to use [branching](#branching) to access and modify child values.
 
 ### Values
 
@@ -390,6 +392,95 @@ form.done();
 // form.value will update to become 3
 ```
 
+### ES6 classes
+
+ES6 classes can be stored in a form and its properties can be accessed using branch methods.
+
+```js
+class Person {
+    firstName = '';
+    lastName = '';
+}
+
+const person = new Person();
+person.firstName = 'Billy';
+person.lastName = 'Thump';
+
+const form = new Dendriform(person);
+
+// form.branch('firstName').value will be 'Billy'
+```
+
+But by default you will not be able to modify this value.
+
+```js
+const form = new Dendriform(person);
+form.branch('firstName').set('Janet');
+// ^ throws an error
+```
+
+To modify a class property, your class must have the `immerable` property on it [as immer's documentation describes(https://immerjs.github.io/immer/complex-objects).
+
+You should import `immerable` from `dendriform` so you are guaranteed to get the immerable symbol from the version of immer that dendriform uses.
+
+```js
+import {immerable} from 'dendriform';
+
+class Person {
+    firstName = '';
+    lastName = '';
+    [immerable] = true; // makes the class immerable
+}
+
+const person = new Person();
+person.firstName = 'Billy';
+person.lastName = 'Thump';
+
+const form = new Dendriform(person);
+form.branch('firstName').set('Janet');
+```
+
+[Demo](http://dendriform.xyz#es6-classes)
+
+### ES6 maps
+
+ES6 maps can be stored in a form and its properties can be accessed using branch methods.
+
+```js
+const usersById = new Map();
+usersById.set(123, 'Harry');
+usersById.set(456, 'Larry');
+
+const form = new Dendriform(usersById);
+
+// form.branch(123).value will be 'Harry'
+```
+
+But by default you will not be able to modify this value.
+
+```js
+const form = new Dendriform(usersById);
+form.branch(456).set('Janet');
+// ^ throws an error
+```
+
+To modify a `Map`s value, support must be explicitly enabled by calling `enableMapSet()` [as immer's documentation describes(https://immerjs.github.io/immer/map-set).
+
+```js
+import {enableMapSet} from 'immer';
+
+enableMapSet();
+
+const usersById = new Map();
+usersById.set(123, 'Harry');
+usersById.set(456, 'Larry');
+
+const form = new Dendriform(usersById);
+form.branch(456).set('Janet');
+```
+
+[Demo](http://dendriform.xyz#es6-maps)
+
 ### Form inputs
 
 You can easily bind parts of your data to form inputs using `useInput()` and `useCheckbox()`. The props they return can be spread onto form elements. A debounce value (milliseconds) can also be provided to `useInput()` to prevent too many updates happening in a short space of time.
@@ -593,7 +684,7 @@ function MyComponent(props) {
 
 Dendriform can keep track of the history of changes and supports undo and redo. Activate this by specifying the maximum number of undos you would like to allow in the options object when creating a form.
 
-History items consist of immer patches that have been optimised, so they take up very little memory in comparison to full state snapshots.
+History items consist of [immer patches](https://immerjs.github.io/immer/patches) that have been optimised, so they take up very little memory in comparison to full state snapshots.
 
 ```js
 const form = new Dendriform({name: 'Bill'}, {history: 50});

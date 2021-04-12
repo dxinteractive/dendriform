@@ -1,13 +1,16 @@
-import {useDendriform, Dendriform, noChange, sync, useSync} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 
 import React from 'react';
 import Enzyme, {mount} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
+import {enableMapSet} from 'immer';
 
 Enzyme.configure({
     adapter: new Adapter()
 });
+
+enableMapSet();
 
 type MyComponentProps<V> = {
     foo: number;
@@ -668,6 +671,82 @@ describe(`Dendriform`, () => {
         });
 
         // TODO what about misses?
+    });
+
+    describe(`es6 values`, () => {
+
+        describe(`es6 class`, () => {
+
+            test(`should allow branching of plain ES6 class, but not setting`, () => {
+                expect.assertions(3);
+
+                class MyClass {
+                    hello = "hi";
+                }
+
+                const instance = new MyClass();
+
+                const form = new Dendriform(instance);
+                expect(form.value).toBe(instance);
+                expect(form.branch('hello').value).toBe("hi");
+
+                expect(() => form.branch('hello').set('bye')).toThrow('produce can only be called on things that are draftable');
+            });
+
+            test(`should allow branching and setting if class is immerable`, () => {
+
+                class MyClass {
+                    hello = "hi";
+                    [immerable] = true;
+                }
+
+                const instance = new MyClass();
+
+                const form = new Dendriform(instance);
+                expect(form.value).toBe(instance);
+                expect(form.branch('hello').value).toBe("hi");
+
+                form.branch('hello').set('bye');
+                expect(form.value).toEqual({
+                    hello: 'bye',
+                    [immerable]: true
+                });
+            });
+
+        });
+
+        describe(`es6 Map`, () => {
+
+            test(`should allow branching and setting of ES6 Map`, () => {
+
+                const form = new Dendriform(new Map<string,number>([
+                    ['one', 1],
+                    ['two', 2]
+                ]));
+
+                expect(form.branch('one').value).toBe(1);
+
+                form.branch('one').set(3);
+                expect(form.value.get('one')).toBe(3);
+                expect(form.value.get('two')).toBe(2);
+            });
+
+            test(`should allow branching and setting of ES6 Map with numeric keys`, () => {
+
+                const form = new Dendriform(new Map<number,string>([
+                    [1, 'one'],
+                    [2, 'two']
+                ]));
+
+                expect(form.branch(1).value).toBe('one');
+
+                form.branch(1).set('one!');
+                expect(form.value.get(1)).toBe('one!');
+                expect(form.value.get(2)).toBe('two');
+            });
+
+        });
+
     });
 
     describe(`.render()`, () => {
