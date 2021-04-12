@@ -167,7 +167,7 @@ export const produceNodePatches = (
     newNodeCreator: NewNodeCreator,
     baseValue: unknown,
     valuePatches: DendriformPatch[]
-): [Nodes, DendriformPatch[], DendriformPatch[]] => {
+): readonly [Nodes, DendriformPatch[], DendriformPatch[]] => {
 
     const result = produceWithPatches(nodes, draft => {
 
@@ -233,5 +233,5 @@ export const produceNodePatches = (
 
     (result[1] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');
     (result[2] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');
-    return result;
+    return result as readonly [Nodes, DendriformPatch[], DendriformPatch[]];
 };
