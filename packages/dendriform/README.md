@@ -87,7 +87,8 @@ npm install --save dendriform
 - [Rendering](#rendering)
 - [Rendering arrays](#rendering-arrays)
 - [Setting data](#setting-data)
-- [ES6 classes](#esr-classes)
+- [ES6 classes](#es6-classes)
+- [ES6 maps](#es6-maps)
 - [Form inputs](#form-inputs)
 - [Subscribing to changes](#subscribing-to-changes)
 - [Array operations](#array-operations)
@@ -130,7 +131,7 @@ function MyComponent(props) {
 }
 ```
 
-The value can be of any type, however only plain objects, arrays and [ES6 classes](#es6-classes) will be able to use [branching](#branching) to access and modify child values.
+The value can be of any type, however only plain objects, arrays, [ES6 classes](#es6-classes) and [ES6 maps](#es6-maps) will be able to use [branching](#branching) to access and modify child values.
 
 ### Values
 
@@ -439,6 +440,48 @@ const form = new Dendriform(person);
 form.branch('firstName').set('Janet');
 ```
 
+[Demo](http://dendriform.xyz#es6-classes)
+
+### ES6 maps
+
+ES6 maps can be stored in a form and its properties can be accessed using branch methods.
+
+```js
+const usersById = new Map();
+usersById.set(123, 'Harry');
+usersById.set(456, 'Larry');
+
+const form = new Dendriform(usersById);
+
+// form.branch(123).value will be 'Harry'
+```
+
+But by default you will not be able to modify this value.
+
+```js
+const form = new Dendriform(usersById);
+form.branch(456).set('Janet');
+// ^ throws an error
+```
+
+To modify a `Map`s value, support must be explicitly enabled by calling `enableMapSet()` [as immer's documentation describes(https://immerjs.github.io/immer/map-set).
+
+You should import `enableMapSet` from `dendriform` so you are guaranteed to enable Maps on the version of immer that dendriform uses.
+
+```js
+import {enableMapSet} from 'dendriform';
+
+enableMapSet();
+
+const usersById = new Map();
+usersById.set(123, 'Harry');
+usersById.set(456, 'Larry');
+
+const form = new Dendriform(usersById);
+form.branch(456).set('Janet');
+```
+
+[Demo](http://dendriform.xyz#es6-maps)
 
 ### Form inputs
 

@@ -6,4 +6,4 @@ export * from './array';
 export * from './useInput';
 export * from './useCheckbox';
 export * from './sync';
-export {immerable} from 'immer';
+export {immerable, enableMapSet} from 'immer';

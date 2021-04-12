@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, getType, has, get, set, each, clone, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, set, each, clone, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path, DendriformPatch} from 'dendriform-immer-patch-optimiser';
 import {produceWithPatches, setAutoFreeze} from 'immer';
 
@@ -20,6 +20,13 @@ export type NodeArray = {
     parentId: number;
 };
 
+export type NodeMap = {
+    type: typeof MAP;
+    child?: Map<string|number,number>;
+    id: number;
+    parentId: number;
+};
+
 export type NodeBasic = {
     type: typeof BASIC;
     child: undefined;
@@ -27,7 +34,7 @@ export type NodeBasic = {
     parentId: number;
 };
 
-export type NodeAny = NodeObject|NodeArray|NodeBasic;
+export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap;
 
 export type Nodes = {[id: string]: NodeAny};
 
@@ -63,7 +70,12 @@ export const _prepChild = <P>(
 
     if(parentNode.type === BASIC || parentNode.child) return;
 
-    const child: number[]|{[key: string]: number} = parentNode.type === ARRAY ? [] : {};
+    const child: number[]|{[key: string]: number}|Map<string|number,number> = parentNode.type === MAP
+        ? new Map()
+        : parentNode.type === ARRAY
+            ? []
+            : {};
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     each(parentValueRef, (value, key: any) => {
         const childNode = newNodeCreator(value, parentNode.id);

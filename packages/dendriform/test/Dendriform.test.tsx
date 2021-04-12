@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable, enableMapSet} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 
 import React from 'react';
@@ -8,6 +8,8 @@ import Adapter from 'enzyme-adapter-react-16';
 Enzyme.configure({
     adapter: new Adapter()
 });
+
+enableMapSet();
 
 type MyComponentProps<V> = {
     foo: number;
@@ -708,6 +710,38 @@ describe(`Dendriform`, () => {
                     hello: 'bye',
                     [immerable]: true
                 });
+            });
+
+        });
+
+        describe(`es6 Map`, () => {
+
+            test(`should allow branching and setting of ES6 Map`, () => {
+
+                const form = new Dendriform(new Map<string,number>([
+                    ['one', 1],
+                    ['two', 2]
+                ]));
+
+                expect(form.branch('one').value).toBe(1);
+
+                form.branch('one').set(3);
+                expect(form.value.get('one')).toBe(3);
+                expect(form.value.get('two')).toBe(2);
+            });
+
+            test(`should allow branching and setting of ES6 Map with numeric keys`, () => {
+
+                const form = new Dendriform(new Map<number,string>([
+                    [1, 'one'],
+                    [2, 'two']
+                ]));
+
+                expect(form.branch(1).value).toBe('one');
+
+                form.branch(1).set('one!');
+                expect(form.value.get(1)).toBe('one!');
+                expect(form.value.get(2)).toBe('two');
             });
 
         });

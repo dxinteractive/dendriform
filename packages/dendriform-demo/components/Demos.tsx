@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState, useRef, memo} from 'react';
-import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable} from 'dendriform';
+import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable, enableMapSet} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2} from '../components/Text';
 import styled from 'styled-components';
@@ -467,6 +467,8 @@ function ES6Classes(): React.ReactElement {
 }
 
 const ES6ClassesCode = `
+import {immerable} from 'dendriform';
+
 class Person {
     firstName = '';
     lastName = '';
@@ -488,6 +490,55 @@ function MyComponent(props) {
         ))}
         {form.render('lastName', form => (
             <label>last name: <input {...useInput(form, 150)} /></label>
+        ))}
+    </div>;
+}
+`;
+
+//
+// es6 maps
+//
+
+enableMapSet();
+
+function ES6Maps(): React.ReactElement {
+
+    const form = useDendriform(() => {
+        const usersById = new Map<number, string>();
+        usersById.set(123, 'Harry');
+        usersById.set(456, 'Larry');
+        return usersById;
+    });
+
+    return <Region>
+        {form.render(123, form => (
+            <label>123: <input {...useInput(form, 150)} /></label>
+        ))}
+        {form.render(456, form => (
+            <label>456: <input {...useInput(form, 150)} /></label>
+        ))}
+    </Region>;
+}
+
+const ES6MapsCode = `
+import {enableMapSet} from 'dendriform';
+enableMapSet();
+
+function MyComponent(props) {
+
+    const form = useDendriform(() => {
+        const usersById = new Map<number, string>();
+        usersById.set(123, 'Harry');
+        usersById.set(456, 'Larry');
+        return usersById;
+    });
+
+    return <div>
+        {form.render(123, form => (
+            <label>123: <input {...useInput(form, 150)} /></label>
+        ))}
+        {form.render(456, form => (
+            <label>456: <input {...useInput(form, 150)} /></label>
         ))}
     </div>;
 }
@@ -1428,6 +1479,12 @@ const DEMOS: DemoObject[] = [
         Demo: ES6Classes,
         code: ES6ClassesCode,
         anchor: 'es6-classes'
+    },
+    {
+        title: 'ES6 maps',
+        Demo: ES6Maps,
+        code: ES6MapsCode,
+        anchor: 'es6-maps'
     },
     {
         title: 'Form inputs',

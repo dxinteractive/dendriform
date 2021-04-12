@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, getType, has, get, getIn, set, each, clone} from '../src/index';
+import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, getIn, set, each, clone} from '../src/index';
 
 describe(`getType`, () => {
     test(`should identify basics`, () => {
@@ -17,6 +17,10 @@ describe(`getType`, () => {
 
     test(`should identify array`, () => {
         expect(getType([])).toBe(ARRAY);
+    });
+
+    test(`should identify map`, () => {
+        expect(getType(new Map())).toBe(MAP);
     });
 });
 
@@ -38,6 +42,13 @@ describe(`has`, () => {
         expect(() => has(null, 4)).toThrow(`Cant access property 4 of null`);
         expect(() => has(undefined, 4)).toThrow(`Cant access property 4 of undefined`);
     });
+
+    test(`should work with map`, () => {
+        const map = new Map<number,boolean>([[0,true],[2,false]]);
+        expect(has(map, 0)).toBe(true);
+        expect(has(map, 1)).toBe(false);
+        expect(has(map, 2)).toBe(true);
+    });
 });
 
 describe(`get`, () => {
@@ -55,6 +66,16 @@ describe(`get`, () => {
 
     test(`should work with array and miss`, () => {
         expect(get(['a','b'], 4)).toBe(undefined);
+    });
+
+    test(`should work with map`, () => {
+        const map = new Map<number,boolean>([[0,true],[2,false]]);
+        expect(get(map, 2)).toBe(false);
+    });
+
+    test(`should work with map and miss`, () => {
+        const map = new Map<number,boolean>([[0,true],[2,false]]);
+        expect(get(map, 1)).toBe(undefined);
     });
 
     test(`should error on basic types`, () => {
@@ -100,6 +121,12 @@ describe(`set`, () => {
         expect(arr).toEqual([1,20,3]);
     });
 
+    test(`should work with map`, () => {
+        const map = new Map<number,boolean>([[0,true],[2,false]]);
+        set(map, 2, true);
+        expect(map.get(2)).toBe(true);
+    });
+
     test(`should error on basic types`, () => {
         expect(() => set(100, 4, 4)).toThrow(`Cant access property 4 of 100`);
         expect(() => set("str", 4, 4)).toThrow(`Cant access property 4 of str`);
@@ -138,6 +165,18 @@ describe(`each`, () => {
         expect(callback.mock.calls[2][1]).toBe(2);
     });
 
+    test(`should work with map`, () => {
+        const callback = jest.fn();
+        const map = new Map([['foo', 1], ['bar', 2]]);
+
+        each(map, callback);
+
+        expect(callback).toHaveBeenCalledTimes(2);
+        expect(callback.mock.calls[0][0]).toBe(1);
+        expect(callback.mock.calls[0][1]).toBe('foo');
+        expect(callback.mock.calls[1][0]).toBe(2);
+    });
+
     test(`should error on basic types`, () => {
         const callback = jest.fn();
 
@@ -169,5 +208,14 @@ describe(`clone`, () => {
 
         expect(cloned).not.toBe(arr);
         expect(cloned).toEqual(arr);
+    });
+
+    test(`should work with map`, () => {
+        const map = new Map([['foo', 1], ['bar', 2]]);
+        const cloned = clone(map);
+
+        expect(cloned).not.toBe(map);
+        expect(cloned.get('foo')).toBe(1);
+        expect(cloned.get('bar')).toBe(2);
     });
 });
