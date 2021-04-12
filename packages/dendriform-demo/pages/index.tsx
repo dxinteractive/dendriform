@@ -13,7 +13,7 @@ export default function Main(): React.ReactElement {
             </Box>
             <Box maxWidth="20rem">
                 <Logo>dendriform</Logo>
-                <Text as="div" color="subtitle" style={{fontStyle: "italic", lineHeight: '1.3rem'}}>Build feature-rich data-editing React UIs with great performance and not much code.</Text>
+                <Text as="div" color="subtitle" style={{fontStyle: "italic", lineHeight: '1.3rem'}}>Build feature-rich data-editing React UIs with great performance and little code.</Text>
             </Box>
         </Flex>
         <FloatZone>

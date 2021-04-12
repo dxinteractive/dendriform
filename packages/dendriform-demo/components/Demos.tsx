@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState, useRef, memo} from 'react';
-import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array} from 'dendriform';
+import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2} from '../components/Text';
 import styled from 'styled-components';
@@ -433,6 +433,62 @@ function MyComponent(props) {
 
         <button onClick={add3nobuffer}>add 1, 3 times without buffering</button>
         <button onClick={add3buffer}>add 1, 3 times with buffering</button>
+    </div>;
+}
+`;
+
+//
+// es6 classes
+//
+
+class Person {
+    firstName = '';
+    lastName = '';
+    [immerable] = true;
+}
+
+function ES6Classes(): React.ReactElement {
+
+    const form = useDendriform(() => {
+        const person = new Person();
+        person.firstName = 'Billy';
+        person.lastName = 'Thump';
+        return person;
+    });
+
+    return <Region>
+        {form.render('firstName', form => (
+            <Region of="label">first name: <input {...useInput(form, 150)} /></Region>
+        ))}
+        {form.render('lastName', form => (
+            <Region of="label">last name: <input {...useInput(form, 150)} /></Region>
+        ))}
+    </Region>;
+}
+
+const ES6ClassesCode = `
+class Person {
+    firstName = '';
+    lastName = '';
+    [immerable] = true;
+}
+
+function MyComponent(props) {
+
+    const form = useDendriform(() => {
+        const person = new Person();
+        person.firstName = 'Billy';
+        person.lastName = 'Thump';
+        return person;
+    });
+
+    return <div>
+        {form.render('firstName', form => (
+            <label>first name: <input {...useInput(form, 150)} /></label>
+        ))}
+        {form.render('lastName', form => (
+            <label>last name: <input {...useInput(form, 150)} /></label>
+        ))}
     </div>;
 }
 `;
@@ -1366,6 +1422,12 @@ const DEMOS: DemoObject[] = [
         Demo: SettingDataBuffer,
         code: SettingDataBufferCode,
         anchor: 'buffer'
+    },
+    {
+        title: 'ES6 classes',
+        Demo: ES6Classes,
+        code: ES6ClassesCode,
+        anchor: 'es6-classes'
     },
     {
         title: 'Form inputs',

@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 
 import React from 'react';
@@ -668,6 +668,50 @@ describe(`Dendriform`, () => {
         });
 
         // TODO what about misses?
+    });
+
+    describe(`es6 values`, () => {
+
+        describe(`es6 class`, () => {
+
+            test(`should allow branching of plain ES6 class, but not setting`, () => {
+                expect.assertions(3);
+
+                class MyClass {
+                    hello = "hi";
+                }
+
+                const instance = new MyClass();
+
+                const form = new Dendriform(instance);
+                expect(form.value).toBe(instance);
+                expect(form.branch('hello').value).toBe("hi");
+
+                expect(() => form.branch('hello').set('bye')).toThrow('produce can only be called on things that are draftable');
+            });
+
+            test(`should allow branching and setting if class is immerable`, () => {
+
+                class MyClass {
+                    hello = "hi";
+                    [immerable] = true;
+                }
+
+                const instance = new MyClass();
+
+                const form = new Dendriform(instance);
+                expect(form.value).toBe(instance);
+                expect(form.branch('hello').value).toBe("hi");
+
+                form.branch('hello').set('bye');
+                expect(form.value).toEqual({
+                    hello: 'bye',
+                    [immerable]: true
+                });
+            });
+
+        });
+
     });
 
     describe(`.render()`, () => {
