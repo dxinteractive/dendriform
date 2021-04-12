@@ -419,7 +419,7 @@ form.branch('firstName').set('Janet');
 // ^ throws an error
 ```
 
-To modify a class property, your class must have the `immerable` property on it [as immer's documentation describes(https://immerjs.github.io/immer/complex-objects).
+To modify a class property, your class must have the `immerable` property on it [as immer's documentation describes](https://immerjs.github.io/immer/complex-objects).
 
 You should import `immerable` from `dendriform` so you are guaranteed to get the immerable symbol from the version of immer that dendriform uses.
 
@@ -464,7 +464,7 @@ form.branch(456).set('Janet');
 // ^ throws an error
 ```
 
-To modify a `Map`s value, support must be explicitly enabled by calling `enableMapSet()` [as immer's documentation describes(https://immerjs.github.io/immer/map-set).
+To modify a `Map`s value, support must be explicitly enabled by calling `enableMapSet()` [as immer's documentation describes](https://immerjs.github.io/immer/map-set).
 
 ```js
 import {enableMapSet} from 'immer';
