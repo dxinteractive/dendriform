@@ -2,7 +2,7 @@ module.exports = [
     {
         name: 'everything combined',
         path: "dist/dendriform.esm.js",
-        limit: "8.3 KB",
+        limit: "8.4 KB",
         ignore: ['react', 'react-dom']
     },
     {

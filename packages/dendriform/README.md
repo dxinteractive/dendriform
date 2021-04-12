@@ -466,10 +466,8 @@ form.branch(456).set('Janet');
 
 To modify a `Map`s value, support must be explicitly enabled by calling `enableMapSet()` [as immer's documentation describes(https://immerjs.github.io/immer/map-set).
 
-You should import `enableMapSet` from `dendriform` so you are guaranteed to enable Maps on the version of immer that dendriform uses.
-
 ```js
-import {enableMapSet} from 'dendriform';
+import {enableMapSet} from 'immer';
 
 enableMapSet();
 

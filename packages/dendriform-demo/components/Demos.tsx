@@ -1,11 +1,12 @@
 import {useCallback, useEffect, useState, useRef, memo} from 'react';
-import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable, enableMapSet} from 'dendriform';
+import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2} from '../components/Text';
 import styled from 'styled-components';
 import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
 import type {DropResult} from 'react-beautiful-dnd';
 import type {Draft} from 'immer';
+import {enableMapSet} from 'immer';
 import type {ThemeProps} from '../pages/_app';
 
 //

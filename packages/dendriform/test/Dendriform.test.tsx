@@ -1,9 +1,10 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable, enableMapSet} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 
 import React from 'react';
 import Enzyme, {mount} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
+import {enableMapSet} from 'immer';
 
 Enzyme.configure({
     adapter: new Adapter()
