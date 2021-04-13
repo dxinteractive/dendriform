@@ -71,7 +71,7 @@ const GlobalStyle = createGlobalStyle`
     body {
         font-weight: 400;
         height: 100%;
-        line-height: 1.5em;
+        line-height: 1.2em;
         overflow-x: hidden;
         text-rendering: optimizelegibility;
 
@@ -91,6 +91,8 @@ const fonts = {
 };
 
 const fontSizes = {
+    smaller: '.8rem',
+    small: '.9rem',
     big: '1.2rem',
     bigger: '1.5rem'
 };
@@ -102,6 +104,7 @@ const widths = {
 const colors = {
     subtitle: '#4f81a9',
     text: '#6490b3',
+    code: '#a5c5de',
     heading: '#ffffff',
     link: 'rgb(241 67 44)',
     line: '#1e2c37',
@@ -120,6 +123,7 @@ export type Theme = {
     colors: {
         subtitle: string;
         text: string;
+        code: string;
         heading: string;
         link: string;
         line: string;
@@ -127,6 +131,8 @@ export type Theme = {
         backgroundLight: string;
     };
     fontSizes: {
+        smaller: string;
+        small: string;
         big: string;
         bigger: string;
     };
