@@ -104,7 +104,7 @@ class Core<C> {
     constructor(config: CoreConfig<C>) {
         this.value = config.initialValue;
         // create a root node for the value
-        addNode(this.nodes, this.newNodeCreator(this.value, 'root'));
+        addNode(this.nodes, this.newNodeCreator(this.value));
 
         this.historyLimit = config.options.history || 0;
         this.replaceByDefault = !!config.options.replace;

@@ -6,7 +6,7 @@ const createNodesFrom = (value: unknown): [Nodes, NewNodeCreator] => {
     const nodes = {};
     const countRef = {current: 0};
     const newNodeCreator = newNode(countRef);
-    addNode(nodes, newNodeCreator(value, 'root'));
+    addNode(nodes, newNodeCreator(value));
     return [nodes, newNodeCreator];
 };
 
@@ -22,31 +22,31 @@ describe(`Nodes`, () => {
             const expected = {
                 type: BASIC,
                 child: undefined,
-                parentId: 'root',
+                parentId: '',
                 id: '0'
             };
 
-            expect(newNode(countRef)(undefined, 'root')).toEqual(expected);
+            expect(newNode(countRef)(undefined)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(null, 'root')).toEqual(expected);
+            expect(newNode(countRef)(null)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(1, 'root')).toEqual(expected);
+            expect(newNode(countRef)(1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)('string', 'root')).toEqual(expected);
+            expect(newNode(countRef)('string')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(true, 'root')).toEqual(expected);
+            expect(newNode(countRef)(true)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(NaN, 'root')).toEqual(expected);
+            expect(newNode(countRef)(NaN)).toEqual(expected);
             expect(countRef.current).toBe(1);
         });
 
@@ -60,10 +60,10 @@ describe(`Nodes`, () => {
                 bar: 'bar!'
             };
 
-            expect(newNode(countRef)(obj, 'root')).toEqual({
+            expect(newNode(countRef)(obj)).toEqual({
                 type: OBJECT,
                 child: undefined,
-                parentId: 'root',
+                parentId: '',
                 id: '0'
             });
         });
@@ -75,10 +75,10 @@ describe(`Nodes`, () => {
 
             const arr = ['a','b','c'];
 
-            expect(newNode(countRef)(arr, 'root')).toEqual({
+            expect(newNode(countRef)(arr)).toEqual({
                 type: ARRAY,
                 child: undefined,
-                parentId: 'root',
+                parentId: '',
                 id: '0'
             });
         });
@@ -93,10 +93,10 @@ describe(`Nodes`, () => {
                 [2, 'two']
             ]);
 
-            expect(newNode(countRef)(map, 'root')).toEqual({
+            expect(newNode(countRef)(map)).toEqual({
                 type: MAP,
                 child: undefined,
-                parentId: 'root',
+                parentId: '',
                 id: '0'
             });
         });
@@ -109,7 +109,7 @@ describe(`Nodes`, () => {
             const node: NodeAny = {
                 type: OBJECT,
                 child: undefined,
-                parentId: 'root',
+                parentId: '',
                 id: '0'
             };
 
@@ -137,7 +137,7 @@ describe(`Nodes`, () => {
             const node: NodeAny = {
                 type: OBJECT,
                 child: undefined,
-                parentId: 'root',
+                parentId: '',
                 id: '0'
             };
 
@@ -699,7 +699,7 @@ describe(`Nodes`, () => {
                     ['0']: {
                         child: undefined,
                         id: '0',
-                        parentId: 'root',
+                        parentId: '',
                         type: BASIC
                     }
                 });

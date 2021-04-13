@@ -42,10 +42,10 @@ export type CountRef = {
     current: number
 };
 
-export type NewNodeCreator = (value: unknown, parentId: string) => NodeAny;
+export type NewNodeCreator = (value: unknown, parentId?: string) => NodeAny;
 
 export const newNode = (countRef: CountRef): NewNodeCreator => {
-    return (value: unknown, parentId: string): NodeAny => {
+    return (value: unknown, parentId = ''): NodeAny => {
         const type = getType(value);
         const id = `${countRef.current++}`;
         return {
@@ -138,7 +138,7 @@ export const getPath = (nodes: Nodes, id: string): Path|undefined => {
     if(!node) return undefined;
 
     const path: Path = [];
-    while(node && node.parentId !== 'root') {
+    while(node && node.parentId !== '') {
         const parentNode = get(nodes, node.parentId) as NodeAny;
         const key = _getKey(parentNode, node);
         if(key === undefined) return undefined;
