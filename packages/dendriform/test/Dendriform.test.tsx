@@ -31,7 +31,7 @@ describe(`Dendriform`, () => {
             const form = new Dendriform(123);
 
             expect(form.value).toBe(123);
-            expect(form.id).toBe(0);
+            expect(form.id).toBe('0');
         });
 
         test(`should set value`, () => {
@@ -40,7 +40,7 @@ describe(`Dendriform`, () => {
             form.set(456);
 
             expect(form.value).toBe(456);
-            expect(form.id).toBe(0);
+            expect(form.id).toBe('0');
         });
 
         test(`should set value from immer producer`, () => {
@@ -49,7 +49,7 @@ describe(`Dendriform`, () => {
             form.set(draft => draft + 1);
 
             expect(form.value).toBe(2);
-            expect(form.id).toBe(0);
+            expect(form.id).toBe('0');
         });
 
         test(`merging multiple sets`, () => {
@@ -62,7 +62,7 @@ describe(`Dendriform`, () => {
             form.done();
 
             expect(form.value).toBe(4);
-            expect(form.id).toBe(0);
+            expect(form.id).toBe('0');
 
             form.set(draft => draft + 1);
             form.set(draft => draft + 1);
@@ -500,7 +500,7 @@ describe(`Dendriform`, () => {
             const bForm = form.branch(1);
 
             expect(bForm.value).toBe('B');
-            expect(bForm.id).toBe(2);
+            expect(bForm.id).toBe('2');
         });
 
         test(`should produce child value with new value`, () => {
@@ -540,7 +540,7 @@ describe(`Dendriform`, () => {
                 const bForm = form.branch('bar');
 
                 expect(bForm.value).toBe(undefined);
-                expect(bForm.id).toBe(2);
+                expect(bForm.id).toBe('2');
             });
 
             test(`should produce child value with new value`, () => {
@@ -580,7 +580,7 @@ describe(`Dendriform`, () => {
             const barForm = form.branch(['foo','bar']);
 
             expect(barForm.value).toBe(123);
-            expect(barForm.id).toBe(2);
+            expect(barForm.id).toBe('2');
         });
 
         test(`should produce child value with new value`, () => {
@@ -607,7 +607,7 @@ describe(`Dendriform`, () => {
             const forms = form.branchAll();
 
             expect(forms.map(f => f.value)).toEqual(['A','B','C']);
-            expect(forms.map(f => f.id)).toEqual([1,2,3]);
+            expect(forms.map(f => f.id)).toEqual(['1','2','3']);
         });
 
         test(`should branchAll() no levels (using [])`, () => {
@@ -615,7 +615,7 @@ describe(`Dendriform`, () => {
             const forms = form.branchAll([]);
 
             expect(forms.map(f => f.value)).toEqual(['A','B','C']);
-            expect(forms.map(f => f.id)).toEqual([1,2,3]);
+            expect(forms.map(f => f.id)).toEqual(['1','2','3']);
         });
 
         test(`should branchAll() one level with key`, () => {
@@ -623,7 +623,7 @@ describe(`Dendriform`, () => {
             const forms = form.branchAll('foo');
 
             expect(forms.map(f => f.value)).toEqual(['A','B','C']);
-            expect(forms.map(f => f.id)).toEqual([2,3,4]);
+            expect(forms.map(f => f.id)).toEqual(['2','3','4']);
         });
 
         test(`should branchAll() one level with path`, () => {
@@ -631,7 +631,7 @@ describe(`Dendriform`, () => {
             const forms = form.branchAll(['foo']);
 
             expect(forms.map(f => f.value)).toEqual(['A','B','C']);
-            expect(forms.map(f => f.id)).toEqual([2,3,4]);
+            expect(forms.map(f => f.id)).toEqual(['2','3','4']);
         });
 
         test(`should branchAll() two levels with path`, () => {
@@ -644,7 +644,7 @@ describe(`Dendriform`, () => {
             const forms = form.branchAll(['foo', 'bar']);
 
             expect(forms.map(f => f.value)).toEqual(['A','B','C']);
-            expect(forms.map(f => f.id)).toEqual([3,4,5]);
+            expect(forms.map(f => f.id)).toEqual(['3','4','5']);
         });
 
         test(`should produce child value with new value`, () => {

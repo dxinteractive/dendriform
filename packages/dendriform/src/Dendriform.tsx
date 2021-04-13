@@ -56,7 +56,7 @@ type ChangeTypeIndex = 'index';
 type ChangeTypeHistory = 'history';
 type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ChangeCallbackRef = [ChangeType, number, ChangeCallback<any>, any];
+type ChangeCallbackRef = [ChangeType, string, ChangeCallback<any>, any];
 
 export type DeriveCallbackDetails = {
     go: number;
@@ -88,7 +88,7 @@ class Core<C> {
     // the value in the form
     value: C;
     // cached Dendriform instances
-    dendriforms = new Map<number,Dendriform<unknown,C>>();
+    dendriforms = new Map<string,Dendriform<unknown,C>>();
     // derive callback refs, will be called while values are changing and require data to be derived
     deriveCallbackRefs = new Set<DeriveCallbackRef>();
     // change callback refs, will be called when values are to be pushed out to subscribers
@@ -104,7 +104,7 @@ class Core<C> {
     constructor(config: CoreConfig<C>) {
         this.value = config.initialValue;
         // create a root node for the value
-        addNode(this.nodes, this.newNodeCreator(this.value, -1));
+        addNode(this.nodes, this.newNodeCreator(this.value, 'root'));
 
         this.historyLimit = config.options.history || 0;
         this.replaceByDefault = !!config.options.replace;
@@ -114,23 +114,23 @@ class Core<C> {
     // data access
     //
 
-    getPath = (id: number): Path|undefined => {
+    getPath = (id: string): Path|undefined => {
         return getPath(this.nodes, id);
     };
 
-    getPathOrError = (id: number): Path => {
+    getPathOrError = (id: string): Path => {
         const path = this.getPath(id);
         if(!path) die(0, id);
         return path;
     };
 
-    getValue = (id: number): unknown => {
+    getValue = (id: string): unknown => {
         const path = this.getPath(id);
         if(!path) return undefined;
         return getIn(this.value, path);
     };
 
-    getIndex = (id: number): number => {
+    getIndex = (id: string): number => {
         const path = this.getPath(id);
         if(!path) return -1;
         const [key] = path.slice(-1);
@@ -138,7 +138,7 @@ class Core<C> {
         return key;
     };
 
-    valueGettersByType: {[key in ChangeType]: (id: number) => unknown} = {
+    valueGettersByType: {[key in ChangeType]: (id: string) => unknown} = {
         value: this.getValue,
         index: this.getIndex,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -170,7 +170,7 @@ class Core<C> {
     setBuffer?: HistoryPatch;
     replaceByDefault = false;
 
-    set = (id: number, toProduce: unknown): void => {
+    set = (id: string, toProduce: unknown): void => {
         const path = this.getPath(id);
         if(!path) return;
 
@@ -448,7 +448,7 @@ const Branch = React.memo(
 type DendriformBranch<C> = {
     __branch: {
         core: Core<C>;
-        id: number;
+        id: string;
     };
 };
 
@@ -471,7 +471,7 @@ export class Dendriform<V,C=V> {
     // hooks provided by Dendriform can obviously be stateful
 
     core: Core<C>;
-    id: number;
+    id: string;
 
     constructor(initialValue: V|DendriformBranch<C>, options: Options = {}) {
 
@@ -484,7 +484,7 @@ export class Dendriform<V,C=V> {
         }
 
         // if not branch off an existing form, make a core
-        this.id = 0;
+        this.id = '0';
         this.core = new Core<C>({
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore

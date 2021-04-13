@@ -6,7 +6,7 @@ const createNodesFrom = (value: unknown): [Nodes, NewNodeCreator] => {
     const nodes = {};
     const countRef = {current: 0};
     const newNodeCreator = newNode(countRef);
-    addNode(nodes, newNodeCreator(value, -1));
+    addNode(nodes, newNodeCreator(value, 'root'));
     return [nodes, newNodeCreator];
 };
 
@@ -22,31 +22,31 @@ describe(`Nodes`, () => {
             const expected = {
                 type: BASIC,
                 child: undefined,
-                parentId: -1,
-                id: 0
+                parentId: 'root',
+                id: '0'
             };
 
-            expect(newNode(countRef)(undefined, -1)).toEqual(expected);
+            expect(newNode(countRef)(undefined, 'root')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(null, -1)).toEqual(expected);
+            expect(newNode(countRef)(null, 'root')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(1, -1)).toEqual(expected);
+            expect(newNode(countRef)(1, 'root')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)('string', -1)).toEqual(expected);
+            expect(newNode(countRef)('string', 'root')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(true, -1)).toEqual(expected);
+            expect(newNode(countRef)(true, 'root')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(NaN, -1)).toEqual(expected);
+            expect(newNode(countRef)(NaN, 'root')).toEqual(expected);
             expect(countRef.current).toBe(1);
         });
 
@@ -60,11 +60,11 @@ describe(`Nodes`, () => {
                 bar: 'bar!'
             };
 
-            expect(newNode(countRef)(obj, -1)).toEqual({
+            expect(newNode(countRef)(obj, 'root')).toEqual({
                 type: OBJECT,
                 child: undefined,
-                parentId: -1,
-                id: 0
+                parentId: 'root',
+                id: '0'
             });
         });
 
@@ -75,11 +75,11 @@ describe(`Nodes`, () => {
 
             const arr = ['a','b','c'];
 
-            expect(newNode(countRef)(arr, -1)).toEqual({
+            expect(newNode(countRef)(arr, 'root')).toEqual({
                 type: ARRAY,
                 child: undefined,
-                parentId: -1,
-                id: 0
+                parentId: 'root',
+                id: '0'
             });
         });
 
@@ -93,11 +93,11 @@ describe(`Nodes`, () => {
                 [2, 'two']
             ]);
 
-            expect(newNode(countRef)(map, -1)).toEqual({
+            expect(newNode(countRef)(map, 'root')).toEqual({
                 type: MAP,
                 child: undefined,
-                parentId: -1,
-                id: 0
+                parentId: 'root',
+                id: '0'
             });
         });
     });
@@ -109,15 +109,15 @@ describe(`Nodes`, () => {
             const node: NodeAny = {
                 type: OBJECT,
                 child: undefined,
-                parentId: -1,
-                id: 0
+                parentId: 'root',
+                id: '0'
             };
 
             const node2: NodeAny = {
                 type: BASIC,
                 child: undefined,
-                parentId: 0,
-                id: 1
+                parentId: '0',
+                id: '1'
             };
 
             const nodes = {};
@@ -137,15 +137,15 @@ describe(`Nodes`, () => {
             const node: NodeAny = {
                 type: OBJECT,
                 child: undefined,
-                parentId: -1,
-                id: 0
+                parentId: 'root',
+                id: '0'
             };
 
             const nodes = {
                 ['0']: node
             };
 
-            expect(getNode(nodes, 0)).toBe(node);
+            expect(getNode(nodes, '0')).toBe(node);
         });
 
     });
@@ -166,20 +166,20 @@ describe(`Nodes`, () => {
             expect(getNodeByPath(nodes, newNodeCreator, value, ['foo'])).toEqual({
                 type: BASIC,
                 child: undefined,
-                parentId: 0,
-                id: 1
+                parentId: '0',
+                id: '1'
             });
 
             expect(nodes['0'].child).toEqual({
-                foo: 1,
-                bar: 2
+                foo: '1',
+                bar: '2'
             });
 
             expect(nodes['1']).toEqual({
                 type: BASIC,
                 child: undefined,
-                parentId: 0,
-                id: 1
+                parentId: '0',
+                id: '1'
             });
         });
 
@@ -190,23 +190,23 @@ describe(`Nodes`, () => {
             expect(getNodeByPath(nodes, newNodeCreator, value, ['foo'])).toEqual({
                 type: OBJECT,
                 child: undefined,
-                parentId: 0,
-                id: 1
+                parentId: '0',
+                id: '1'
             });
 
             expect(nodes['0'].child).toEqual({
-                foo: 1
+                foo: '1'
             });
 
             expect(getNodeByPath(nodes, newNodeCreator, value, ['foo', 'bar'])).toEqual({
                 type: BASIC,
                 child: undefined,
-                parentId: 1,
-                id: 2
+                parentId: '1',
+                id: '2'
             });
 
             expect(nodes['1'].child).toEqual({
-                bar: 2
+                bar: '2'
             });
         });
 
@@ -217,14 +217,14 @@ describe(`Nodes`, () => {
             expect(getNodeByPath(nodes, newNodeCreator, value, ['baz'])).toEqual({
                 type: BASIC,
                 child: undefined,
-                parentId: 0,
-                id: 3
+                parentId: '0',
+                id: '3'
             });
 
             expect(nodes['0'].child).toEqual({
-                foo: 1,
-                bar: 2,
-                baz: 3
+                foo: '1',
+                bar: '2',
+                baz: '3'
             });
 
             // make sure no mutations have occurred
@@ -238,12 +238,12 @@ describe(`Nodes`, () => {
             expect(getNodeByPath(nodes, newNodeCreator, value, [2])).toEqual({
                 type: BASIC,
                 child: undefined,
-                parentId: 0,
-                id: 3
+                parentId: '0',
+                id: '3'
             });
 
             // internal child check
-            expect(nodes['0'].child).toEqual([1,2,3]);
+            expect(nodes['0'].child).toEqual(['1','2','3']);
         });
 
         test(`should accept arrays and getNodeByPath() and return basic node if nothing at path`, () => {
@@ -253,11 +253,11 @@ describe(`Nodes`, () => {
             expect(getNodeByPath(nodes, newNodeCreator, value, [3])).toEqual({
                 type: BASIC,
                 child: undefined,
-                parentId: 0,
-                id: 4
+                parentId: '0',
+                id: '4'
             });
 
-            expect(nodes['0'].child).toEqual([1,2,3,4]);
+            expect(nodes['0'].child).toEqual(['1','2','3','4']);
         });
     });
 
@@ -265,12 +265,12 @@ describe(`Nodes`, () => {
 
         test(`should getPath() at top`, () => {
             const [nodes] = createNodesFrom({foo: 'foo!', bar: 'bar!'});
-            expect(getPath(nodes, 0)).toEqual([]);
+            expect(getPath(nodes, '0')).toEqual([]);
         });
 
         test(`should getPath() and return undefined if not id`, () => {
             const [nodes] = createNodesFrom({foo: 'foo!', bar: 'bar!'});
-            expect(getPath(nodes, 999)).toBe(undefined);
+            expect(getPath(nodes, '999')).toBe(undefined);
         });
 
         test(`should getPath() on object value`, () => {
@@ -279,7 +279,7 @@ describe(`Nodes`, () => {
             // create child nodes first
             getNodeByPath(nodes, newNodeCreator, value, ['bar']);
             // run test
-            expect(getPath(nodes, 2)).toEqual(['bar']);
+            expect(getPath(nodes, '2')).toEqual(['bar']);
         });
     });
 
@@ -292,7 +292,7 @@ describe(`Nodes`, () => {
             expect(Object.keys(nodes)).toEqual(['0','1','2','3']);
 
             // run test
-            removeNode(nodes, 1);
+            removeNode(nodes, '1');
             expect(Object.keys(nodes)).toEqual(['0','2']);
         });
 
@@ -305,7 +305,7 @@ describe(`Nodes`, () => {
             const nodesBefore = JSON.stringify(nodes);
 
             // run test
-            removeNode(nodes, 1888);
+            removeNode(nodes, '1888');
 
             // should be the same still
             expect(JSON.stringify(nodes)).toBe(nodesBefore);
@@ -320,13 +320,13 @@ describe(`Nodes`, () => {
             // create child nodes first
             getNodeByPath(nodes, newNodeCreator, value, [2]);
             // run test
-            updateNode(nodes, 3, {c: 'd'});
+            updateNode(nodes, '3', {c: 'd'});
             // internal child check
             expect(nodes['3']).toEqual({
                 type: OBJECT,
                 child: undefined,
-                parentId: 0,
-                id: 3
+                parentId: '0',
+                id: '3'
             });
         });
 
@@ -335,17 +335,17 @@ describe(`Nodes`, () => {
             const [nodes, newNodeCreator] = createNodesFrom(value);
             // create child nodes first
             getNodeByPath(nodes, newNodeCreator, value, [2,'c']);
-            expect(nodes['3'].child).toEqual({c: 4});
+            expect(nodes['3'].child).toEqual({c: '4'});
             expect(Object.keys(nodes)).toEqual(['0','1','2','3','4']);
 
             // run test
-            updateNode(nodes, 3,'d');
+            updateNode(nodes, '3','d');
             // internal child check
             expect(nodes['3']).toEqual({
                 type: BASIC,
                 child: undefined,
-                parentId: 0,
-                id: 3
+                parentId: '0',
+                id: '3'
             });
             // internal node check
             expect(Object.keys(nodes)).toEqual(['0','1','2','3']);
@@ -360,7 +360,7 @@ describe(`Nodes`, () => {
             const nodesBefore = JSON.stringify(nodes);
 
             // run test
-            updateNode(nodes, 389890890, {c: 'd'});
+            updateNode(nodes, '389890890', {c: 'd'});
 
             // should be the same still
             expect(JSON.stringify(nodes)).toBe(nodesBefore);
@@ -399,13 +399,13 @@ describe(`Nodes`, () => {
                         ...nodesBefore['1'],
                         child: {
                             ...nodesBefore['1'].child,
-                            baz: 4
+                            baz: '4'
                         }
                     },
                     ['4']: {
                         child: undefined,
-                        id: 4,
-                        parentId: 1,
+                        id: '4',
+                        parentId: '1',
                         type: BASIC
                     }
                 });
@@ -433,7 +433,7 @@ describe(`Nodes`, () => {
                     ['1']: {
                         ...nodesBefore['1'],
                         child: {
-                            foo: 2
+                            foo: '2'
                         }
                     },
                     ['2']: nodesBefore['2']
@@ -508,8 +508,8 @@ describe(`Nodes`, () => {
                     ...nodesBefore,
                     ['3']: {
                         child: undefined,
-                        id: 3,
-                        parentId: 1,
+                        id: '3',
+                        parentId: '1',
                         type: ARRAY
                     }
                 });
@@ -539,12 +539,12 @@ describe(`Nodes`, () => {
                     ...nodesBefore,
                     ['0']: {
                         ...nodesBefore['0'],
-                        child: [1,4,2,3]
+                        child: ['1','4','2','3']
                     },
                     ['4']: {
                         child: undefined,
-                        id: 4,
-                        parentId: 0,
+                        id: '4',
+                        parentId: '0',
                         type: BASIC
                     }
                 });
@@ -571,7 +571,7 @@ describe(`Nodes`, () => {
                 expect(newNodes).toEqual({
                     ['0']: {
                         ...nodesBefore['0'],
-                        child: [1,3]
+                        child: ['1','3']
                     },
                     ['1']: nodesBefore['1'],
                     // 2 should be missing
@@ -622,7 +622,7 @@ describe(`Nodes`, () => {
                     ...nodesBefore,
                     ['0']: {
                         ...nodesBefore['0'],
-                        child: [1,3,2]
+                        child: ['1','3','2']
                     }
                 });
             });
@@ -639,7 +639,7 @@ describe(`Nodes`, () => {
 
                     // expect(nodes['0'].childKeysCached).toBe(undefined);
 
-                    const path = getPath(nodes, 2);
+                    const path = getPath(nodes, '2');
                     expect(path).toEqual([1]);
                     // expect(nodes['0'].childKeysCached).toBe(true);
                 }
@@ -652,7 +652,7 @@ describe(`Nodes`, () => {
 
                 // expect(newNodes['0'].childKeysCached).toBe(false);
 
-                const path2 = getPath(newNodes, 2);
+                const path2 = getPath(newNodes, '2');
                 expect(path2).toEqual([0]);
 
                 // expect(newNodes['0'].childKeysCached).toBe(true);
@@ -698,8 +698,8 @@ describe(`Nodes`, () => {
                 expect(newNodes).toEqual({
                     ['0']: {
                         child: undefined,
-                        id: 0,
-                        parentId: -1,
+                        id: '0',
+                        parentId: 'root',
                         type: BASIC
                     }
                 });

@@ -8,30 +8,30 @@ setAutoFreeze(false);
 
 export type NodeObject = {
     type: typeof OBJECT;
-    child?: {[key: string]: number};
-    id: number;
-    parentId: number;
+    child?: {[key: string]: string};
+    id: string;
+    parentId: string;
 };
 
 export type NodeArray = {
     type: typeof ARRAY;
-    child?: number[];
-    id: number;
-    parentId: number;
+    child?: string[];
+    id: string;
+    parentId: string;
 };
 
 export type NodeMap = {
     type: typeof MAP;
-    child?: Map<string|number,number>;
-    id: number;
-    parentId: number;
+    child?: Map<string|number,string>;
+    id: string;
+    parentId: string;
 };
 
 export type NodeBasic = {
     type: typeof BASIC;
     child: undefined;
-    id: number;
-    parentId: number;
+    id: string;
+    parentId: string;
 };
 
 export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap;
@@ -42,12 +42,12 @@ export type CountRef = {
     current: number
 };
 
-export type NewNodeCreator = (value: unknown, parentId: number) => NodeAny;
+export type NewNodeCreator = (value: unknown, parentId: string) => NodeAny;
 
 export const newNode = (countRef: CountRef): NewNodeCreator => {
-    return (value: unknown, parentId: number): NodeAny => {
+    return (value: unknown, parentId: string): NodeAny => {
         const type = getType(value);
-        const id = countRef.current++;
+        const id = `${countRef.current++}`;
         return {
             type,
             child: undefined,
@@ -58,7 +58,7 @@ export const newNode = (countRef: CountRef): NewNodeCreator => {
 };
 
 export const addNode = (nodes: Nodes, node: NodeAny): void => {
-    nodes[`${node.id}`] = node;
+    nodes[node.id] = node;
 };
 
 export const _prepChild = <P>(
@@ -70,7 +70,7 @@ export const _prepChild = <P>(
 
     if(parentNode.type === BASIC || parentNode.child) return;
 
-    const child: number[]|{[key: string]: number}|Map<string|number,number> = parentNode.type === MAP
+    const child: string[]|{[key: string]: string}|Map<string|number,string> = parentNode.type === MAP
         ? new Map()
         : parentNode.type === ARRAY
             ? []
@@ -85,8 +85,8 @@ export const _prepChild = <P>(
     parentNode.child = child;
 };
 
-export const getNode = (nodes: Nodes, id: number): NodeAny|undefined => {
-    return nodes[`${id}`];
+export const getNode = (nodes: Nodes, id: string): NodeAny|undefined => {
+    return nodes[id];
 };
 
 export const getNodeByPath = <P = unknown>(
@@ -111,7 +111,7 @@ export const getNodeByPath = <P = unknown>(
 
         _prepChild<P>(nodes, newNodeCreator, valueRefAny, node);
 
-        const nextId = get(node.child, key) as number;
+        const nextId = get(node.child, key) as string;
         node = getNode(nodes, nextId);
         valueRefAny = get(valueRefAny, key);
     }
@@ -133,12 +133,12 @@ export const _getKey = (parentNode: NodeAny, childNode: NodeAny): number|string|
     return key;
 };
 
-export const getPath = (nodes: Nodes, id: number): Path|undefined => {
+export const getPath = (nodes: Nodes, id: string): Path|undefined => {
     let node = get(nodes, id) as NodeAny|undefined;
     if(!node) return undefined;
 
     const path: Path = [];
-    while(node && node.parentId !== -1) {
+    while(node && node.parentId !== 'root') {
         const parentNode = get(nodes, node.parentId) as NodeAny;
         const key = _getKey(parentNode, node);
         if(key === undefined) return undefined;
@@ -149,25 +149,25 @@ export const getPath = (nodes: Nodes, id: number): Path|undefined => {
     return path;
 };
 
-export const removeNode = (nodes: Nodes, id: number, onlyChildren = false): void => {
+export const removeNode = (nodes: Nodes, id: string, onlyChildren = false): void => {
     const node = get(nodes, id) as NodeAny|undefined;
     if(!node) return;
 
     if(node.child) {
-        each(node.child, id => removeNode(nodes, id as number));
+        each(node.child, id => removeNode(nodes, id as string));
     }
     if(!onlyChildren) {
-        delete nodes[`${id}`];
+        delete nodes[id];
     }
 };
 
-export const updateNode = (nodes: Nodes, id: number, value: unknown): void => {
+export const updateNode = (nodes: Nodes, id: string, value: unknown): void => {
     const node = get(nodes, id) as NodeAny|undefined;
     if(!node) return;
 
     removeNode(nodes, id, true);
     const type = getType(value);
-    nodes[`${id}`] = {
+    nodes[id] = {
         ...node,
         type,
         child: undefined
@@ -189,7 +189,7 @@ export const produceNodePatches = (
             const {op, path, value} = patch;
 
             if(path.length === 0 && op === 'replace') {
-                updateNode(draft, 0, value);
+                updateNode(draft, '0', value);
                 return;
             }
 
@@ -203,9 +203,9 @@ export const produceNodePatches = (
 
             if(!parentNode) return;
 
-            const basePath = [`${parentNode.id}`, 'child'];
+            const basePath = [parentNode.id, 'child'];
             const key = path[path.length - 1];
-            const childId = get(parentNode.child, key) as number;
+            const childId = get(parentNode.child, key) as string;
 
             // depending on type, make changes to the child node
             // and to the parent node's child
