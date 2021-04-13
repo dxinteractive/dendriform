@@ -946,7 +946,7 @@ function MyComponent(props) {
 }
 ```
 
-The `sync()` function can also accept a deriver to derive data in one direction.
+The `sync()` function can also accept a deriver to derive data in one direction. This has the effect of caching each derived form state in history, and calling undo and redo will just restore the relevant derived data at that point in history.
 
 ```js
 import {sync} from 'dendriform';
