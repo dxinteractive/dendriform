@@ -28,17 +28,17 @@ describe(`array`, () => {
         test(`with Dendriform`, () => {
             const form = new Dendriform(['a','b','c']);
 
-            expect(form.branch(0).id).toBe(1);
-            expect(form.branch(1).id).toBe(2);
-            expect(form.branch(2).id).toBe(3);
+            expect(form.branch(0).id).toBe('1');
+            expect(form.branch(1).id).toBe('2');
+            expect(form.branch(2).id).toBe('3');
 
             form.set(array.unshift('d'));
 
             expect(form.value).toEqual(['d','a','b','c']);
-            expect(form.branch(0).id).toBe(4);
-            expect(form.branch(1).id).toBe(1);
-            expect(form.branch(2).id).toBe(2);
-            expect(form.branch(3).id).toBe(3);
+            expect(form.branch(0).id).toBe('4');
+            expect(form.branch(1).id).toBe('1');
+            expect(form.branch(2).id).toBe('2');
+            expect(form.branch(3).id).toBe('3');
         });
 
         test(`unshift deep with Dendriform`, () => {
@@ -61,10 +61,10 @@ describe(`array`, () => {
                 ]
             });
 
-            expect(form.branch(['foo',0]).id).toBe(5);
-            expect(form.branch(['foo',1]).id).toBe(2);
-            expect(form.branch(['foo',2]).id).toBe(3);
-            expect(form.branch(['foo',3]).id).toBe(4);
+            expect(form.branch(['foo',0]).id).toBe('5');
+            expect(form.branch(['foo',1]).id).toBe('2');
+            expect(form.branch(['foo',2]).id).toBe('3');
+            expect(form.branch(['foo',3]).id).toBe('4');
         });
     });
 
@@ -94,10 +94,10 @@ describe(`array`, () => {
             form.set(array.push('d'));
 
             expect(form.value).toEqual(['a','b','c','d']);
-            expect(form.branch(0).id).toBe(1);
-            expect(form.branch(1).id).toBe(2);
-            expect(form.branch(2).id).toBe(3);
-            expect(form.branch(3).id).toBe(4);
+            expect(form.branch(0).id).toBe('1');
+            expect(form.branch(1).id).toBe('2');
+            expect(form.branch(2).id).toBe('3');
+            expect(form.branch(3).id).toBe('4');
         });
 
     });
@@ -128,8 +128,8 @@ describe(`array`, () => {
             form.set(array.pop());
 
             expect(form.value).toEqual(['a','b']);
-            expect(form.branch(0).id).toBe(1);
-            expect(form.branch(1).id).toBe(2);
+            expect(form.branch(0).id).toBe('1');
+            expect(form.branch(1).id).toBe('2');
         });
     });
 
@@ -159,8 +159,8 @@ describe(`array`, () => {
             form.set(array.shift());
 
             expect(form.value).toEqual(['b','c']);
-            expect(form.branch(0).id).toBe(2);
-            expect(form.branch(1).id).toBe(3);
+            expect(form.branch(0).id).toBe('2');
+            expect(form.branch(1).id).toBe('3');
         });
     });
 
@@ -184,8 +184,8 @@ describe(`array`, () => {
             form.branch(0).set(array.remove());
 
             expect(form.value).toEqual(['b','c']);
-            expect(form.branch(0).id).toBe(2);
-            expect(form.branch(1).id).toBe(3);
+            expect(form.branch(0).id).toBe('2');
+            expect(form.branch(1).id).toBe('3');
         });
     });
 
@@ -248,18 +248,18 @@ describe(`array`, () => {
         test(`move with Dendriform`, () => {
             const form = new Dendriform(['a','b','c','d']);
 
-            expect(form.branch(0).id).toBe(1);
-            expect(form.branch(1).id).toBe(2);
-            expect(form.branch(2).id).toBe(3);
-            expect(form.branch(3).id).toBe(4);
+            expect(form.branch(0).id).toBe('1');
+            expect(form.branch(1).id).toBe('2');
+            expect(form.branch(2).id).toBe('3');
+            expect(form.branch(3).id).toBe('4');
 
             form.set(array.move(3,1));
 
             expect(form.value).toEqual(['a','d','b','c']);
-            expect(form.branch(0).id).toBe(1);
-            expect(form.branch(1).id).toBe(4);
-            expect(form.branch(2).id).toBe(2);
-            expect(form.branch(3).id).toBe(3);
+            expect(form.branch(0).id).toBe('1');
+            expect(form.branch(1).id).toBe('4');
+            expect(form.branch(2).id).toBe('2');
+            expect(form.branch(3).id).toBe('3');
         });
     });
 });

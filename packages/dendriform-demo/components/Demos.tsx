@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useState, useRef, memo} from 'react';
 import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
-import {H2} from '../components/Text';
+import {H2, Link, Text} from '../components/Text';
 import styled from 'styled-components';
 import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
 import type {DropResult} from 'react-beautiful-dnd';
@@ -263,14 +263,26 @@ function Rendering(): React.ReactElement {
 
 const RenderingCode = `
 function MyComponent(props) {
-    const form = useDendriform({name: 'Ben'});
-
-    const nameForm = form.branch('name');
-    const value = nameForm.useValue();
+    const form = useDendriform({
+        name: 'Ben',
+        address: {
+            street: '123 Fake St'
+        }
+    });
 
     return <div>
-        <code>name: {value}</code>
-        <input {...useInput(nameForm, 150)} />
+        {form.render(form => {
+            const value = form.useValue();
+            return <code>{value.name} from {value.address.street}</code>;
+        })}
+
+        {form.render('name', form => (
+            <label>name: <input {...useInput(form, 150)} /></label>
+        ))}
+
+        {form.render(['address', 'street'], form => (
+            <label>street: <input {...useInput(form, 150)} /></label>
+        ))}
     </div>;
 }
 `;
@@ -1430,6 +1442,7 @@ type DemoObject = {
     Demo: React.ComponentType<Record<string, unknown>>;
     code: string;
     anchor: string;
+    more: string;
 };
 
 const DEMOS: DemoObject[] = [
@@ -1437,149 +1450,234 @@ const DEMOS: DemoObject[] = [
         title: 'A quick example',
         Demo: FirstExample,
         code: FirstExampleCode,
-        anchor: 'example'
+        anchor: 'example',
+        description: `This demonstrates a basic form with several fields, rendering, and array elements. Changes are subscribed to and logged to the console.`,
+        more: 'dendriform'
     },
     {
         title: 'Dendriform instance outside of React',
         Demo: OutsideReactContainer,
         code: OutsideReactCode,
-        anchor: 'outside'
+        anchor: 'outside',
+        description: `Dendriform instances can be kept outside of React. Notice how the state is preserved regardless of whether the component is mounted.`,
+        more: 'creation'
     },
     {
         title: 'Branching forms',
         Demo: Branching,
         code: BranchingCode,
-        anchor: 'branch'
+        anchor: 'branch',
+        description: `Here .branch() is used to access parts of a data shapes, which are returned as their own smaller forms. Changes made to these smaller forms are also made to the original form.`,
+        more: 'branching'
     },
     {
         title: 'Rendering fields',
         Demo: Rendering,
         code: RenderingCode,
-        anchor: 'render'
+        anchor: 'render',
+        description: `The .render() function is used to render parts of a form into small performant components. The white flashes indicate regions of the page that React has re-rendered. You can see how performant Dendriform's rendering is by how localised these flashes are.`,
+        more: 'rendering'
     },
     {
         title: 'Rendering with dependencies',
         Demo: RenderingDeps,
         code: RenderingDepsCode,
-        anchor: 'renderdeps'
+        description: `This demonstrates how .render() can be forced to update in response to other prop changes.`,
+        anchor: 'renderdeps',
+        more: 'rendering'
     },
     {
         title: 'Setting data',
         Demo: SettingData,
         code: SettingDataCode,
-        anchor: 'set'
+        description: `This demo shows how to set data in a form in various ways: by passing the value, by using an updater function, and by using an immer producer.`,
+        anchor: 'set',
+        more: 'setting-data'
     },
     {
         title: 'Setting data with buffering',
         Demo: SettingDataBuffer,
         code: SettingDataBufferCode,
-        anchor: 'buffer'
+        description: `This demonstrates how multiple changes can be collected and applied at once. View the console to see how many changes are produced by each button click.`,
+        anchor: 'buffer',
+        more: 'setting-data'
     },
     {
         title: 'ES6 classes',
         Demo: ES6Classes,
         code: ES6ClassesCode,
-        anchor: 'es6-classes'
+        description: `A demonstration of how to use ES6 classes with dendriform.`,
+        anchor: 'es6-classes',
+        more: 'es6-classes'
     },
     {
         title: 'ES6 maps',
         Demo: ES6Maps,
         code: ES6MapsCode,
-        anchor: 'es6-maps'
+        description: `A demonstration of how to use ES6 maps with dendriform.`,
+        anchor: 'es6-maps',
+        more: 'es6-maps'
     },
     {
         title: 'Form inputs',
         Demo: FormInputs,
         code: FormInputsCode,
-        anchor: 'inputs'
+        description: `Here different types of form input elements are bound to different forms. Note that useInput and useCheckbox are React hooks and as such must follow the rules of hooks.`,
+        anchor: 'inputs',
+        more: 'form-inputs'
     },
     {
         title: 'Subscribing to changes',
         Demo: Subscribe,
         code: SubscribeCode,
-        anchor: 'subscribe'
+        description: `Subscribing to changes using useChange(). Open the console to see these changes occur.`,
+        anchor: 'subscribe',
+        more: 'subscribing-to-changes'
     },
     {
         title: 'Array operations',
         Demo: ArrayOperations,
         code: ArrayOperationsCode,
-        anchor: 'array'
+        description: `This shows how to use the array methods to manipulate arrays. If you're interested in rendering arrays of items, there is also a drag and drop demo that can provide a better user experience.`,
+        anchor: 'array',
+        more: 'array-operations'
     },
     {
         title: 'Array indexes',
         Demo: ArrayIndexes,
         code: ArrayIndexesCode,
-        anchor: 'indexes'
+        description: `This shows how to access array element indexes and respond to their changes. See how this incresases the amount of component updates required.`,
+        anchor: 'indexes',
+        more: 'array-operations'
     },
     {
         title: 'History',
         Demo: History,
         code: HistoryCode,
-        anchor: 'history'
+        description: `A simple demonstration of history with undo and redo.`,
+        anchor: 'history',
+        more: 'history'
     },
     {
         title: 'Grouping history items',
         Demo: GroupingHistoryItems,
         code: GroupingHistoryItemsCode,
-        anchor: 'historygroup'
+        description: `Shows how you can control how changes are grouped within the history stack. Use any of the buttons, and then use undo and redo to see how the changes are grouped within history.`,
+        anchor: 'historygroup',
+        more: 'history'
     },
     {
         title: 'Deriving data in a single form',
         Demo: Deriving,
         code: DerivingCode,
-        anchor: 'derive'
+        description: `The .useDerive() hook is used to set the value of one property in response to the value of other properties.`,
+        anchor: 'derive',
+        more: 'deriving-data'
     },
     {
         title: 'Deriving data in another form',
         Demo: DerivingOther,
         code: DerivingOtherCode,
-        anchor: 'deriveother'
+        description: `It is also possible and often preferrable to make changes in other forms in .onDerive()'s callback. Here we can see that deriving data can be useful for implementing validation.`,
+        anchor: 'deriveother',
+        more: 'deriving-data'
     },
     {
         title: 'Synchronising forms',
         Demo: Sync,
         code: SyncCode,
-        anchor: 'sync'
+        description: 'When forms are synchronised with each other, their changes throughout history are also synchronised. Type in either input and use undo and redo to see how the two forms are connected.',
+        anchor: 'sync',
+        more: 'synchronising-forms'
     },
     {
         title: 'Synchronising forms with deriving',
         Demo: SyncDerive,
         code: SyncDeriveCode,
-        anchor: 'syncderive'
+        description: `The useSync() hook can also accept a deriver to derive data in one direction.`,
+        anchor: 'syncderive',
+        more: 'synchronising-forms'
     },
     {
         title: 'Drag and drop with react-beautiful-dnd',
         Demo: DragAndDrop,
         code: DragAndDropCode,
-        anchor: 'draganddrop'
+        description: `An example of how one might implement drag and drop with react-beautiful-dnd. Dendriform's .renderAll() function, and its automatic id management on array elements simplifies this greatly.`,
+        anchor: 'draganddrop',
+        more: 'drag-and-drop'
     }
 ];
 
 export function Demos(): React.ReactElement {
     return <Flex flexWrap="wrap">
-        {DEMOS.map(({Demo, title, anchor}, index) => <Flex key={index} mr={4} mb={4}>
-            <DemoStyle>
-                <Box pb={3}>
-                    <H2 id={anchor}>{title}</H2>
-                </Box>
-                <Box>
-                    <Demo />
-                </Box>
-            </DemoStyle>
-            {/*<Box ml={4}>
-                <Code code={code} />
-            </Box>*/}
-        </Flex>)}
+        {DEMOS.map(demo => <Demo demo={demo} key={demo.anchor} />)}
     </Flex>;
 }
 
-const DemoStyle =  styled.div`
-    background-color: ${(props: ThemeProps) => props.theme.colors.backgroundLight};
-    padding: 1rem;
-    margin-bottom: 2rem;
-    width: 100%;
-    max-width: 30rem;
+type DemoProps = {
+    demo: DemoObject
+};
 
+function Demo(props: DemoProps): React.ReactElement {
+    const {Demo, title, anchor, code, description, more} = props.demo;
+
+    const [expanded, setExpanded] = useState(false);
+    const toggleExpanded = useCallback(() => {
+        setExpanded(e => !e);
+    }, []);
+
+    const content = <Box maxWidth="25rem">
+        <Flex pb={3}>
+            <Box mr={2}><H2 id={anchor} onClick={toggleExpanded} style={{cursor: 'pointer'}}>{title}</H2></Box>
+            <Box flexShrink="0"><Text style={{lineHeight: "1.9rem"}} fontSize="smaller"><Link onClick={toggleExpanded}>{expanded ? 'minimise' : 'show code'}</Link></Text></Box>
+        </Flex>
+        <Box mb={4}>
+            <Text fontSize="smaller">
+                {description} {more && <Link title="To the documentation" href={`https://github.com/92green/dendriform#${more ?? ''}`}>docs {'>'}</Link>}
+            </Text>
+        </Box>
+        <DemoStyle>
+            <Demo />
+        </DemoStyle>
+    </Box>;
+
+    return <DemoBox expanded={expanded}>
+        <DemoPad>
+            {!expanded && content}
+            {expanded &&
+                <Flex display={['block', 'flex']}>
+                    <Box flexShrink="0">{content}</Box>
+                    <Box ml={[0,4]} flexGrow="1" flexShrink="1" style={{minWidth: 0}}>
+                        <Code code={code} />
+                    </Box>
+                </Flex>
+            }
+        </DemoPad>
+    </DemoBox>;
+}
+
+const DemoBox =  styled.div`
+    background-color: ${(props: ThemeProps) => props.theme.colors.background};
+    width: 100%;
+
+    ${props => props.expanded
+        ? `
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 100;
+            padding: 1rem;
+            overflow: auto;
+        `
+        : `
+            margin-right: 2rem;
+            margin-bottom: 2rem;
+            max-width: 25rem;
+        `}
+`;
+
+const DemoStyle = styled.div`
     label {
         display: block;
         margin-bottom: .5rem;
@@ -1646,7 +1744,12 @@ const DemoStyle =  styled.div`
     }
 `;
 
-/*
+const DemoPad =  styled.div`
+    background-color: ${(props: ThemeProps) => props.theme.colors.backgroundLight};
+    padding: 1rem;
+`;
+
+
 type CodeProps = {
     code: string;
 };
@@ -1654,20 +1757,28 @@ type CodeProps = {
 const Code = styled((props: CodeProps): React.ReactElement => {
     const {className, code} = props;
 
-    useEffect(() => {
+    /*useEffect(() => {
         console.log('window.Prism', window.Prism);
         if(typeof window !== 'undefined' && typeof window.Prism !== 'undefined') {
             window.Prism.highlightAll();
         }
-    }, [props.code]);
+    }, [props.code]);*/
 
     return <pre className={`${className} language-jsx`}>
-        <code>{code}</code>
-    </pre>
+        <code>{code.substr(1)}</code>
+    </pre>;
 })`
     font-family: ${(props: ThemeProps) => props.theme.fonts.mono};
-    color: ${(props: ThemeProps) => props.theme.colors.heading};
-    font-size: .8rem;
+    color: ${(props: ThemeProps) => props.theme.colors.code};
+    font-size: 14px;
     line-height: 1.4em;
+    background-color: ${(props: ThemeProps) => props.theme.colors.background};
+
+    display: block;
+        overflow: auto;
+        padding: 1rem;
+
+    code {
+
+    }
 `;
-*/
