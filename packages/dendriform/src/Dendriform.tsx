@@ -22,6 +22,7 @@ import {useState, useEffect} from 'react';
 import {shallowEqualArrays} from 'shallow-equal';
 import {getIn, applyPatches, zoomOutPatches} from 'dendriform-immer-patch-optimiser';
 import type {DendriformPatch, Path} from 'dendriform-immer-patch-optimiser';
+import produce, {isDraft, original} from 'immer';
 import {producePatches} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {die} from './errors';
@@ -29,6 +30,7 @@ import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './No
 import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
 
 //
+
 // core
 //
 
@@ -155,7 +157,13 @@ class Core<C> {
     };
 
     getFormAt = (path: Path): Dendriform<unknown,C> => {
-        const node = getNodeByPath(this.nodes, this.newNodeCreator, this.value, path);
+        let node: NodeAny|undefined;
+
+        this.nodes = produce(this.nodes, draft => {
+            const found = getNodeByPath(draft, this.newNodeCreator, this.value, path);
+            node = isDraft(found) ? original(found) : found;
+        });
+
         if(!node) die(1, path);
         return this.dendriforms.get(node.id) || this.createForm(node);
     };
@@ -509,7 +517,6 @@ export class Dendriform<V,C=V> {
         return this.core.historyState;
     }
 
-    // must be an arrow function as this is plucked off the Dendriform instances when used via useValue()
     set = (toProduce: ToProduce<V>): void => {
         this.core.set(this.id, toProduce);
     };
@@ -566,7 +573,7 @@ export class Dendriform<V,C=V> {
     }
 
     useIndex(): number {
-        const [index, setIndex] = useState<number>(() => this.core.getIndex(this.id));
+        const [index, setIndex] = useState<number>(() => this.index);
         this.useChange(setIndex, 'index');
         return index;
     }

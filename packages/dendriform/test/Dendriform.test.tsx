@@ -498,9 +498,16 @@ describe(`Dendriform`, () => {
             const form = new Dendriform(['A','B','C']);
 
             const bForm = form.branch(1);
-
             expect(bForm.value).toBe('B');
-            expect(bForm.id).toBe('2');
+            expect(bForm.id).toBe('1');
+
+            const cForm = form.branch(2);
+            expect(cForm.value).toBe('C');
+            expect(cForm.id).toBe('2');
+
+            const bFormAgain = form.branch(1);
+            expect(bFormAgain.value).toBe('B');
+            expect(bFormAgain.id).toBe('1');
         });
 
         test(`should produce child value with new value`, () => {
@@ -537,6 +544,7 @@ describe(`Dendriform`, () => {
             test(`should get child value`, () => {
                 const form = new Dendriform<NotSetTestValue>({foo: 'a'});
 
+                form.branch('foo');
                 const bForm = form.branch('bar');
 
                 expect(bForm.value).toBe(undefined);

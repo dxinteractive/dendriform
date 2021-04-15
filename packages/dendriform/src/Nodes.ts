@@ -1,45 +1,38 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, set, each, clone, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, getType, get, set, each, create, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path, DendriformPatch} from 'dendriform-immer-patch-optimiser';
-import {produceWithPatches, setAutoFreeze} from 'immer';
+import {produceWithPatches} from 'immer';
 
-// never autofreeze, this stops us from mutating node.child
-// node.child is a safe mutation as the tree / nodes are entirely internal
-setAutoFreeze(false);
+export type NodeCommon = {
+    id: string;
+    parentId: string;
+};
 
 export type NodeObject = {
     type: typeof OBJECT;
     child?: {[key: string]: string};
-    id: string;
-    parentId: string;
-};
+} & NodeCommon;
 
 export type NodeArray = {
     type: typeof ARRAY;
     child?: string[];
-    id: string;
-    parentId: string;
-};
+} & NodeCommon;
 
 export type NodeMap = {
     type: typeof MAP;
     child?: Map<string|number,string>;
-    id: string;
-    parentId: string;
-};
+} & NodeCommon;
 
 export type NodeBasic = {
     type: typeof BASIC;
     child: undefined;
-    id: string;
-    parentId: string;
-};
+} & NodeCommon;
 
 export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap;
 
 export type Nodes = {[id: string]: NodeAny};
 
 export type CountRef = {
-    current: number
+    current: number;
 };
 
 export type NewNodeCreator = (value: unknown, parentId?: string) => NodeAny;
@@ -50,7 +43,7 @@ export const newNode = (countRef: CountRef): NewNodeCreator => {
         const id = `${countRef.current++}`;
         return {
             type,
-            child: undefined,
+            child: create(type),
             parentId,
             id
         };
@@ -61,69 +54,47 @@ export const addNode = (nodes: Nodes, node: NodeAny): void => {
     nodes[node.id] = node;
 };
 
-export const _prepChild = <P>(
-    nodes: Nodes,
-    newNodeCreator: NewNodeCreator,
-    parentValueRef: P,
-    parentNode: NodeAny
-): void => {
-
-    if(parentNode.type === BASIC || parentNode.child) return;
-
-    const child: string[]|{[key: string]: string}|Map<string|number,string> = parentNode.type === MAP
-        ? new Map()
-        : parentNode.type === ARRAY
-            ? []
-            : {};
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    each(parentValueRef, (value, key: any) => {
-        const childNode = newNodeCreator(value, parentNode.id);
-        addNode(nodes, childNode);
-        return set(child, key, childNode.id);
-    });
-    parentNode.child = child;
-};
-
 export const getNode = (nodes: Nodes, id: string): NodeAny|undefined => {
     return nodes[id];
+};
+
+const _getOrCreateChild = <P = unknown>(nodes: Nodes, newNodeCreator: NewNodeCreator, parentNode: NodeAny, childValueRef: P, key: string|number): NodeAny|undefined => {
+    const childId = get(parentNode.child, key);
+    if(typeof childId === 'string') {
+        return getNode(nodes, childId);
+    }
+
+    const childNode = newNodeCreator(childValueRef, parentNode.id);
+
+    addNode(nodes, childNode);
+    set(parentNode.child, key, childNode.id);
+    return childNode;
 };
 
 export const getNodeByPath = <P = unknown>(
     nodes: Nodes,
     newNodeCreator: NewNodeCreator,
     valueRef: P,
-    path: Path,
-    andChildren?: boolean
+    path: Path
 ): NodeAny|undefined => {
 
+    let node: NodeAny|undefined = nodes['0'];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let valueRefAny = valueRef as any;
-    let node: NodeAny|undefined = nodes['0'];
 
     for(const key of path) {
-        if(!node || node.type === BASIC) return undefined;
-
-        if(!has(valueRefAny, key)) {
-            valueRefAny = clone(valueRefAny);
-            set(valueRefAny, key, undefined);
+        if(!node || node.type === BASIC) {
+            node = undefined;
+        } else {
+            valueRefAny = get(valueRefAny, key);
+            node = _getOrCreateChild(nodes, newNodeCreator, node, valueRefAny, key);
         }
-
-        _prepChild<P>(nodes, newNodeCreator, valueRefAny, node);
-
-        const nextId = get(node.child, key) as string;
-        node = getNode(nodes, nextId);
-        valueRefAny = get(valueRefAny, key);
-    }
-
-    if(andChildren && node) {
-        _prepChild<P>(nodes, newNodeCreator, valueRefAny, node);
     }
 
     return node;
 };
 
-export const _getKey = (parentNode: NodeAny, childNode: NodeAny): number|string|undefined => {
+const _getKey = (parentNode: NodeAny, childNode: NodeAny): number|string|undefined => {
     let key = undefined;
     each(parentNode.child, (childId, childKey) => {
         if(childId === childNode.id) {
@@ -165,12 +136,14 @@ export const updateNode = (nodes: Nodes, id: string, value: unknown): void => {
     const node = get(nodes, id) as NodeAny|undefined;
     if(!node) return;
 
-    removeNode(nodes, id, true);
     const type = getType(value);
+    if(type !== ARRAY && type === node.type) return;
+
+    removeNode(nodes, id, true);
     nodes[id] = {
         ...node,
         type,
-        child: undefined
+        child: create(type)
     };
 };
 
@@ -186,26 +159,26 @@ export const produceNodePatches = (
         // adapt patches to operate on nodes
         const patchesForNodes: DendriformPatch[] = [];
         valuePatches.forEach(patch => {
-            const {op, path, value} = patch;
+            const {path, value} = patch;
+            let {op} = patch;
 
             if(path.length === 0 && op === 'replace') {
                 updateNode(draft, '0', value);
                 return;
             }
 
-            const parentNode = getNodeByPath(
-                nodes,
-                newNodeCreator,
-                baseValue,
-                path.slice(0,-1),
-                true
-            );
-
+            const parentNode = getNodeByPath(draft, newNodeCreator, baseValue, path.slice(0,-1));
             if(!parentNode) return;
 
             const basePath = [parentNode.id, 'child'];
             const key = path[path.length - 1];
-            const childId = get(parentNode.child, key) as string;
+
+            // for some unknown reason, occasionally we get patches from immer
+            // that say 'add' on object keys that already exist
+            // ensure these actually replace
+            if(op === 'add' && parentNode.type !== ARRAY && get(parentNode.child || {}, key)) {
+                op = 'replace';
+            }
 
             // depending on type, make changes to the child node
             // and to the parent node's child
@@ -217,24 +190,35 @@ export const produceNodePatches = (
                     path: [...basePath, key],
                     value: node.id
                 });
+                return;
 
-            } else if(op === 'remove') {
-                removeNode(draft, childId);
-                patchesForNodes.push({
-                    op,
-                    path: [...basePath, key]
-                });
+            }
 
-            } else if(op === 'replace') {
-                updateNode(draft, childId, value);
-
-            } else if(op === 'move' && patch.from) {
+            if(op === 'move' && patch.from) {
                 const fromKey = patch.from[patch.from.length - 1];
                 patchesForNodes.push({
                     op,
                     path: [...basePath, key],
                     from: [...basePath, fromKey]
                 });
+                return;
+            }
+
+            const childId = getNodeByPath(draft, newNodeCreator, baseValue, path)?.id as string;
+
+            if(op === 'remove') {
+                removeNode(draft, childId);
+                patchesForNodes.push({
+                    op,
+                    path: [...basePath, key]
+                });
+                return;
+
+            }
+
+            if(op === 'replace') {
+                updateNode(draft, childId, value);
+                return;
             }
         });
 
@@ -242,6 +226,9 @@ export const produceNodePatches = (
         // (immer's produceWithPatches will collect the mutations)
         applyPatches(draft, patchesForNodes);
     });
+
+
+    //console.log('node patches', result[1]);
 
     (result[1] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');
     (result[2] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');

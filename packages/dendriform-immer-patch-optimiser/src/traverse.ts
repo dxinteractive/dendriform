@@ -3,9 +3,11 @@ export const OBJECT = 1;
 export const ARRAY = 2;
 export const MAP = 3;
 
+export type DataType = typeof ARRAY|typeof OBJECT|typeof BASIC|typeof MAP;
+
 const cantAccess = (thing: unknown, key: PropertyKey) => new Error(`Cant access property ${String(key)} of ${String(thing)}`);
 
-export function getType(thing: unknown): typeof ARRAY|typeof OBJECT|typeof BASIC|typeof MAP {
+export function getType(thing: unknown): DataType {
     if(thing instanceof Map) return MAP;
     if(Array.isArray(thing)) return ARRAY;
     if(thing instanceof Object) return OBJECT;
@@ -80,4 +82,12 @@ export function clone(thing: any): any {
     if(type === ARRAY) return thing.slice();
     if(type === MAP) return new Map(thing);
     return thing;
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+export function create(type: DataType): any {
+    if(type === OBJECT) return {};
+    if(type === ARRAY) return [];
+    if(type === MAP) return new Map();
+    return undefined;
 }
