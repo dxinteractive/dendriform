@@ -1441,7 +1441,6 @@ const BLANK_PERSON = {
 };
 
 type ValidationMap = {
-    all: string[];
     [id: string]: string;
 };
 
@@ -1451,25 +1450,29 @@ function Validation(): React.ReactElement {
     const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
 
     // validation
-    const validationForm = useDendriform<ValidationMap>({all: []});
+    const errorMapForm = useDendriform<ValidationMap>({});
+    const errorListForm = useDendriform<string[]>([]);
+
     form.useDerive(() => {
-        const validationMap: ValidationMap = {all: []};
+        const validationMap: ValidationMap = {};
+        const errorList: string[] = [];
 
         form.branchAll().forEach(form => {
             const nameForm = form.branch('name');
             if(nameForm.value === '') {
                 validationMap[nameForm.id] = 'Name must not be blank';
-                validationMap.all.push(`Name #${form.index + 1} must not be blank`);
+                errorList.push(`Name #${form.index + 1} must not be blank`);
             }
 
             const ageForm = form.branch('age');
             if(isNaN(parseFloat(ageForm.value))) {
                 validationMap[ageForm.id] = 'Age must be numeric';
-                validationMap.all.push(`Age #${form.index + 1} must be numeric`);
+                errorList.push(`Age #${form.index + 1} must be numeric`);
             }
         });
 
-        validationForm.set(validationMap);
+        errorMapForm.set(validationMap);
+        errorListForm.set(errorList);
     });
 
     return <Region>
@@ -1483,13 +1486,13 @@ function Validation(): React.ReactElement {
                 {form.render('name', form => {
                     return <Region>
                         <label>name: <input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
+                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
                     </Region>;
                 })}
                 {form.render('age', form => (
                     <Region>
                         <label>age: {' '}<input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
+                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
                     </Region>
                 ))}
 
@@ -1500,7 +1503,7 @@ function Validation(): React.ReactElement {
         })}
         <button onClick={addNew}>add new</button>
 
-        {validationForm.render('all', form => {
+        {errorListForm.render(form => {
             const errors = form.useValue();
             return <Region>
                 Errors:
@@ -1528,25 +1531,29 @@ function MyComponent(props) {
     const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
 
     // validation
-    const validationForm = useDendriform({all: []});
+    const errorMapForm = useDendriform<ValidationMap>({});
+    const errorListForm = useDendriform<string[]>([]);
+
     form.useDerive(() => {
-        const validationMap = {all: []};
+        const validationMap: ValidationMap = {};
+        const errorList: string[] = [];
 
         form.branchAll().forEach(form => {
             const nameForm = form.branch('name');
             if(nameForm.value === '') {
                 validationMap[nameForm.id] = 'Name must not be blank';
-                validationMap.all.push(\`Name #\${form.index + 1} must not be blank\`);
+                errorList.push(\`Name #\${form.index + 1} must not be blank\`);
             }
 
             const ageForm = form.branch('age');
             if(isNaN(parseFloat(ageForm.value))) {
                 validationMap[ageForm.id] = 'Age must be numeric';
-                validationMap.all.push(\`Age #\${form.index + 1} must be numeric\`);
+                errorList.push(\`Age #\${form.index + 1} must be numeric\`);
             }
         });
 
-        validationForm.set(validationMap);
+        errorMapForm.set(validationMap);
+        errorListForm.set(errorList);
     });
 
     return <>
@@ -1560,13 +1567,13 @@ function MyComponent(props) {
                 {form.render('name', form => {
                     return <>
                         <label>name: <input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
+                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
                     </>;
                 })}
                 {form.render('age', form => (
                     <>
                         <label>age: {' '}<input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
+                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
                     </>
                 ))}
 
@@ -1577,7 +1584,7 @@ function MyComponent(props) {
         })}
         <button onClick={addNew}>add new</button>
 
-        {validationForm.render('all', form => {
+        {errorListForm.render(form => {
             const errors = form.useValue();
             return <>
                 Errors:
