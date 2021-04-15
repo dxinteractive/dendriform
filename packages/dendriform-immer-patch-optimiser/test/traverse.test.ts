@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, getIn, set, each, clone} from '../src/index';
+import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, getIn, set, each, clone, create} from '../src/index';
 
 describe(`getType`, () => {
     test(`should identify basics`, () => {
@@ -217,5 +217,23 @@ describe(`clone`, () => {
         expect(cloned).not.toBe(map);
         expect(cloned.get('foo')).toBe(1);
         expect(cloned.get('bar')).toBe(2);
+    });
+});
+
+describe(`create`, () => {
+    test(`BASIC should create undefined`, () => {
+        expect(create(BASIC)).toBe(undefined);
+    });
+
+    test(`OBJECT should create object`, () => {
+        expect(create(OBJECT)).toEqual({});
+    });
+
+    test(`ARRAY should create array`, () => {
+        expect(create(ARRAY)).toEqual([]);
+    });
+
+    test(`MAP should create map`, () => {
+        expect(create(MAP) instanceof Map).toBe(true);
     });
 });
