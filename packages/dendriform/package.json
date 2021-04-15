@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-alpha.4",
+  "version": "2.0.0-alpha.5",
   "license": "MIT",
   "main": "dist/index.js",
   "description": "Build feature-rich data-editing React UIs with great performance and little code.",
@@ -20,7 +20,7 @@
     "prepare": "tsdx build"
   },
   "dependencies": {
-    "dendriform-immer-patch-optimiser": "^1.0.0-alpha.2",
+    "dendriform-immer-patch-optimiser": "^1.0.0-alpha.3",
     "immer": "9.0.1",
     "shallow-equal": "1.2.1"
   },
