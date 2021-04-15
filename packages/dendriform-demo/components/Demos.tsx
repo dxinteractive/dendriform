@@ -1441,51 +1441,36 @@ const BLANK_PERSON = {
 };
 
 type ValidationMap = {
+    all: string[];
     [id: string]: string;
 };
 
 function Validation(): React.ReactElement {
 
     const form = useDendriform<ValidationPerson[]>([BLANK_PERSON]);
-    const validationForm = useDendriform<ValidationMap>({});
+    const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
 
+    // validation
+    const validationForm = useDendriform<ValidationMap>({all: []});
     form.useDerive(() => {
-        const validationMap: ValidationMap = {};
+        const validationMap: ValidationMap = {all: []};
 
         form.branchAll().forEach(form => {
             const nameForm = form.branch('name');
-            const name = nameForm.value;
-            validationMap[nameForm.id] = name === ''
-                ? 'Name must not be blank'
-                : '';
+            if(nameForm.value === '') {
+                validationMap[nameForm.id] = 'Name must not be blank';
+                validationMap.all.push(`Name #${form.index + 1} must not be blank`);
+            }
 
             const ageForm = form.branch('age');
-            const age = ageForm.value;
-            validationMap[ageForm.id] = isNaN(parseFloat(age))
-                ? 'Age must be numeric'
-                : '';
+            if(isNaN(parseFloat(ageForm.value))) {
+                validationMap[ageForm.id] = 'Age must be numeric';
+                validationMap.all.push(`Age #${form.index + 1} must be numeric`);
+            }
         });
 
         validationForm.set(validationMap);
     });
-
-    validationForm.useChange(newValue => {
-        console.log('newvalidation', newValue);
-    });
-
-    validationForm.branch('1').useChange(newValue => {
-        console.log('newvalidation 1', newValue);
-    });
-
-    validationForm.branch('2').useChange(newValue => {
-        console.log('newvalidation 2', newValue);
-    });
-
-    validationForm.branch('3').useChange(newValue => {
-        console.log('newvalidation 3', newValue);
-    });
-
-    const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
 
     return <Region>
         {form.renderAll(form => {
@@ -1498,12 +1483,13 @@ function Validation(): React.ReactElement {
                 {form.render('name', form => {
                     return <Region>
                         <label>name: <input {...useInput(form, 150)} /></label>
-                        {/*{validationForm.branch('2').value} - {validationForm.branch('2').useValue('name')}*/}
+                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
                     </Region>;
                 })}
                 {form.render('age', form => (
                     <Region>
                         <label>age: {' '}<input {...useInput(form, 150)} /></label>
+                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
                     </Region>
                 ))}
 
@@ -1513,6 +1499,17 @@ function Validation(): React.ReactElement {
             </Region>;
         })}
         <button onClick={addNew}>add new</button>
+
+        {validationForm.render('all', form => {
+            const errors = form.useValue();
+            return <Region>
+                Errors:
+                <ul>
+                    {errors.map((err, key) => <Region of="li" key={key}>{err}</Region>)}
+                    {errors.length === 0 && <Region of="li">None</Region>}
+                </ul>
+            </Region>;
+        })}
     </Region>;
 }
 
@@ -1521,8 +1518,76 @@ const offsetElement = (form, offset) => {
     return form.setParent(index => array.move(index, index + offset));
 };
 
+const BLANK_PERSON = {
+    name: '',
+    age: ''
+};
+
 function MyComponent(props) {
-    ...
+    const form = useDendriform([BLANK_PERSON]);
+    const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
+
+    // validation
+    const validationForm = useDendriform({all: []});
+    form.useDerive(() => {
+        const validationMap = {all: []};
+
+        form.branchAll().forEach(form => {
+            const nameForm = form.branch('name');
+            if(nameForm.value === '') {
+                validationMap[nameForm.id] = 'Name must not be blank';
+                validationMap.all.push(\`Name #\${form.index + 1} must not be blank\`);
+            }
+
+            const ageForm = form.branch('age');
+            if(isNaN(parseFloat(ageForm.value))) {
+                validationMap[ageForm.id] = 'Age must be numeric';
+                validationMap.all.push(\`Age #\${form.index + 1} must be numeric\`);
+            }
+        });
+
+        validationForm.set(validationMap);
+    });
+
+    return <>
+        {form.renderAll(form => {
+
+            const remove = useCallback(() => form.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(form, 1), []);
+            const moveUp = useCallback(() => offsetElement(form, -1), []);
+
+            return <>
+                {form.render('name', form => {
+                    return <>
+                        <label>name: <input {...useInput(form, 150)} /></label>
+                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
+                    </>;
+                })}
+                {form.render('age', form => (
+                    <>
+                        <label>age: {' '}<input {...useInput(form, 150)} /></label>
+                        <Text fontSize="small">{validationForm.branch(form.id).useValue()}</Text>
+                    </>
+                ))}
+
+                <button onClick={remove}>remove</button>
+                <button onClick={moveDown}>down</button>
+                <button onClick={moveUp}>up</button>
+            </>;
+        })}
+        <button onClick={addNew}>add new</button>
+
+        {validationForm.render('all', form => {
+            const errors = form.useValue();
+            return <>
+                Errors:
+                <ul>
+                    {errors.map((err, key) => <li key={key}>{err}</li>)}
+                    {errors.length === 0 && <li>None</li>}
+                </ul>
+            </>;
+        })}
+    </>;
 }
 `;
 
