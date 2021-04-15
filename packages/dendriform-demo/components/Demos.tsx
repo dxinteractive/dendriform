@@ -1198,6 +1198,7 @@ function SyncDerive(): React.ReactElement {
     }), {history: 100});
 
     useSync(namesForm, addressForm, names => {
+        // eslint-disable-next-line no-console
         console.log(`Deriving occupants for ${JSON.stringify(names)}`);
         addressForm.branch('occupants').set(names.length);
     });
