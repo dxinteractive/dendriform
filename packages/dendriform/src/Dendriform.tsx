@@ -573,7 +573,7 @@ export class Dendriform<V,C=V> {
     }
 
     useIndex(): number {
-        const [index, setIndex] = useState<number>(() => this.core.getIndex(this.id));
+        const [index, setIndex] = useState<number>(() => this.index);
         this.useChange(setIndex, 'index');
         return index;
     }
