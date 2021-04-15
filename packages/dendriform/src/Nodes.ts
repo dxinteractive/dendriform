@@ -136,8 +136,10 @@ export const updateNode = (nodes: Nodes, id: string, value: unknown): void => {
     const node = get(nodes, id) as NodeAny|undefined;
     if(!node) return;
 
-    removeNode(nodes, id, true);
     const type = getType(value);
+    if(type !== ARRAY && type === node.type) return;
+
+    removeNode(nodes, id, true);
     nodes[id] = {
         ...node,
         type,
@@ -157,7 +159,8 @@ export const produceNodePatches = (
         // adapt patches to operate on nodes
         const patchesForNodes: DendriformPatch[] = [];
         valuePatches.forEach(patch => {
-            const {op, path, value} = patch;
+            const {path, value} = patch;
+            let {op} = patch;
 
             if(path.length === 0 && op === 'replace') {
                 updateNode(draft, '0', value);
@@ -167,10 +170,15 @@ export const produceNodePatches = (
             const parentNode = getNodeByPath(draft, newNodeCreator, baseValue, path.slice(0,-1));
             if(!parentNode) return;
 
-            const getChildId = (): string => getNodeByPath(draft, newNodeCreator, baseValue, path)?.id as string;
-
             const basePath = [parentNode.id, 'child'];
             const key = path[path.length - 1];
+
+            // for some unknown reason, occasionally we get patches from immer
+            // that say 'add' on object keys that already exist
+            // ensure these actually replace
+            if(op === 'add' && parentNode.type !== ARRAY && get(parentNode.child || {}, key)) {
+                op = 'replace';
+            }
 
             // depending on type, make changes to the child node
             // and to the parent node's child
@@ -182,33 +190,45 @@ export const produceNodePatches = (
                     path: [...basePath, key],
                     value: node.id
                 });
+                return;
 
-            } else if(op === 'remove') {
-                removeNode(draft, getChildId());
-                patchesForNodes.push({
-                    op,
-                    path: [...basePath, key]
-                });
+            }
 
-            } else if(op === 'replace') {
-                updateNode(draft, getChildId(), value);
-
-            } else if(op === 'move' && patch.from) {
+            if(op === 'move' && patch.from) {
                 const fromKey = patch.from[patch.from.length - 1];
                 patchesForNodes.push({
                     op,
                     path: [...basePath, key],
                     from: [...basePath, fromKey]
                 });
+                return;
+            }
+
+            const childId = getNodeByPath(draft, newNodeCreator, baseValue, path)?.id as string;
+
+            if(op === 'remove') {
+                removeNode(draft, childId);
+                patchesForNodes.push({
+                    op,
+                    path: [...basePath, key]
+                });
+                return;
+
+            }
+
+            if(op === 'replace') {
+                updateNode(draft, childId, value);
+                return;
             }
         });
-
-        // console.log('draft', JSON.stringify(draft, null, 2));
 
         // apply the patches to change parent node's children
         // (immer's produceWithPatches will collect the mutations)
         applyPatches(draft, patchesForNodes);
     });
+
+
+    //console.log('node patches', result[1]);
 
     (result[1] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');
     (result[2] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');

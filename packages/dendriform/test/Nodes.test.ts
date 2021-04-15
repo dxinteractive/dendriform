@@ -371,6 +371,62 @@ describe(`Nodes`, () => {
 
     describe(`updateNode()`, () => {
 
+        test(`should not update nodes if type is the same and type is not an array`, () => {
+            // because non-arrays children are identified by their keys which never move
+            const value = {foo: 123};
+            const [nodes, newNodeCreator] = createNodesFrom(value);
+            // create child nodes first
+            const [newNodes] = produceNodeByPath(nodes, newNodeCreator, value, ['foo']);
+            expect(newNodes['0']).toEqual({
+                type: OBJECT,
+                child: {
+                    foo: '1'
+                },
+                parentId: '',
+                id: '0'
+            });
+
+            // run test
+            const newNodes2 = produce(newNodes, draft => updateNode(draft, '0', {bar: 456}));
+            // node 0 should still be the same
+            expect(newNodes2['0']).toEqual({
+                type: OBJECT,
+                child: {
+                    foo: '1'
+                },
+                parentId: '',
+                id: '0'
+            });
+        });
+
+        test(`should remove and update nodes if type is the same and is an array`, () => {
+            // because arrays children are identified by their indexes which can and do move.
+            // the dendriform-immer-patch-optimiser will normally take care of those movements if they
+            // take place at the depth of the array within the value data shape,
+            // but if not then we have to remove the array element's nodes to be careful
+            // and prevent those elements from possibly beging adopted by other children
+            const value = [100];
+            const [nodes, newNodeCreator] = createNodesFrom(value);
+            // create child nodes first
+            const [newNodes] = produceNodeByPath(nodes, newNodeCreator, value, [0]);
+            expect(newNodes['0']).toEqual({
+                type: ARRAY,
+                child: ['1'],
+                parentId: '',
+                id: '0'
+            });
+
+            // run test
+            const newNodes2 = produce(newNodes, draft => updateNode(draft, '0', [300]));
+            // node should have been updated
+            expect(newNodes2['0']).toEqual({
+                type: ARRAY,
+                child: [],
+                parentId: '',
+                id: '0'
+            });
+        });
+
         test(`should update item and change its type from basic to object`, () => {
             const value = ['a','b','c'];
             const [nodes, newNodeCreator] = createNodesFrom(value);
@@ -572,6 +628,38 @@ describe(`Nodes`, () => {
                 const barId: string = topChild.bar;
 
                 expect(newNodes[barId]?.type).toBe(ARRAY);
+            });
+
+            test(`should skip patches that try to edit children of types with no children`, () => {
+                // in reality produceNodePatches is always done just after an applyPatches on the value
+                // which in this situation will always error
+                const value = 100;
+                const [nodes, newNodeCreator] = createNodesFrom(value);
+
+                const patches = [
+                    {op: 'add', path: ['top','baz'], value: 3}
+                ];
+
+                const [newNodes] = produceNodePatches(nodes, newNodeCreator, value, patches);
+
+                expect(newNodes).toEqual(nodes);
+            });
+
+            test(`should ensure that add patches on non-arrays dont try to add if there is already somethign there - but why arent these replace patches in the first place?`, () => {
+                // in reality produceNodePatches is always done just after an applyPatches on the value
+                // which in this situation will always error
+                const value = {foo: 123};
+                const [nodes, newNodeCreator] = createNodesFrom(value);
+
+                const [newNodes1] = produceNodeByPath(nodes, newNodeCreator, value, ['foo']);
+
+                const patches = [
+                    {op: 'add', path: ['foo'], value: 456}
+                ];
+
+                const [newNodes2] = produceNodePatches(newNodes1, newNodeCreator, value, patches);
+
+                expect(newNodes2).toEqual(newNodes1);
             });
         });
 
