@@ -702,7 +702,7 @@ function MyComponent(props) {
 // array
 //
 
-const offsetElement = (form: Dendriform<string, {colours: string[]}>, offset: number): void => {
+const offsetElement = <T,>(form: Dendriform<T,unknown>, offset: number): void => {
     return form.setParent(index => array.move(index as number, index as number + offset));
 };
 
@@ -812,6 +812,10 @@ function ArrayIndexes(): React.ReactElement {
 }
 
 const ArrayIndexesCode = `
+const offsetElement = (form, offset) => {
+    return form.setParent(index => array.move(index, index + offset));
+};
+
 function MyComponent(props) {
 
     const form = useDendriform({
@@ -1194,6 +1198,7 @@ function SyncDerive(): React.ReactElement {
     }), {history: 100});
 
     useSync(namesForm, addressForm, names => {
+        console.log(`Deriving occupants for ${JSON.stringify(names)}`);
         addressForm.branch('occupants').set(names.length);
     });
 
@@ -1234,26 +1239,49 @@ function SyncDerive(): React.ReactElement {
 
 const SyncDeriveCode = `
 function MyComponent(props) {
-    const nameForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
-    const addressForm = useDendriform(() => ({street: 'Cool St'}), {history: 100});
 
-    useSync(nameForm, addressForm);
+    const namesForm = useDendriform(() => ['Bill', 'Ben', 'Bob'], {history: 100});
+
+    const addressForm = useDendriform(() => ({
+        street: 'Cool St',
+        occupants: 0
+    }), {history: 100});
+
+    useSync(namesForm, addressForm, names => {
+        addressForm.branch('occupants').set(names.length);
+    });
+
+    const addName = useCallback(() => {
+        namesForm.set(draft => {
+            draft.push('Name ' + draft.length);
+        });
+    }, []);
 
     return <div>
-        {nameForm.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
-        ))}
+        <fieldset>
+            <legend>names</legend>
+            <ul>
+                {namesForm.renderAll(form => <Region of="li">
+                    <label><input {...useInput(form, 150)} /></label>
+                </Region>)}
+            </ul>
+            <button onClick={addName}>Add name</button>
+        </fieldset>
 
         {addressForm.render('street', form => (
             <label>street: <input {...useInput(form, 150)} /></label>
         ))}
 
-        {nameForm.render(form => {
+        {addressForm.render('occupants', form => (
+            <code>occupants: {form.useValue()}</code>
+        ))}
+
+        {namesForm.render(form => {
             const {canUndo, canRedo} = form.useHistory();
-            return <div>
+            return <>
                 <button onClick={form.undo} disabled={!canUndo}>Undo</button>
                 <button onClick={form.redo} disabled={!canRedo}>Redo</button>
-            </div>;
+            </>;
         })}
     </div>;
 }
@@ -1399,6 +1427,106 @@ function DragAndDropList(props) {
 `;
 
 //
+// validation
+//
+
+type ValidationPerson = {
+    name: string;
+    age: string;
+};
+
+const BLANK_PERSON = {
+    name: '',
+    age: ''
+};
+
+type ValidationMap = {
+    [id: string]: string;
+};
+
+function Validation(): React.ReactElement {
+
+    const form = useDendriform<ValidationPerson[]>([BLANK_PERSON]);
+    const validationForm = useDendriform<ValidationMap>({});
+
+    form.useDerive(() => {
+        const validationMap: ValidationMap = {};
+
+        form.branchAll().forEach(form => {
+            const nameForm = form.branch('name');
+            const name = nameForm.value;
+            validationMap[nameForm.id] = name === ''
+                ? 'Name must not be blank'
+                : '';
+
+            const ageForm = form.branch('age');
+            const age = ageForm.value;
+            validationMap[ageForm.id] = isNaN(parseFloat(age))
+                ? 'Age must be numeric'
+                : '';
+        });
+
+        validationForm.set(validationMap);
+    });
+
+    validationForm.useChange(newValue => {
+        console.log('newvalidation', newValue);
+    });
+
+    validationForm.branch('1').useChange(newValue => {
+        console.log('newvalidation 1', newValue);
+    });
+
+    validationForm.branch('2').useChange(newValue => {
+        console.log('newvalidation 2', newValue);
+    });
+
+    validationForm.branch('3').useChange(newValue => {
+        console.log('newvalidation 3', newValue);
+    });
+
+    const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
+
+    return <Region>
+        {form.renderAll(form => {
+
+            const remove = useCallback(() => form.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(form, 1), []);
+            const moveUp = useCallback(() => offsetElement(form, -1), []);
+
+            return <Region>
+                {form.render('name', form => {
+                    return <Region>
+                        <label>name: <input {...useInput(form, 150)} /></label>
+                        {/*{validationForm.branch('2').value} - {validationForm.branch('2').useValue('name')}*/}
+                    </Region>;
+                })}
+                {form.render('age', form => (
+                    <Region>
+                        <label>age: {' '}<input {...useInput(form, 150)} /></label>
+                    </Region>
+                ))}
+
+                <button onClick={remove}>remove</button>
+                <button onClick={moveDown}>down</button>
+                <button onClick={moveUp}>up</button>
+            </Region>;
+        })}
+        <button onClick={addNew}>add new</button>
+    </Region>;
+}
+
+const ValidationCode = `
+const offsetElement = (form, offset) => {
+    return form.setParent(index => array.move(index, index + offset));
+};
+
+function MyComponent(props) {
+    ...
+}
+`;
+
+//
 // region
 //
 
@@ -1442,7 +1570,7 @@ type DemoObject = {
     Demo: React.ComponentType<Record<string, unknown>>;
     code: string;
     anchor: string;
-    more: string;
+    more?: string;
 };
 
 const DEMOS: DemoObject[] = [
@@ -1578,7 +1706,7 @@ const DEMOS: DemoObject[] = [
         title: 'Deriving data in another form',
         Demo: DerivingOther,
         code: DerivingOtherCode,
-        description: `It is also possible and often preferrable to make changes in other forms in .onDerive()'s callback. Here we can see that deriving data can be useful for implementing validation.`,
+        description: `It is also possible and often preferrable to make changes in other forms in .onDerive()'s callback. Here we can see that deriving data can be useful for implementing validation. Try deleting all the characters in the name below.`,
         anchor: 'deriveother',
         more: 'deriving-data'
     },
@@ -1594,7 +1722,7 @@ const DEMOS: DemoObject[] = [
         title: 'Synchronising forms with deriving',
         Demo: SyncDerive,
         code: SyncDeriveCode,
-        description: `The useSync() hook can also accept a deriver to derive data in one direction.`,
+        description: `The useSync() hook can also accept a deriver to derive data in one direction.  This has the effect of caching each derived form state in history, and calling undo and redo will just restore the relevant derived data at that point in history.`,
         anchor: 'syncderive',
         more: 'synchronising-forms'
     },
@@ -1605,6 +1733,13 @@ const DEMOS: DemoObject[] = [
         description: `An example of how one might implement drag and drop with react-beautiful-dnd. Dendriform's .renderAll() function, and its automatic id management on array elements simplifies this greatly.`,
         anchor: 'draganddrop',
         more: 'drag-and-drop'
+    },
+    {
+        title: 'Validation example',
+        Demo: Validation,
+        code: ValidationCode,
+        description: `An example of how it's possible to perform validation on an array of items.`,
+        anchor: 'validation'
     }
 ];
 
@@ -1633,7 +1768,7 @@ function Demo(props: DemoProps): React.ReactElement {
         </Flex>
         <Box mb={4}>
             <Text fontSize="smaller">
-                {description} {more && <Link title="To the documentation" href={`https://github.com/92green/dendriform#${more ?? ''}`}>docs {'>'}</Link>}
+                {description} {more && <Link title="To the documentation" href={`https://github.com/92green/dendriform#${more}`}>docs {'>'}</Link>}
             </Text>
         </Box>
         <DemoStyle>
@@ -1656,11 +1791,15 @@ function Demo(props: DemoProps): React.ReactElement {
     </DemoBox>;
 }
 
-const DemoBox =  styled.div`
+type DemoBoxProps = {
+    expanded: boolean;
+} & ThemeProps;
+
+const DemoBox =  styled.div<DemoBoxProps>`
     background-color: ${(props: ThemeProps) => props.theme.colors.background};
     width: 100%;
 
-    ${props => props.expanded
+    ${(props: DemoBoxProps) => props.expanded
         ? `
             position: fixed;
             top: 0;
@@ -1752,6 +1891,7 @@ const DemoPad =  styled.div`
 
 type CodeProps = {
     code: string;
+    className: string;
 };
 
 const Code = styled((props: CodeProps): React.ReactElement => {

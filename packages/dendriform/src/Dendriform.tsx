@@ -331,7 +331,7 @@ class Core<C> {
         patches: HistoryPatch
     ): void => {
         // only update a callback if it is not equal to the previous value
-        const [,id, changeCallback, prevValue] = changeCallbackRef;
+        const [,, changeCallback, prevValue] = changeCallbackRef;
         if(!Object.is(nextValue, prevValue)) {
             changeCallback(nextValue, {patches});
             changeCallbackRef[3] = nextValue;
