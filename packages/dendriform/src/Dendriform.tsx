@@ -435,8 +435,10 @@ class Core<C> {
 // should only update based on deps (or based on own state changing)
 //
 
+type MaybeReactElement = React.ReactElement|null;
+
 type BranchProps = {
-    renderer: () => React.ReactElement|React.ReactElement[];
+    renderer: () => MaybeReactElement|MaybeReactElement[];
     deps: unknown[];
 };
 
@@ -460,7 +462,7 @@ type DendriformBranch<C> = {
     };
 };
 
-type Renderer<D> = (form: D) => React.ReactElement;
+type Renderer<D> = (form: D) => MaybeReactElement;
 
 type ChildToProduce<V> = (key: PropertyKey) => ToProduce<V>;
 
