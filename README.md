@@ -66,10 +66,45 @@ function MyComponent(props) {
 
 [Demo](http://dendriform.xyz#example)
 
+- [What does it do?](#what-does-it-do)
 - [Installation](#installation)
 - [Usage and API](#usage-and-api)
+- [Etymology](#etymology)
 - [Development](#development)
-- [Demos](http://dendriform.xyz)
+- [Demos](#demos)
+
+## What does it do?
+
+Dendriform is kind of like a very advanced `useState()` hook that:
+
+- Stores state
+  - see [creation](#creation) and [values](#values)
+- Allows deep values in state to be accessed and set independently
+  - see [branching](#branching) and [setting data](#setting-data)
+- Coordinates component updates in a more perfomant way than `useState()` typically does
+  - see [rendering](#rendering)
+- Has convenient input binding and change debouncing
+  - [Form inputs](#form-inputs)
+- Has undo and redo out of the box
+  - see [history (undo and redo)](#history)
+- Handles editing arrays of items with ease
+  - [Array operations](#array-operations) and [drag and drop](#drag-and-drop)
+- Freezes state objects to prevent accidental editing, and only updates parts of the data shape that change
+  - [thanks Immer!](https://immerjs.github.io/immer/)
+- Supports concurrent editing because it produces patches
+  - [thanks again Immer!](https://immerjs.github.io/immer/patches)
+- Support for ES6 class and ES6 Maps
+  - see [ES6 classes](#es6-classes) and [ES6 maps](#es6-maps)
+- Can exist outside of React
+  - see [creation](#creation) again
+- Can be subscribed to
+  - see [subscribing to changes](#subscribing-to-changes)
+- Can automatically derive data in other forms
+  - see [synchronising forms](#synchronising-forms)
+- Comes with demos and recipes for building forms and data-editing user interfaces
+  - [see the demos](http://dendriform.xyz) 
+
+It's not a traditional "web form" library that has fields, validation and a submit mechanism all ready to go, although you can certainly build that with dendriform. If you want a traditional web form then [formik](https://formik.org/) will likely suit your needs better. Dendriform is less specific and far more adaptable, to be used to make entire UIs where allowing the user to edit data is the goal. You get full control over the behaviour of the interface you create, with many of the common problems already solved, and none of the boilerplate.
 
 ## Installation
 
@@ -165,6 +200,23 @@ function MyComponent(props) {
 }
 ```
 
+Accessing values in callbacks is very easy compared to using vanilla React hooks; simply call `form.value` in your callback. As `form` is an unchangeing reference to a form, you do not have to add extra dependencies to your `useCallback()` hook, and `form.value` will _always_ return the current value, not a stale one.
+
+```js
+function MyComponent(props) {
+    const form = useDendriform({name: 'Ben'});
+
+    const handleNameAlert = useCallback(() => {
+        alert(form.value);
+    }, []);
+
+    return <button onClick={handleNameAlert}>
+        Alert my name
+    </button>;
+}
+```
+```
+
 ### Branching
 
 Use `.branch()` to deeply access parts of your form's value. This returns another form, containing just the deep value.
@@ -193,14 +245,28 @@ function MyComponent(props) {
 
 The `.render()` function allows you to branch off and render a deep value in a React component.
 
-The `.render()` function's callback is rendered as it's own component instance, so you can use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. This keeps component updates to a minimum.
+The `.render()` function's callback is rendered as it's own component instance, so you are allowed to use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. This keeps component updates to a minimum.
+
+This act of 'opting-in' to reacting to data changes is similar to [mobx](https://mobx.js.org/), and is in contrast to React's default behaviour which is to make the developer 'opt-out' of component updates by using `React.memo`.
+
+Sometimes using `useState()` you might need to raise the `useState()` hook further up the component heirarchy so that something higher up can set state. But this can then cause much larger parts of the React component heirarchy to be updated in response to those state changes, depending on how much use of `React.memo` you have.
+
+With Dendriform, your state can be moved as high up the component heirarchy as you need, or even outside the component heirarchy, without accidentally causing larger parts of the React component heirarchy to update. And unlike [redux](https://redux.js.org/), you don't have to also put your state into a centralised data store if it doesn't belong there.
 
 ```js
 function MyComponent(props) {
+    // this component will never need to update, because 'form'
+    // is an unchanging reference to a dendriform instance
+
     const form = useDendriform({name: 'Ben'});
 
     return <div>
         {form.render('name', form => {
+            // this component will update whenever 'name' changes,
+            // and only because the useValue() hook is used.
+            // the useValue() hook tells this component
+            // to opt-in to 'name' changes
+
             const name = form.useValue();
             return <div>My name is {name}</div>;
         })}
@@ -210,7 +276,75 @@ function MyComponent(props) {
 
 [Demo](http://dendriform.xyz#render)
 
-As the callback of `.render()` doesn't update in response to changes in the parent's props, you may sometimes need to force it to update using the last argument `dependencies`.
+The `.render()` function can also be called without branching.
+
+```js
+function MyComponent(props) {
+    const form = useDendriform({name: 'Ben'});
+
+    return <div>
+        {form.render(form => {
+            // the 'form' passed into this component is the same
+            // as the 'form' belonging to the parent component
+
+            const [user, setUser] = form.useValue();
+            return <div>My name is {user.name}</div>;
+        })}
+    </div>;
+}
+```
+
+The `form` passed into the `render()` callback is provided just for convenience of writing less code while branching and rendering. The following examples are equivalent. You can use whichever suits:
+
+```js
+form.render('name', form => {
+    const name = form.useValue();
+    return <div>My name is {name}</div>;
+});
+
+form.render(form => {
+    const name = form.branch('name').useValue();
+    return <div>My name is {name}</div>;
+});
+
+form.render('name', form => <div>My name is {form.useValue()}</div>);
+
+form.render(() => {
+    const name = form.branch('name').useValue();
+
+    // ^ this is essentially the same as example 2.
+    // the 'form' being accessed is the form in the parent component
+    // which is fine do to because forms are always
+    // unchanging references that never go stale
+
+    return <div>My name is {name}</div>;
+});
+
+```
+
+As such, you can access updates to multiple forms in a single `render()` component.
+
+```js
+function MyComponent(props) {
+    const tableSize = useDendriform({
+        height: 100,
+        width: 200,
+        depth: 300
+    });
+
+    return <div>
+        {tableSize.render(tableSize => {
+            const width = tableSize.branch('width').useValue();
+            const depth = tableSize.branch('depth').useValue();
+            return <div>
+                table top area: {width * depth}
+            </div>;
+        })}
+    </div>;
+}
+```
+
+As the callback of `.render()` doesn't update in response to changes in the parent's props by default, you may sometimes need to force it to update using the last argument `dependencies`.
 
 ```js
 function MyComponent(props) {
@@ -227,21 +361,6 @@ function MyComponent(props) {
 ```
 
 [Demo](http://dendriform.xyz#renderdeps)
-
-The `.render()` function can also be called without branching. As with the above this can also accept a `dependencies` argument to force it to update.
-
-```js
-function MyComponent(props) {
-    const form = useDendriform({name: 'Ben'});
-
-    return <div>
-        {form.render(form => {
-            const [user, setUser] = form.useValue();
-            return <div>My name is {user.name}</div>;
-        })}
-    </div>;
-}
-```
 
 ### Rendering arrays
 
@@ -379,6 +498,8 @@ function MyComponent(props) {
     </div>;
 }
 ```
+
+#### Buffering
 
 To call it multiple times in a row, use `buffer()` to begin buffering changes and `done()` to apply the changes. These will affect the entire form including all branches, so `form.buffer()` has the same effect as `form.branch('example').buffer()`.
 
@@ -1035,6 +1156,14 @@ function DragAndDropList(props) {
 ```
 
 [Demo](http://dendriform.xyz#draganddrop)
+
+## Etymology
+
+"Dendriform" means "tree shaped", referencing the tree-like manner in which you can traverse and render the parts of a deep data shape.
+
+## Demos
+
+Demos can be found on [dendriform.xyz](http://dendriform.xyz).
 
 ## Development
 
