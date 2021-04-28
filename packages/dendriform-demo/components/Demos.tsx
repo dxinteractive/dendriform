@@ -57,7 +57,7 @@ function FirstExample(): React.ReactElement {
                 </Region>)}
             </ul>
 
-            <button onClick={addPet}>Add pet</button>
+            <button type="button" onClick={addPet}>Add pet</button>
         </fieldset>
     </Region>;
 }
@@ -107,7 +107,7 @@ function MyComponent(props) {
                     ))}
                 </li>)}
             </ul>
-            <button onClick={addPet}>Add pet</button>
+            <button type="button" onClick={addPet}>Add pet</button>
         </fieldset>
     </div>;
 };
@@ -132,12 +132,12 @@ function OutsideReactContainer(): React.ReactElement {
     if(show) {
         return <Region>
             <OutsideReact />
-            <button onClick={toggleShow}>Unmount</button>
+            <button type="button" onClick={toggleShow}>Unmount</button>
         </Region>;
     }
 
     return <Region>
-        <button onClick={toggleShow}>Remount</button>
+        <button type="button" onClick={toggleShow}>Remount</button>
     </Region>;
 }
 
@@ -147,7 +147,7 @@ const OutsideReact = memo(function OutsideReact(): React.ReactElement {
 
     return <Region>
         <code>Value: {value}</code>
-        <button onClick={addOne}>Add 1</button>
+        <button type="button" onClick={addOne}>Add 1</button>
     </Region>;
 });
 
@@ -165,11 +165,11 @@ function MyComponent(props) {
     if(show) {
         return <div>
             <OutsideReact />
-            <button onClick={toggleShow}>Unmount</button>
+            <button type="button" onClick={toggleShow}>Unmount</button>
         </div>;
     }
 
-    return <button onClick={toggleShow}>Remount</button>;
+    return <button type="button" onClick={toggleShow}>Remount</button>;
 }
 
 const OutsideReact = React.memo(function OutsideReact() {
@@ -178,7 +178,7 @@ const OutsideReact = React.memo(function OutsideReact() {
 
     return <div>
         <code>Value: {value}</code>
-        <button onClick={addOne}>Add 1</button>
+        <button type="button" onClick={addOne}>Add 1</button>
     </div>;
 });
 `;
@@ -351,9 +351,9 @@ function SettingData(): React.ReactElement {
     return <Region>
         {form.render('number', form => <Region of="code">{form.useValue()}</Region>)}
 
-        <button onClick={set100}>set value to 100</button>
-        <button onClick={add3}>add 3 to value</button>
-        <button onClick={add6immer}>add 6 to value with immer producer</button>
+        <button type="button" onClick={set100}>set value to 100</button>
+        <button type="button" onClick={add3}>add 3 to value</button>
+        <button type="button" onClick={add6immer}>add 6 to value with immer producer</button>
     </Region>;
 }
 
@@ -378,9 +378,9 @@ function MyComponent(props) {
     return <div>
         {form.render('number', form => <code>{form.useValue()}</code>)}
 
-        <button onClick={set100}>set value to 100</button>
-        <button onClick={add3}>add 3 to value</button>
-        <button onClick={add6immer}>add 6 to value with immer producer</button>
+        <button type="button" onClick={set100}>set value to 100</button>
+        <button type="button" onClick={add3}>add 3 to value</button>
+        <button type="button" onClick={add6immer}>add 6 to value with immer producer</button>
     </div>;
 }
 `;
@@ -414,8 +414,8 @@ function SettingDataBuffer(): React.ReactElement {
     return <Region>
         {form.render(form => <Region of="code">{form.useValue()}</Region>)}
 
-        <button onClick={add3nobuffer}>add 1, 3 times without buffering</button>
-        <button onClick={add3buffer}>add 1, 3 times with buffering</button>
+        <button type="button" onClick={add3nobuffer}>add 1, 3 times without buffering</button>
+        <button type="button" onClick={add3buffer}>add 1, 3 times with buffering</button>
     </Region>;
 }
 
@@ -444,8 +444,8 @@ function MyComponent(props) {
     return <div>
         {form.render(form => <code>{form.useValue()}</code>)}
 
-        <button onClick={add3nobuffer}>add 1, 3 times without buffering</button>
-        <button onClick={add3buffer}>add 1, 3 times with buffering</button>
+        <button type="button" onClick={add3nobuffer}>add 1, 3 times without buffering</button>
+        <button type="button" onClick={add3buffer}>add 1, 3 times with buffering</button>
     </div>;
 }
 `;
@@ -729,16 +729,16 @@ function ArrayOperations(): React.ReactElement {
             return <Region>
                 <label>colour: <input {...useInput(form, 150)} /></label>
 
-                <button onClick={remove}>remove</button>
-                <button onClick={moveDown}>down</button>
-                <button onClick={moveUp}>up</button>
+                <button type="button" onClick={remove}>remove</button>
+                <button type="button" onClick={moveDown}>down</button>
+                <button type="button" onClick={moveUp}>up</button>
             </Region>;
         })}
-        <button onClick={shift}>shift</button>
-        <button onClick={pop}>pop</button>
-        <button onClick={unshift}>unshift</button>
-        <button onClick={push}>push</button>
-        <button onClick={move}>move last to first</button>
+        <button type="button" onClick={shift}>shift</button>
+        <button type="button" onClick={pop}>pop</button>
+        <button type="button" onClick={unshift}>unshift</button>
+        <button type="button" onClick={push}>push</button>
+        <button type="button" onClick={move}>move last to first</button>
     </Region>;
 }
 
@@ -770,17 +770,17 @@ function MyComponent(props) {
             return <div>
                 <label>colour: <input {...useInput(form, 150)} /></label>
 
-                <button onClick={remove}>remove</button>
-                <button onClick={moveDown}>down</button>
-                <button onClick={moveUp}>up</button>
+                <button type="button" onClick={remove}>remove</button>
+                <button type="button" onClick={moveDown}>down</button>
+                <button type="button" onClick={moveUp}>up</button>
             </div>;
         })}
 
-        <button onClick={shift}>shift</button>
-        <button onClick={pop}>pop</button>
-        <button onClick={unshift}>unshift</button>
-        <button onClick={push}>push</button>
-        <button onClick={move}>move last to first</button>
+        <button type="button" onClick={shift}>shift</button>
+        <button type="button" onClick={pop}>pop</button>
+        <button type="button" onClick={unshift}>unshift</button>
+        <button type="button" onClick={push}>push</button>
+        <button type="button" onClick={move}>move last to first</button>
     </div>;
 }
 `;
@@ -804,8 +804,8 @@ function ArrayIndexes(): React.ReactElement {
 
             return <Region>
                 <code>Colour: {colour}, index: {index}</code>
-                <button onClick={moveDown}>down</button>
-                <button onClick={moveUp}>up</button>
+                <button type="button" onClick={moveDown}>down</button>
+                <button type="button" onClick={moveUp}>up</button>
             </Region>;
         })}
     </Region>;
@@ -831,8 +831,8 @@ function MyComponent(props) {
 
             return <div>
                 <code>Colour: {colour}, index: {index}</code>
-                <button onClick={moveDown}>down</button>
-                <button onClick={moveUp}>up</button>
+                <button type="button" onClick={moveDown}>down</button>
+                <button type="button" onClick={moveUp}>up</button>
             </div>;
         })}
     </div>;
@@ -859,9 +859,9 @@ function History(): React.ReactElement {
             const {canUndo, canRedo} = form.useHistory();
             // this function will only re-render if canUndo or canRedo changes
             return <Region>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
-                <button onClick={() => form.go(-3)} disabled={!canUndo}>Undo 3</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={() => form.go(-3)} disabled={!canUndo}>Undo 3</button>
             </Region>;
         })}
     </Region>;
@@ -884,9 +884,9 @@ function MyComponent(props) {
             const {canUndo, canRedo} = form.useHistory();
             // this function will only re-render if canUndo or canRedo changes
             return <>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
-                <button onClick={() => form.go(-3)} disabled={!canUndo}>Undo 3</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={() => form.go(-3)} disabled={!canUndo}>Undo 3</button>
             </>;
         })}
     </div>;
@@ -927,15 +927,15 @@ function GroupingHistoryItems(): React.ReactElement {
             <Region of="code">value: {form.useValue()}</Region>
         ))}
 
-        <button onClick={add}>Add history item</button>
-        <button onClick={addMulti}>Add 3 history items</button>
-        <button onClick={replace}>Replace history item</button>
+        <button type="button" onClick={add}>Add history item</button>
+        <button type="button" onClick={addMulti}>Add 3 history items</button>
+        <button type="button" onClick={replace}>Replace history item</button>
 
         {form.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <Region>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </Region>;
         })}
     </Region>;
@@ -972,15 +972,15 @@ function MyComponent(props) {
             <code>value: {form.useValue()}</code>
         ))}
 
-        <button onClick={add}>Add history item</button>
-        <button onClick={addMulti}>Add 3 history items</button>
-        <button onClick={replace}>Replace history item</button>
+        <button type="button" onClick={add}>Add history item</button>
+        <button type="button" onClick={addMulti}>Add 3 history items</button>
+        <button type="button" onClick={replace}>Replace history item</button>
 
         {form.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <div>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </div>;
         })}
     </div>;
@@ -1020,8 +1020,8 @@ function Deriving(): React.ReactElement {
         {form.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <Region>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </Region>;
         })}
     </Region>;
@@ -1057,8 +1057,8 @@ function MyComponent(props) {
         {form.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <div>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </div>;
         })}
     </div>;
@@ -1150,8 +1150,8 @@ function Sync(): React.ReactElement {
         {nameForm.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <Region>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </Region>;
         })}
     </Region>;
@@ -1176,8 +1176,8 @@ function MyComponent(props) {
         {nameForm.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <div>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </div>;
         })}
     </div>;
@@ -1217,7 +1217,7 @@ function SyncDerive(): React.ReactElement {
                     <label><input {...useInput(form, 150)} /></label>
                 </Region>)}
             </ul>
-            <button onClick={addName}>Add name</button>
+            <button type="button" onClick={addName}>Add name</button>
         </fieldset>
 
         {addressForm.render('street', form => (
@@ -1231,8 +1231,8 @@ function SyncDerive(): React.ReactElement {
         {namesForm.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <Region>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </Region>;
         })}
     </Region>;
@@ -1266,7 +1266,7 @@ function MyComponent(props) {
                     <label><input {...useInput(form, 150)} /></label>
                 </Region>)}
             </ul>
-            <button onClick={addName}>Add name</button>
+            <button type="button" onClick={addName}>Add name</button>
         </fieldset>
 
         {addressForm.render('street', form => (
@@ -1280,8 +1280,8 @@ function MyComponent(props) {
         {namesForm.render(form => {
             const {canUndo, canRedo} = form.useHistory();
             return <>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </>;
         })}
     </div>;
@@ -1332,7 +1332,7 @@ function DragAndDrop(): React.ReactElement {
                 )}
             </Droppable>
         </DragDropContext>
-        <button onClick={onAdd}>add new</button>
+        <button type="button" onClick={onAdd}>add new</button>
     </Region>;
 }
 
@@ -1355,7 +1355,7 @@ function DragAndDropList(props: DragAndDropListProps): React.ReactElement {
             >
                 <Region>
                     <label>colour: <input {...useInput(form, 150)} /></label>
-                    <button onClick={remove}>remove</button>
+                    <button type="button" onClick={remove}>remove</button>
                 </Region>
             </div>}
         </Draggable>;
@@ -1402,7 +1402,7 @@ function DragAndDrop() {
             </Droppable>
         </DragDropContext>
 
-        <button onClick={push}>add new</button>
+        <button type="button" onClick={push}>add new</button>
     </div>;
 }
 
@@ -1420,12 +1420,82 @@ function DragAndDropList(props) {
                 {...provided.dragHandleProps}
             >
                 <label>colour: <input {...useInput(form, 150)} /></label>
-                <button onClick={remove}>remove</button>
+                <button type="button" onClick={remove}>remove</button>
             </div>}
         </Draggable>;
     });
 }
 `;
+
+//
+// input refs
+//
+
+// type InputRefsPerson = {
+//     name: string;
+//     age: string;
+// };
+//
+// type InputRefsMap = {
+//     [id: string]: HTMLInputElement;
+// };
+//
+// function InputRefs(): React.ReactElement {
+//
+//     const form = useDendriform<ValidationPerson[]>([BLANK_PERSON]);
+//     const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
+//
+//     const [inputRefs, setInputRefs] = useState<InputRefsMap>({});
+//
+//     const useInputRef = (form) => {
+//         const ref = useRef();
+//         useEffect(() => {
+//             if(ref.current) {
+//                 setInputRefs(refs => ({
+//                     ...refs,
+//                     [form.id]: ref.current
+//                 }));
+//             }
+//
+//             return () => setInputRefs(refs => {
+//                 const clonedRefs = {...refs};
+//                 delete clonedRefs[form.id];
+//                 return clonedRefs;
+//             });
+//         }, []);
+//         return ref;
+//     };
+//
+//     console.log('inputRefs', inputRefs);
+//
+//     return <Region>
+//         {form.renderAll(form => {
+//
+//             const remove = useCallback(() => form.set(array.remove()), []);
+//             const moveDown = useCallback(() => offsetElement(form, 1), []);
+//             const moveUp = useCallback(() => offsetElement(form, -1), []);
+//
+//             return <Region>
+//
+//                 {form.render('name', form => <Region>
+//                     <label>name: <input {...useInput(form, 150)} ref={useInputRef(form)} /></label>
+//                 </Region>)}
+//
+//                 {form.render('age', form => <Region>
+//                     <label>age: {' '}<input {...useInput(form, 150)} ref={useInputRef(form)} /></label>
+//                 </Region>)}
+//
+//                 <button type="button" onClick={remove}>remove</button>
+//                 <button type="button" onClick={moveDown}>down</button>
+//                 <button type="button" onClick={moveUp}>up</button>
+//             </Region>;
+//         })}
+//
+//         <button type="button" onClick={addNew}>add new</button>
+//     </Region>;
+// }
+//
+// const InputRefsCode = ``;
 
 //
 // validation
@@ -1445,28 +1515,37 @@ type ValidationMap = {
     [id: string]: string;
 };
 
+type ValidationDisplayMap = {
+    [id: string]: boolean;
+};
+
 function Validation(): React.ReactElement {
 
     const form = useDendriform<ValidationPerson[]>([BLANK_PERSON]);
     const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
 
+    // submit
+    const [submitted, setSubmitted] = useState(false);
+
     // validation
     const errorMapForm = useDendriform<ValidationMap>({});
+    const showErrorMapForm = useDendriform<ValidationDisplayMap>({});
     const errorListForm = useDendriform<string[]>([]);
 
-    form.useDerive(() => {
+    const updateValidation = useCallback(() => {
         const validationMap: ValidationMap = {};
         const errorList: string[] = [];
+        const showErrorMap: ValidationDisplayMap = showErrorMapForm.value;
 
         form.branchAll().forEach(form => {
             const nameForm = form.branch('name');
-            if(nameForm.value === '') {
+            if(showErrorMap[nameForm.id] && nameForm.value === '') {
                 validationMap[nameForm.id] = 'Name must not be blank';
                 errorList.push(`Name #${form.index + 1} must not be blank`);
             }
 
             const ageForm = form.branch('age');
-            if(isNaN(parseFloat(ageForm.value))) {
+            if(showErrorMap[ageForm.id] && isNaN(parseFloat(ageForm.value))) {
                 validationMap[ageForm.id] = 'Age must be numeric';
                 errorList.push(`Age #${form.index + 1} must be numeric`);
             }
@@ -1474,46 +1553,84 @@ function Validation(): React.ReactElement {
 
         errorMapForm.set(validationMap);
         errorListForm.set(errorList);
-    });
+    }, []);
+
+    form.useDerive(() => updateValidation());
+
+    const useError = useCallback((form) => {
+        return errorMapForm.branch(form.id).useValue();
+    }, []);
+
+    const showError = useCallback((form) => {
+        showErrorMapForm.branch(form.id).set(true);
+    }, []);
+
+    const onSubmit = useCallback((e) => {
+        e.preventDefault();
+
+        form.branchAll().forEach(form => {
+            showError(form.branch('name'));
+            showError(form.branch('age'));
+        });
+
+        updateValidation();
+
+        if(errorListForm.value.length === 0) {
+            setSubmitted(true);
+            // eslint-disable-next-line no-console
+            console.log('Submitting data:', form.value);
+        }
+    }, []);
+
+    const handleBlur = useCallback((form) => () => {
+        showError(form);
+        updateValidation();
+    }, []);
 
     return <Region>
-        {form.renderAll(form => {
+        <form onSubmit={onSubmit}>
+            {form.renderAll(form => {
 
-            const remove = useCallback(() => form.set(array.remove()), []);
-            const moveDown = useCallback(() => offsetElement(form, 1), []);
-            const moveUp = useCallback(() => offsetElement(form, -1), []);
+                const remove = useCallback(() => form.set(array.remove()), []);
+                const moveDown = useCallback(() => offsetElement(form, 1), []);
+                const moveUp = useCallback(() => offsetElement(form, -1), []);
 
-            return <Region>
-                {form.render('name', form => {
-                    return <Region>
-                        <label>name: <input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
-                    </Region>;
-                })}
-                {form.render('age', form => (
-                    <Region>
-                        <label>age: {' '}<input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
-                    </Region>
-                ))}
+                return <Region>
+                    {form.render('name', form => {
+                        return <Region>
+                            <label>name: <input {...useInput(form, 150)} onBlur={handleBlur(form)} /></label>
+                            <Text fontSize="small">{useError(form)}</Text>
+                        </Region>;
+                    })}
+                    {form.render('age', form => (
+                        <Region>
+                            <label>age: {' '}<input {...useInput(form, 150)} onBlur={handleBlur(form)} /></label>
+                            <Text fontSize="small">{useError(form)}</Text>
+                        </Region>
+                    ))}
 
-                <button onClick={remove}>remove</button>
-                <button onClick={moveDown}>down</button>
-                <button onClick={moveUp}>up</button>
-            </Region>;
-        })}
-        <button onClick={addNew}>add new</button>
+                    <button type="button" onClick={remove}>remove</button>
+                    <button type="button" onClick={moveDown}>down</button>
+                    <button type="button" onClick={moveUp}>up</button>
+                </Region>;
+            })}
 
-        {errorListForm.render(form => {
-            const errors = form.useValue();
-            return <Region>
-                Errors:
-                <ul>
-                    {errors.map((err, key) => <Region of="li" key={key}>{err}</Region>)}
-                    {errors.length === 0 && <Region of="li">None</Region>}
-                </ul>
-            </Region>;
-        })}
+            <button type="button" onClick={addNew}>add new</button>
+
+            {errorListForm.render(form => {
+                const errors = form.useValue();
+                return <Region>
+                    Errors:
+                    <ul>
+                        {errors.map((err, key) => <Region of="li" key={key}>{err}</Region>)}
+                        {errors.length === 0 && <Region of="li">None</Region>}
+                    </ul>
+                </Region>;
+            })}
+
+            <button type="submit">submit</button>
+            {submitted && <code>submitted</code>}
+        </form>
     </Region>;
 }
 
@@ -1531,23 +1648,28 @@ function MyComponent(props) {
     const form = useDendriform([BLANK_PERSON]);
     const addNew = useCallback(() => form.set(array.push(BLANK_PERSON)), []);
 
-    // validation
-    const errorMapForm = useDendriform<ValidationMap>({});
-    const errorListForm = useDendriform<string[]>([]);
+    // submit
+    const [submitted, setSubmitted] = useState(false);
 
-    form.useDerive(() => {
-        const validationMap: ValidationMap = {};
-        const errorList: string[] = [];
+    // validation
+    const errorMapForm = useDendriform({});
+    const showErrorMapForm = useDendriform({});
+    const errorListForm = useDendriform([]);
+
+    const updateValidation = useCallback(() => {
+        const validationMap = {};
+        const errorList = [];
+        const showErrorMap: = showErrorMapForm.value;
 
         form.branchAll().forEach(form => {
             const nameForm = form.branch('name');
-            if(nameForm.value === '') {
+            if(showErrorMap[nameForm.id] && nameForm.value === '') {
                 validationMap[nameForm.id] = 'Name must not be blank';
                 errorList.push(\`Name #\${form.index + 1} must not be blank\`);
             }
 
             const ageForm = form.branch('age');
-            if(isNaN(parseFloat(ageForm.value))) {
+            if(showErrorMap[ageForm.id] && isNaN(parseFloat(ageForm.value))) {
                 validationMap[ageForm.id] = 'Age must be numeric';
                 errorList.push(\`Age #\${form.index + 1} must be numeric\`);
             }
@@ -1555,9 +1677,40 @@ function MyComponent(props) {
 
         errorMapForm.set(validationMap);
         errorListForm.set(errorList);
-    });
+    }, []);
 
-    return <>
+    form.useDerive(() => updateValidation());
+
+    const useError = useCallback((form) => {
+        return errorMapForm.branch(form.id).useValue();
+    }, []);
+
+    const showError = useCallback((form) => {
+        showErrorMapForm.branch(form.id).set(true);
+    }, []);
+
+    const onSubmit = useCallback((e) => {
+        e.preventDefault();
+
+        form.branchAll().forEach(form => {
+            showError(form.branch('name'));
+            showError(form.branch('age'));
+        });
+
+        updateValidation();
+
+        if(errorListForm.value.length === 0) {
+            setSubmitted(true);
+            console.log('Submitting data:', form.value);
+        }
+    }, []);
+
+    const handleBlur = useCallback((form) => () => {
+        showError(form);
+        updateValidation();
+    }, []);
+
+    return <form onSubmit={onSubmit}>
         {form.renderAll(form => {
 
             const remove = useCallback(() => form.set(array.remove()), []);
@@ -1567,23 +1720,24 @@ function MyComponent(props) {
             return <>
                 {form.render('name', form => {
                     return <>
-                        <label>name: <input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
+                        <label>name: <input {...useInput(form, 150)} onBlur={handleBlur(form)} /></label>
+                        {useError(form)}
                     </>;
                 })}
                 {form.render('age', form => (
                     <>
-                        <label>age: {' '}<input {...useInput(form, 150)} /></label>
-                        <Text fontSize="small">{errorMapForm.branch(form.id).useValue()}</Text>
+                        <label>age: <input {...useInput(form, 150)} onBlur={handleBlur(form)} /></label>
+                        {useError(form)}
                     </>
                 ))}
 
-                <button onClick={remove}>remove</button>
-                <button onClick={moveDown}>down</button>
-                <button onClick={moveUp}>up</button>
+                <button type="button" onClick={remove}>remove</button>
+                <button type="button" onClick={moveDown}>down</button>
+                <button type="button" onClick={moveUp}>up</button>
             </>;
         })}
-        <button onClick={addNew}>add new</button>
+
+        <button type="button" onClick={addNew}>add new</button>
 
         {errorListForm.render(form => {
             const errors = form.useValue();
@@ -1595,7 +1749,10 @@ function MyComponent(props) {
                 </ul>
             </>;
         })}
-    </>;
+
+        <button type="submit">submit</button>
+        {submitted && <code>submitted</code>}
+    </form>;
 }
 `;
 
@@ -1807,6 +1964,13 @@ const DEMOS: DemoObject[] = [
         anchor: 'draganddrop',
         more: 'drag-and-drop'
     },
+//    {
+//        title: 'Keeping track of input refs',
+//        Demo: InputRefs,
+//        code: InputRefsCode,
+//        description: `It's possible to use Dendriform forms to store refs to inputs being rendered. This allows you to access the refs from outside of the local component instances, which is particularly useful for focus management.`,
+//        anchor: 'refs'
+//    },
     {
         title: 'Validation example',
         Demo: Validation,
