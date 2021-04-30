@@ -614,8 +614,8 @@ form.branch(456).set('Janet');
 To set a Date or other non-immerable value, set the value immutably from the parent like so:
 
 ```js
-form.setParent(draft => {
-    draft.myDate = new Date();
+form.setParent(key => draft => {
+    draft[key] = new Date();
 })
 ```
 
