@@ -1,4 +1,4 @@
-import {produceWithPatches} from 'immer';
+import {produceWithPatches, nothing} from 'immer';
 import {optimise, applyPatches} from '../src/index';
 import type {Patch as ImmerPatch} from 'immer';
 import type {DendriformPatch} from '../src/types';
@@ -519,4 +519,24 @@ describe('immer: confirm that explicit returns dont needlessly replace object re
         expect(result.arr[2]).toBe(c);
         expect(patches).toEqual([{op: 'replace', path: ['arr'], value: [a,d,c]}]);
     });
+});
+
+describe('immer bug fix: nothings in patches should be replaced with undefineds', () => {
+
+    test(`optimise should produce correct patches`, () => {
+        const base = {abc: 123};
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const [result, recordedPatches] = produceWithPatches(base, () => nothing);
+
+        expect(result).toBe(undefined);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        expect(recordedPatches[0].value).toBe(nothing);
+        // ^ this is the immer bug
+
+        const optimisedPatches = optimise(base, recordedPatches);
+        expect(optimisedPatches[0].value).toBe(undefined);
+    });
+
 });
