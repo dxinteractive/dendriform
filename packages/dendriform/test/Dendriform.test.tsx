@@ -606,6 +606,17 @@ describe(`Dendriform`, () => {
                 }
             });
         });
+
+        test(`should get impossible child value`, () => {
+            const form = new Dendriform(123);
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            const barForm = form.branch(['foo','bar']);
+
+            expect(barForm.value).toBe(undefined);
+            expect(barForm.id).toBe('notfound');
+        });
     });
 
     describe(`.branchAll()`, () => {

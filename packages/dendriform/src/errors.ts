@@ -1,6 +1,6 @@
 const errors = {
     0: (id: number) => `Cannot find path of node ${id}`,
-    1: (path: unknown[]) => `Cannot find node at path ${path.map(a => JSON.stringify(a)).join('","')}`,
+    // 1: (path: unknown[]) => `Cannot find node at path ${path.map(a => JSON.stringify(a)).join('","')}`,
     2: 'branchAll() can only be called on forms containing arrays',
     3: 'renderAll() can only be called on forms containing arrays',
     4: (path: unknown[]) => `useIndex() can only be called on array element forms, can't be called at path ${path.map(a => JSON.stringify(a)).join('","')}`,
