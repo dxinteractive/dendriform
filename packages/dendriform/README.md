@@ -11,7 +11,7 @@ Build feature-rich data-editing React UIs with great performance and little code
 
 **[See the demos](http://dendriform.xyz)**
 
-*Not yet available on npm unless you use the @next tag. All docs refer to the upcoming version 2.0.0.*
+*Available on npm only as pre-release for now. All docs refer to the upcoming version 2.0.0.*
 
 ```js
 import React, {useCallback} from 'react';
@@ -84,11 +84,11 @@ Dendriform is kind of like a very advanced `useState()` hook that:
 - Coordinates component updates in a more perfomant way than `useState()` typically does
   - see [rendering](#rendering)
 - Has convenient input binding and change debouncing
-  - [Form inputs](#form-inputs)
+  - see [form inputs](#form-inputs)
 - Has undo and redo out of the box
   - see [history (undo and redo)](#history)
 - Handles editing arrays of items with ease
-  - [Array operations](#array-operations) and [drag and drop](#drag-and-drop)
+  - see [array operations](#array-operations) and [drag and drop](#drag-and-drop)
 - Freezes state objects to prevent accidental editing, and only updates parts of the data shape that change
   - [thanks Immer!](https://immerjs.github.io/immer/)
 - Supports concurrent editing because it produces patches
@@ -102,7 +102,7 @@ Dendriform is kind of like a very advanced `useState()` hook that:
 - Can automatically derive data in other forms
   - see [synchronising forms](#synchronising-forms)
 - Comes with demos and recipes for building forms and data-editing user interfaces
-  - [see the demos](http://dendriform.xyz) 
+  - see [the demos](http://dendriform.xyz) 
 
 It's not a traditional "web form" library that has fields, validation and a submit mechanism all ready to go, although you can certainly build that with dendriform. If you want a traditional web form then [formik](https://formik.org/) will likely suit your needs better. Dendriform is less specific and far more adaptable, to be used to make entire UIs where allowing the user to edit data is the goal. You get full control over the behaviour of the interface you create, with many of the common problems already solved, and none of the boilerplate.
 
