@@ -147,8 +147,7 @@ class Core<C> {
         history: (_id) => this.historyState
     };
 
-    createForm = (node: NodeAny): Dendriform<unknown,C> => {
-        const {id} = node;
+    createForm = (id: string): Dendriform<unknown,C> => {
         const __branch = {core: this, id};
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const form = new Dendriform<any>({__branch});
@@ -164,8 +163,8 @@ class Core<C> {
             node = isDraft(found) ? original(found) : found;
         });
 
-        if(!node) die(1, path);
-        return this.dendriforms.get(node.id) || this.createForm(node);
+        const id = node ? node.id : 'notfound';
+        return this.dendriforms.get(id) || this.createForm(id);
     };
 
     //
