@@ -124,6 +124,7 @@ npm install --save dendriform
 - [Setting data](#setting-data)
 - [ES6 classes](#es6-classes)
 - [ES6 maps](#es6-maps)
+- [Dates and other non-immerable data](#dates-and-other-non-immerable-data)
 - [Form inputs](#form-inputs)
 - [Subscribing to changes](#subscribing-to-changes)
 - [Array operations](#array-operations)
@@ -601,6 +602,24 @@ form.branch(456).set('Janet');
 ```
 
 [Demo](http://dendriform.xyz#es6-maps)
+
+### Dates and other non-immerable data
+
+[Immer](https://immerjs.github.io/immer) can't produce non-immerable data such as Dates. For Dendriform users this means that calling `form.branch('myDate').set(new Date())` likely throws the following error:
+
+```
+[Immer] produce can only be called on things that are draftable: plain objects, arrays, Map, Set or classes that are marked with '[immerable]: true'
+```
+
+To set a Date or other non-immerable value, set the value immutably from the parent like so:
+
+```js
+form.setParent(key => draft => {
+    draft[key] = new Date();
+})
+```
+
+This does impose the limitation that you cannot use Dendriform to edit _only_ a Date like `new Dendriform(new Date())`. However this use case would be rare, as Dendriform's main purpose is to make deep data structures easier to edit.
 
 ### Form inputs
 
