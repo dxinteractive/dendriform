@@ -461,6 +461,28 @@ describe(`Nodes`, () => {
             });
         });
 
+        test(`should update item and change a deeper paths type from basic to object`, () => {
+            const value = {foo: true};
+            const [nodes, newNodeCreator] = createNodesFrom(value);
+            // create child nodes first
+            const [newNodes] = produceNodeByPath(nodes, newNodeCreator, value, ['foo']);
+            expect(newNodes['1']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+            // run test
+            const newNodes2 = produce(newNodes, draft => updateNode(draft, '0', {foo: {bar: {baz: true}}}));
+            // internal child check
+            expect(newNodes2['1']).toEqual({
+                type: OBJECT,
+                child: {},
+                parentId: '0',
+                id: '1'
+            });
+        });
+
         test(`should do nothing if node doesnt exist`, () => {
             const value = ['a','b','c'];
             const [nodes, newNodeCreator] = createNodesFrom(value);
