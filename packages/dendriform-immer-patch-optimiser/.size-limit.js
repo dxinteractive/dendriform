@@ -30,7 +30,7 @@ module.exports = [
         name: 'optimise',
         path: "dist/dendriform-immer-patch-optimiser.esm.js",
         import: "{ optimise }",
-        limit: "0.8 KB",
+        limit: "0.9 KB",
         ignore: ['immer']
     }
 ];
