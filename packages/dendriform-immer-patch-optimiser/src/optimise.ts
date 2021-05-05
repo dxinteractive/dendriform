@@ -1,4 +1,4 @@
-import {applyPatches, enablePatches} from 'immer';
+import {applyPatches, enablePatches, nothing} from 'immer';
 import {getIn} from './traverse';
 import {zoomInPatches, zoomOutPatches} from './zoomPatches';
 import type {Patch as ImmerPatch} from 'immer';
@@ -71,6 +71,11 @@ export const optimise = <B,>(base: B, patches: ImmerPatch[]): DendriformPatch[] 
             flush();
             currentPath = thisPath;
         }
+
+        if(patch.value === nothing) {
+            patch = {...patch, value: undefined};
+        }
+        // ^ bug fix until https://github.com/immerjs/immer/issues/791
 
         buffer.push(patch);
     });
