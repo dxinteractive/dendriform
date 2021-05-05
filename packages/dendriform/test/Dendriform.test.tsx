@@ -574,6 +574,19 @@ describe(`Dendriform`, () => {
             expect(update.mock.calls[0][0]).toBe(2);
             expect(form.value).toEqual(['X']);
         });
+
+        test(`should update node type when switching a child to a parent`, () => {
+            const form = new Dendriform<any>({foo: true});
+
+            expect(form.branch('foo').value).toBe(true);
+
+            form.set({foo: {bar: true}});
+
+            expect(form.value).toEqual({foo: {bar: true}});
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
+            expect(form.branch('foo').branch('bar').value).toBe(true);
+        });
     });
 
     describe(`.branch() deep`, () => {
