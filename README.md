@@ -201,7 +201,7 @@ function MyComponent(props) {
 }
 ```
 
-Accessing values in callbacks is very easy compared to using vanilla React hooks; simply call `form.value` in your callback. As `form` is an unchangeing reference to a form, you do not have to add extra dependencies to your `useCallback()` hook, and `form.value` will _always_ return the current value, not a stale one.
+Accessing values in callbacks is very easy compared to using vanilla React hooks; simply call `form.value` in your callback. As `form` is an unchanging reference to a form, you do not have to add extra dependencies to your `useCallback()` hook, and `form.value` will _always_ return the current value, not a stale one.
 
 ```js
 function MyComponent(props) {
@@ -215,7 +215,6 @@ function MyComponent(props) {
         Alert my name
     </button>;
 }
-```
 ```
 
 ### Branching
