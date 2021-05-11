@@ -245,7 +245,7 @@ function MyComponent(props) {
 
 The `.render()` function allows you to branch off and render a deep value in a React component.
 
-The `.render()` function's callback is rendered as it's own component instance, so you are allowed to use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. This keeps component updates to a minimum.
+The `.render()` function's callback is rendered as its own component instance, so you are allowed to use hooks in it. It's optimised for performance and by default it only ever updates if the deep value changes *and* the value is being accessed with a `.useValue()` hook, *or* it contains some changing state of its own. This keeps component updates to a minimum.
 
 This act of 'opting-in' to reacting to data changes is similar to [mobx](https://mobx.js.org/), and is in contrast to React's default behaviour which is to make the developer 'opt-out' of component updates by using `React.memo`.
 
