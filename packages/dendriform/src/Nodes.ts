@@ -181,7 +181,8 @@ export const produceNodePatches = (
         // adapt patches to operate on nodes
         const patchesForNodes: DendriformPatch[] = [];
         valuePatches.forEach(patch => {
-            let {op, path, value} = patch;
+            const {path, value} = patch;
+            let {op} = patch;
 
             if(path.length === 0 && op === 'replace') {
                 updateNode(draft, '0', value);
