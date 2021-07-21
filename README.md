@@ -490,11 +490,32 @@ function MyComponent(props) {
 
     return <div>
         {form.render('count', form => {
-            const [count] = form.useValue();
+            const count = form.useValue();
             return <div>Count: {count}</div>;
         })}
 
         <button onClick={countUp}>Count up</button>
+    </div>;
+}
+```
+
+The `.set()` function can also be debounced by passing a number of milliseconds as the second argument to `.set()`.
+
+```js
+function MyComponent(props) {
+    const form = useDendriform(0);
+
+    const countUpDebounced = useCallback(() => {
+        form.set(count => count + 1, 100);
+    }, []);
+
+    return <div>
+        {form.render(form => {
+            const count = form.useValue();
+            return <div>Count: {count}</div>;
+        })}
+
+        <button onClick={countUpDebounced}>Count up</button>
     </div>;
 }
 ```
@@ -670,6 +691,28 @@ function MyComponent(props) {
 ```
 
 [Demo](http://dendriform.xyz#inputs)
+
+You may also have form input components of your own whose `onChange` functions are called with the new value rather than a change event. The `useProps` hook can be spread onto these elements in a similar way to the `useInput` hook. These also support debouncing.
+
+```js
+import {useDendriform, useProps} from 'dendriform';
+
+function MyComponent(props) {
+
+    const form = useDendriform([]);
+
+    return <MySelectComponent {...useProps(form)} />;
+};
+```
+
+This is equivalent to doing the following:
+
+```js
+return <MySelectComponent 
+    value={form.value}
+    onChange={value => form.set(value)}
+/>;
+```
 
 ### Subscribing to changes
 

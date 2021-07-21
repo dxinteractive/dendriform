@@ -171,6 +171,19 @@ class Core<C> {
     // setting data
     //
 
+    debounceMap = new Map<string,number>();
+
+    setWithDebounce = (id: string, toProduce: unknown, debounce = 0): void => {
+        if(debounce === 0) {
+            this.set(id, toProduce);
+            return;
+        }
+
+        const countAtCall = (this.debounceMap.get(id) ?? 0) + 1;
+        this.debounceMap.set(id, countAtCall);
+        setTimeout(() => countAtCall === this.debounceMap.get(id) && this.set(id, toProduce), debounce);
+    };
+
     // if setBuffer exists, then new changes will be merged onto it
     // if not, a new change will push a new history item
     bufferingChanges = false;
@@ -518,14 +531,14 @@ export class Dendriform<V,C=V> {
         return this.core.historyState;
     }
 
-    set = (toProduce: ToProduce<V>): void => {
-        this.core.set(this.id, toProduce);
+    set = (toProduce: ToProduce<V>, debounce = 0): void => {
+        this.core.setWithDebounce(this.id, toProduce, debounce);
     };
 
-    setParent = (childToProduce: ChildToProduce<unknown>): void => {
+    setParent = (childToProduce: ChildToProduce<unknown>, debounce = 0): void => {
         const basePath = this.core.getPathOrError(this.id);
         const parent = this.core.getFormAt(basePath.slice(0,-1));
-        this.core.set(parent.id, childToProduce(basePath[basePath.length - 1]));
+        this.core.setWithDebounce(parent.id, childToProduce(basePath[basePath.length - 1]), debounce);
     };
 
     onChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): (() => void);

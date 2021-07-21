@@ -26,17 +26,6 @@ describe(`useInput`, () => {
 
         // the same callback should be provided even after hook update
         expect(result.current.onChange).toBe(firstCallback);
-
-        // useInput's state should have changed,
-        // but the change should not have propagated anywhere yet
-        expect(result.current.value).toBe('hello');
-        expect(form.value).toBe('hi');
-
-        // flush buffer, allow setTimeouts to run, and re-test
-        act(() => {
-            jest.advanceTimersByTime(10);
-        });
-
         expect(result.current.value).toBe('hello');
         expect(form.value).toBe('hello');
 
