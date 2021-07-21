@@ -1,27 +1,20 @@
-import {useInput, Dendriform} from '../src/index';
+import {useProps, Dendriform} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
-import type {ChangeEvent} from 'react';
 
 jest.useFakeTimers();
 
-describe(`useInput`, () => {
+describe(`useProps`, () => {
 
-    test(`should adapt form to fit input props`, () => {
+    test(`should provide value and onChange`, () => {
         const form = new Dendriform('hi');
 
-        const {result} = renderHook(() => useInput(form));
+        const {result} = renderHook(() => useProps(form));
         expect(result.current.value).toBe('hi');
 
         const firstCallback = result.current.onChange;
 
         act(() => {
-            const event = {
-                target: {
-                    value: 'hello'
-                }
-            } as ChangeEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>;
-
-            result.current.onChange(event);
+            result.current.onChange('hello');
         });
 
         // the same callback should be provided even after hook update
@@ -34,40 +27,26 @@ describe(`useInput`, () => {
     test(`should debounce`, () => {
         const form = new Dendriform('hi');
 
-        const {result} = renderHook(() => useInput(form, 100));
+        const {result} = renderHook(() => useProps(form, 100));
         expect(result.current.value).toBe('hi');
 
         act(() => {
-            const event = {
-                target: {
-                    value: 'hello'
-                }
-            } as ChangeEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>;
-
-            result.current.onChange(event);
-
+            result.current.onChange('hello');
             jest.advanceTimersByTime(10);
         });
 
-        // useInput's state should have changed,
+        // useProps's state should have changed,
         // but the change should not have propagated anywhere yet
         expect(result.current.value).toBe('hello');
         expect(form.value).toBe('hi');
 
         // change the value again
         act(() => {
-            const event = {
-                target: {
-                    value: 'hello!'
-                }
-            } as ChangeEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>;
-
-            result.current.onChange(event);
-
+            result.current.onChange('hello!');
             jest.advanceTimersByTime(10);
         });
 
-        // useInput's state should have changed,
+        // useProps's state should have changed,
         // but the change should not have propagated anywhere yet
         expect(result.current.value).toBe('hello!');
         expect(form.value).toBe('hi');
@@ -79,13 +58,6 @@ describe(`useInput`, () => {
 
         expect(result.current.value).toBe('hello!');
         expect(form.value).toBe('hello!');
-    });
-
-    test(`should turn falsey non-strings into empty strings`, () => {
-        const form = new Dendriform(null);
-
-        const hook1 = renderHook(() => useInput(form));
-        expect(hook1.result.current.value).toBe('');
     });
 
 });

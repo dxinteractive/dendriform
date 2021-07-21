@@ -6,6 +6,8 @@ import Enzyme, {mount} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 import {enableMapSet} from 'immer';
 
+jest.useFakeTimers();
+
 Enzyme.configure({
     adapter: new Adapter()
 });
@@ -68,6 +70,22 @@ describe(`Dendriform`, () => {
             form.set(draft => draft + 1);
 
             expect(form.value).toBe(6);
+        });
+
+        test(`should set value with debounce`, () => {
+            const form = new Dendriform(123);
+
+            form.set(456, 100);
+            jest.advanceTimersByTime(80);
+            expect(form.value).toBe(123);
+
+            form.set(789, 100);
+            jest.advanceTimersByTime(80);
+            expect(form.value).toBe(123);
+
+            jest.advanceTimersByTime(800);
+
+            expect(form.value).toBe(789);
         });
     });
 

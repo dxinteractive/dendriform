@@ -5,5 +5,6 @@ export * from './Nodes';
 export * from './array';
 export * from './useInput';
 export * from './useCheckbox';
+export * from './useProps';
 export * from './sync';
 export {immerable} from 'immer';

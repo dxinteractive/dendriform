@@ -153,6 +153,22 @@ export const updateNode = (nodes: Nodes, id: string, value: unknown): void => {
     };
 };
 
+export const updateArrayNodeLength = (nodes: Nodes, id: string, length: number): void => {
+    const node = get(nodes, id) as NodeAny|undefined;
+    if(!node || node.type !== ARRAY) return;
+
+    const child = node.child as string[];
+    const newChild = child.slice(0, length);
+    child.slice(length).forEach(id => {
+        removeNode(nodes, id);
+    });
+
+    nodes[id] = {
+        ...node,
+        child: newChild
+    };
+};
+
 export const produceNodePatches = (
     nodes: Nodes,
     newNodeCreator: NewNodeCreator,
@@ -184,6 +200,13 @@ export const produceNodePatches = (
             // ensure these actually replace
             if(op === 'add' && parentNode.type !== ARRAY && get(parentNode.child || {}, key)) {
                 op = 'replace';
+            }
+
+            // if an array is changed by altering length
+            // change the patch to do the same thing via a replace
+            if(parentNode.type === ARRAY && path[path.length - 1] === 'length') {
+                updateArrayNodeLength(draft, parentNode.id, value as number);
+                return;
             }
 
             // depending on type, make changes to the child node
@@ -232,9 +255,6 @@ export const produceNodePatches = (
         // (immer's produceWithPatches will collect the mutations)
         applyPatches(draft, patchesForNodes);
     });
-
-
-    //console.log('node patches', result[1]);
 
     (result[1] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');
     (result[2] as DendriformPatch[]).forEach(patch => patch.namespace = 'nodes');

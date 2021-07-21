@@ -4,8 +4,8 @@ import {BASIC, OBJECT, ARRAY, MAP, applyPatches} from 'dendriform-immer-patch-op
 import type {Path} from 'dendriform-immer-patch-optimiser';
 import produce from 'immer';
 
-const createNodesFrom = (value: unknown): [Nodes, NewNodeCreator] => {
-    const countRef = {current: 0};
+const createNodesFrom = (value: unknown, current: number = 0): [Nodes, NewNodeCreator] => {
+    const countRef = {current};
     const newNodeCreator = newNode(countRef);
 
     // use immer to add this, because immer freezes things and the tests must cope with that
@@ -758,6 +758,19 @@ describe(`Nodes`, () => {
                 const [newNodes] = produceNodePatches(nodesBefore, newNodeCreator, value, patches);
 
                 expect(newNodes).toEqual(nodesBefore);
+            });
+
+            test(`#47 incorrect nodes bug`, () => {
+                const value = JSON.parse(`{"name":"Wappy","address":{"street":"Pump St"},"pets":[{"name":"Spike"},{"name":"Spoke"}]}`);
+                const [,newNodeCreator] = createNodesFrom(value, 8);
+
+                const nodesBefore = JSON.parse(`{"0":{"type":1,"child":{"name":"1","address":"2","pets":"4"},"parentId":"","id":"0"},"1":{"type":0,"parentId":"0","id":"1"},"2":{"type":1,"child":{"street":"3"},"parentId":"0","id":"2"},"3":{"type":0,"parentId":"2","id":"3"},"4":{"type":2,"child":["5","6"],"parentId":"0","id":"4"},"5":{"type":1,"child":{"name":"7"},"parentId":"4","id":"5"},"6":{"type":1,"child":{"name":"8"},"parentId":"4","id":"6"},"7":{"type":0,"parentId":"5","id":"7"},"8":{"type":0,"parentId":"6","id":"8"}}`);
+                const expectedNodes = JSON.parse(`{"0":{"type":1,"child":{"name":"1","address":"2","pets":"4"},"parentId":"","id":"0"},"1":{"type":0,"parentId":"0","id":"1"},"2":{"type":1,"child":{"street":"3"},"parentId":"0","id":"2"},"3":{"type":0,"parentId":"2","id":"3"},"4":{"type":2,"child":["5"],"parentId":"0","id":"4"},"5":{"type":1,"child":{"name":"7"},"parentId":"4","id":"5"},"7":{"type":0,"parentId":"5","id":"7"}}`);
+                const patches = JSON.parse(`[{"op":"replace","path":["pets","length"],"value":1}]`);
+
+                const [newNodes] = produceNodePatches(nodesBefore, newNodeCreator, value, patches);
+
+                expect(newNodes).toEqual(expectedNodes);
             });
 
             test(`of type "move"`, () => {

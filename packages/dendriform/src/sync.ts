@@ -1,5 +1,5 @@
-import {noChange} from './index';
 import type {Dendriform, DeriveCallback, DeriveCallbackDetails} from './index';
+import {noChange} from './producePatches';
 import {die} from './errors';
 import {useEffect} from 'react';
 

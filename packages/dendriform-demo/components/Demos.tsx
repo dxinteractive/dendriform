@@ -451,6 +451,58 @@ function MyComponent(props) {
 `;
 
 //
+// setting data with debouncing
+//
+
+function SettingDataDebounce(): React.ReactElement {
+    const form = useDendriform({
+        a: 0,
+        b: 0
+    });
+
+    const changeA = useCallback(() => {
+        form.branch('a').set(Math.floor(Math.random() * 1000), 300);
+    }, []);
+
+    const changeB = useCallback(() => {
+        form.branch('b').set(Math.floor(Math.random() * 1000), 300);
+    }, []);
+
+    return <Region>
+        {form.render('a', form => <Region of="code">{form.useValue()}</Region>)}
+        {form.render('b', form => <Region of="code">{form.useValue()}</Region>)}
+
+        <button type="button" onClick={changeA}>change a with 300ms debounce</button>
+        <button type="button" onClick={changeB}>change b with 300ms debounce</button>
+    </Region>;
+}
+
+const SettingDataDebounceCode = `
+function MyComponent(props) {
+    const form = useDendriform({
+        a: 0,
+        b: 0
+    });
+
+    const changeA = useCallback(() => {
+        form.branch('a').set(Math.floor(Math.random() * 1000), 300);
+    }, []);
+
+    const changeB = useCallback(() => {
+        form.branch('b').set(Math.floor(Math.random() * 1000), 300);
+    }, []);
+
+    return <div>
+        {form.render('a', form => <code>a: {form.useValue()}</code>)}
+        {form.render('b', form => <code>b: {form.useValue()}</code>)}
+
+        <button type="button" onClick={changeA}>change a with 300ms debounce</button>
+        <button type="button" onClick={changeB}>change b with 300ms debounce</button>
+    </div>;
+}
+`;
+
+//
 // es6 classes
 //
 
@@ -1859,6 +1911,14 @@ const DEMOS: DemoObject[] = [
         description: `This demonstrates how multiple changes can be collected and applied at once. View the console to see how many changes are produced by each button click.`,
         anchor: 'buffer',
         more: 'setting-data'
+    },
+    {
+        title: 'Setting data with debouncing',
+        Demo: SettingDataDebounce,
+        code: SettingDataDebounceCode,
+        description: `This demonstrates how set() calls can be debounced. Click the buttons below rapidly and watch how the value updates more slowly.`,
+        anchor: 'debounce',
+        more: 'debounce'
     },
     {
         title: 'ES6 classes',
