@@ -754,7 +754,7 @@ function MyComponent(props) {
 // array
 //
 
-const offsetElement = <T,>(form: Dendriform<T,unknown>, offset: number): void => {
+const offsetElement = <T,>(form: Dendriform<T>, offset: number): void => {
     return form.setParent(index => array.move(index as number, index as number + offset));
 };
 
@@ -1389,7 +1389,7 @@ function DragAndDrop(): React.ReactElement {
 }
 
 type DragAndDropListProps = {
-    form: Dendriform<string[],unknown>;
+    form: Dendriform<string[]>;
 };
 
 function DragAndDropList(props: DragAndDropListProps): React.ReactElement {

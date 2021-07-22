@@ -6,7 +6,7 @@ type UseCheckboxResult = {
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
 };
 
-export const useCheckbox = <V extends boolean,C>(form: Dendriform<V,C>): UseCheckboxResult => {
+export const useCheckbox = <V extends boolean>(form: Dendriform<V>): UseCheckboxResult => {
     const checked = form.useValue();
 
     const onChange = useCallback(event => {

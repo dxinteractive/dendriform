@@ -6,7 +6,7 @@ type UsePropsResult<V> = {
     onChange: (newValue: V) => void
 };
 
-export const useProps = <V,C>(form: Dendriform<V,C>, debounce = 0): UsePropsResult<V> => {
+export const useProps = <V>(form: Dendriform<V>, debounce = 0): UsePropsResult<V> => {
     const formValue = form.useValue();
     const [lastFormValue, setLastFormValue] = useState(formValue);
     const [localValue, setLocalValue] = useState(formValue);

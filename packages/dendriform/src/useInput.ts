@@ -6,7 +6,7 @@ type UseInputResult = {
     onChange: (event: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) => void
 };
 
-export const useInput = <V extends string|null|undefined,C>(form: Dendriform<V,C>, debounce = 0): UseInputResult => {
+export const useInput = <V extends string|null|undefined>(form: Dendriform<V>, debounce = 0): UseInputResult => {
     const formValue = (form.useValue() || '') as string;
     const [lastFormValue, setLastFormValue] = useState(formValue);
     const [localValue, setLocalValue] = useState(formValue);
