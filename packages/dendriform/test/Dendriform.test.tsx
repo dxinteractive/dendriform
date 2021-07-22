@@ -648,6 +648,19 @@ describe(`Dendriform`, () => {
             expect(barForm.value).toBe(undefined);
             expect(barForm.id).toBe('notfound');
         });
+
+        test(`should get deleted child value`, () => {
+            const form = new Dendriform([[[123]]]);
+            const elemForm = form.branch([0,0]);
+            expect(elemForm.id).toBe('2');
+
+            // delete nodes because data in arrays are not considered
+            // equivalent based on index, so deep nodes are deleted
+            form.set([[[123]]]);
+
+            expect(elemForm.branch(0).value).toBe(undefined);
+            expect(form.branch([0,0,0]).value).toBe(123);
+        });
     });
 
     describe(`.branchAll()`, () => {
