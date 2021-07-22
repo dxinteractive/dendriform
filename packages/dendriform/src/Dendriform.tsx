@@ -155,13 +155,15 @@ class Core<C> {
         return form;
     };
 
-    getFormAt = (path: Path): Dendriform<unknown> => {
+    getFormAt = (path: Path|undefined): Dendriform<unknown> => {
         let node: NodeAny|undefined;
 
-        this.nodes = produce(this.nodes, draft => {
-            const found = getNodeByPath(draft, this.newNodeCreator, this.value, path);
-            node = isDraft(found) ? original(found) : found;
-        });
+        if(path) {
+            this.nodes = produce(this.nodes, draft => {
+                const found = getNodeByPath(draft, this.newNodeCreator, this.value, path);
+                node = isDraft(found) ? original(found) : found;
+            });
+        }
 
         const id = node ? node.id : 'notfound';
         return this.dendriforms.get(id) || this.createForm(id);
@@ -621,8 +623,8 @@ export class Dendriform<V> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     branch(pathOrKey: any): any {
         const appendPath = ([] as Path).concat(pathOrKey ?? []);
-        const basePath = this.core.getPathOrError(this.id);
-        return this.core.getFormAt(basePath.concat(appendPath));
+        const basePath = this.core.getPath(this.id);
+        return this.core.getFormAt(basePath?.concat(appendPath));
     }
 
     branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & unknown[]>(path: [K1, K2, K3, K4]): Dendriform<W[0]>[];
