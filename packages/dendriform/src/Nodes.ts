@@ -144,6 +144,7 @@ export const updateNode = (nodes: Nodes, id: string, value: unknown): void => {
                 updateNode(nodes, childId as string, get(value, childKey));
             } else {
                 removeNode(nodes, childId as string);
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 delete node.child[childKey];
             }
