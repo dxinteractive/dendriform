@@ -18,7 +18,7 @@ export const useProps = <V>(form: Dendriform<V>, debounce = 0): UsePropsResult<V
 
     const onChange = useCallback((newValue: V) => {
         setLocalValue(newValue);
-        form.set(newValue, debounce);
+        form.set(newValue, {debounce});
     }, []);
 
     return {

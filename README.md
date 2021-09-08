@@ -499,14 +499,18 @@ function MyComponent(props) {
 }
 ```
 
-The `.set()` function can also be debounced by passing a number of milliseconds as the second argument to `.set()`.
+The `.set()` function can also accept an options object as the second argument which can affect how the set is executed.
+
+#### options.debounce
+
+The `.set()` action can be debounced by passing a number of milliseconds.
 
 ```js
 function MyComponent(props) {
     const form = useDendriform(0);
 
     const countUpDebounced = useCallback(() => {
-        form.set(count => count + 1, 100);
+        form.set(count => count + 1, {debounce: 100});
     }, []);
 
     return <div>
@@ -518,6 +522,33 @@ function MyComponent(props) {
         <button onClick={countUpDebounced}>Count up</button>
     </div>;
 }
+```
+
+#### options.track (advanced users)
+
+Dendriform automatically assigns a unique id to every nested property and array element of the data shape it contains. It uses these ids to track the movement of array elements over time, and uniquely keys any rendered React elements. By default a call to `.set()` will analyse the resulting data shape and track how any array elements may have moved by identifying each element with strict equality checks.
+
+However you may want to disable this tracking temporarily, for example if you want to replace an array with another whose elements maybe be equal by value but are not strictly equal. This can occur sometimes when setting a form's value based on props that have not been memoised properly.
+
+```js
+const form = new Dendriform([{foo: 123}, {foo: 456}]);
+
+// form.branch(0).id is '1'
+// form.branch(1).id is '2'
+
+form.set([{foo: 123}, {foo: 456}]);
+// ^ these 2 new objects are not recognised as they are not strictly equal
+// to the previous objects, so these will be given new ids
+
+// form.branch(0).id is '3'
+// form.branch(1).id is '4'
+
+form.set([{foo: 123}, {foo: 456}], {track: false});
+// ^ with track: false, Dendriform will not attempt to track array element movement
+// so the ids for each element will remain as they are
+
+// form.branch(0).id is '3'
+// form.branch(1).id is '4'
 ```
 
 #### Buffering

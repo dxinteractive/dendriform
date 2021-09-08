@@ -461,11 +461,11 @@ function SettingDataDebounce(): React.ReactElement {
     });
 
     const changeA = useCallback(() => {
-        form.branch('a').set(Math.floor(Math.random() * 1000), 300);
+        form.branch('a').set(Math.floor(Math.random() * 1000), {debounce: 300});
     }, []);
 
     const changeB = useCallback(() => {
-        form.branch('b').set(Math.floor(Math.random() * 1000), 300);
+        form.branch('b').set(Math.floor(Math.random() * 1000), {debounce: 300});
     }, []);
 
     return <Region>
@@ -485,11 +485,11 @@ function MyComponent(props) {
     });
 
     const changeA = useCallback(() => {
-        form.branch('a').set(Math.floor(Math.random() * 1000), 300);
+        form.branch('a').set(Math.floor(Math.random() * 1000), {debounce: 300});
     }, []);
 
     const changeB = useCallback(() => {
-        form.branch('b').set(Math.floor(Math.random() * 1000), 300);
+        form.branch('b').set(Math.floor(Math.random() * 1000), {debounce: 300});
     }, []);
 
     return <div>

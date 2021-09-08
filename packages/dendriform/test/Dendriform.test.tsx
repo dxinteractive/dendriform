@@ -1,5 +1,6 @@
 import {useDendriform, Dendriform, noChange, sync, useSync, immerable} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
+import {BASIC, OBJECT, ARRAY} from 'dendriform-immer-patch-optimiser';
 
 import React from 'react';
 import Enzyme, {mount} from 'enzyme';
@@ -75,11 +76,11 @@ describe(`Dendriform`, () => {
         test(`should set value with debounce`, () => {
             const form = new Dendriform(123);
 
-            form.set(456, 100);
+            form.set(456, {debounce: 100});
             jest.advanceTimersByTime(80);
             expect(form.value).toBe(123);
 
-            form.set(789, 100);
+            form.set(789, {debounce: 100});
             jest.advanceTimersByTime(80);
             expect(form.value).toBe(123);
 
@@ -2212,5 +2213,438 @@ describe(`Dendriform`, () => {
                 expect(slaveForm.value).toBe(12);
             });
         });
+    });
+
+    describe(`nodes behaviour`, () => {
+
+        test(`should add nodes as data is traversed`, () => {
+            const form = new Dendriform({
+                foo: {
+                    bar: 123,
+                    baz: 456
+                }
+            });
+
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {},
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                }
+            });
+
+            form.branch('foo');
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {},
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                }
+            });
+
+            form.branch(['foo','bar']);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {
+                        bar: '2'
+                    },
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                }
+            });
+        });
+
+        test(`should remove nodes as data is deleted (no changed types)`, () => {
+            const form = new Dendriform<any>({
+                foo: {
+                    bar: 123,
+                    baz: 456
+                }
+            });
+
+            form.branch(['foo','bar']);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {
+                        bar: '2'
+                    },
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                }
+            });
+
+            form.branch('foo').set({});
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {},
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                }
+            });
+        });
+
+         test(`should remove nodes as parent changes type`, () => {
+            const form = new Dendriform<any>({
+                foo: {
+                    bar: 123,
+                    baz: 456
+                }
+            });
+
+            form.branch(['foo','bar']);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {
+                        bar: '2'
+                    },
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                }
+            });
+
+            form.branch('foo').set([]);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: [],
+                    id: '1',
+                    parentId: '0',
+                    type: ARRAY
+                }
+            });
+        });
+
+        test(`should retain common nodes when data is replaced`, () => {
+            const form = new Dendriform<any>({
+                foo: {
+                    bar: 123,
+                    baz: 456
+                }
+            });
+
+            form.branch(['foo','bar']);
+            form.branch(['foo','baz']);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {
+                        bar: '2',
+                        baz: '3'
+                    },
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                },
+                '3': {
+                    id: '3',
+                    parentId: '1',
+                    type: BASIC
+                }
+            });
+
+            form.set({
+                foo: {
+                    bar: 123
+                }
+            });
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {
+                        bar: '2'
+                    },
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                }
+            });
+        });
+
+        test(`should retain nothing when data is replaced at source`, () => {
+            const form = new Dendriform<any>({
+                foo: {
+                    bar: 123,
+                    baz: 456
+                }
+            });
+
+            form.branch(['foo','bar']);
+            form.branch(['foo','baz']);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {
+                        foo: '1'
+                    },
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                },
+                '1': {
+                    child: {
+                        bar: '2',
+                        baz: '3'
+                    },
+                    id: '1',
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                },
+                '3': {
+                    id: '3',
+                    parentId: '1',
+                    type: BASIC
+                }
+            });
+
+            form.set({});
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: {},
+                    id: '0',
+                    parentId: '',
+                    type: OBJECT
+                }
+            });
+        });
+
+        test(`should retain common nodes when data is replaced on array`, () => {
+            const form = new Dendriform<any>([123, 456, 789]);
+
+            form.branch(2);
+            form.branch(1);
+            form.branch(0);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: ['3','2','1'],
+                    id: '0',
+                    parentId: '',
+                    type: ARRAY
+                },
+                '1': {
+                    id: '1',
+                    parentId: '0',
+                    type: BASIC
+                },
+                '2': {
+                    id: '2',
+                    parentId: '0',
+                    type: BASIC
+                },
+                '3': {
+                    id: '3',
+                    parentId: '0',
+                    type: BASIC
+                }
+            });
+
+            form.set([123, 456]);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: ['3','2'],
+                    id: '0',
+                    parentId: '',
+                    type: ARRAY
+                },
+                '2': {
+                    id: '2',
+                    parentId: '0',
+                    type: BASIC
+                },
+                '3': {
+                    id: '3',
+                    parentId: '0',
+                    type: BASIC
+                }
+            });
+        });
+
+        test(`should retain common nodes when data is replaced on array containing objects`, () => {
+            const form = new Dendriform<any>([{foo: 123}, {foo: 456}]);
+
+            form.branch([0,'foo']);
+            form.branch([1,'foo']);
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: ['1','3'],
+                    id: '0',
+                    parentId: '',
+                    type: ARRAY
+                },
+                '1': {
+                    id: '1',
+                    child: {
+                        foo: '2'
+                    },
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                },
+                '3': {
+                    id: '3',
+                    child: {
+                        foo: '4'
+                    },
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '4': {
+                    id: '4',
+                    parentId: '3',
+                    type: BASIC
+                }
+            });
+
+            form.set([{foo: 123}, {foo: 456}], {track: false});
+
+            expect(form.core.nodes).toEqual({
+                '0': {
+                    child: ['1','3'],
+                    id: '0',
+                    parentId: '',
+                    type: ARRAY
+                },
+                '1': {
+                    id: '1',
+                    child: {
+                        foo: '2'
+                    },
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '2': {
+                    id: '2',
+                    parentId: '1',
+                    type: BASIC
+                },
+                '3': {
+                    id: '3',
+                    child: {
+                        foo: '4'
+                    },
+                    parentId: '0',
+                    type: OBJECT
+                },
+                '4': {
+                    id: '4',
+                    parentId: '3',
+                    type: BASIC
+                }
+            });
+        });
+
     });
 });

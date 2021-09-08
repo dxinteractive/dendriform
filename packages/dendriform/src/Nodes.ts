@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, get, set, each, create, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, set, each, create, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path, DendriformPatch} from 'dendriform-immer-patch-optimiser';
 import {produceWithPatches} from 'immer';
 
@@ -137,10 +137,17 @@ export const updateNode = (nodes: Nodes, id: string, value: unknown): void => {
     if(!node) return;
 
     const type = getType(value);
-    if(type !== ARRAY && type === node.type) {
+    if(type === node.type) {
         if(type === BASIC) return;
         each(node.child, (childId, childKey) => {
-            updateNode(nodes, childId as string, get(value, childKey));
+            if(has(value, childKey)) {
+                updateNode(nodes, childId as string, get(value, childKey));
+            } else {
+                removeNode(nodes, childId as string);
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                delete node.child[childKey];
+            }
         });
         return;
     }

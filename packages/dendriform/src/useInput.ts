@@ -19,7 +19,7 @@ export const useInput = <V extends string|null|undefined>(form: Dendriform<V>, d
     const onChange = useCallback(event => {
         const newValue = event.target.value;
         setLocalValue(newValue);
-        form.set(newValue, debounce);
+        form.set(newValue, {debounce});
     }, []);
 
     return {
