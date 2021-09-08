@@ -371,34 +371,6 @@ describe(`Nodes`, () => {
 
     describe(`updateNode()`, () => {
 
-        test(`should remove and update nodes if type is the same and is an array`, () => {
-            // because arrays children are identified by their indexes which can and do move.
-            // the dendriform-immer-patch-optimiser will normally take care of those movements if they
-            // take place at the depth of the array within the value data shape,
-            // but if not then we have to remove the array element's nodes to be careful
-            // and prevent those elements from possibly beging adopted by other children
-            const value = [100];
-            const [nodes, newNodeCreator] = createNodesFrom(value);
-            // create child nodes first
-            const [newNodes] = produceNodeByPath(nodes, newNodeCreator, value, [0]);
-            expect(newNodes['0']).toEqual({
-                type: ARRAY,
-                child: ['1'],
-                parentId: '',
-                id: '0'
-            });
-
-            // run test
-            const newNodes2 = produce(newNodes, draft => updateNode(draft, '0', [300]));
-            // node should have been updated
-            expect(newNodes2['0']).toEqual({
-                type: ARRAY,
-                child: [],
-                parentId: '',
-                id: '0'
-            });
-        });
-
         test(`should update item and change its type from basic to object`, () => {
             const value = ['a','b','c'];
             const [nodes, newNodeCreator] = createNodesFrom(value);
