@@ -76,11 +76,11 @@ describe(`Dendriform`, () => {
         test(`should set value with debounce`, () => {
             const form = new Dendriform(123);
 
-            form.set(456, 100);
+            form.set(456, {debounce: 100});
             jest.advanceTimersByTime(80);
             expect(form.value).toBe(123);
 
-            form.set(789, 100);
+            form.set(789, {debounce: 100});
             jest.advanceTimersByTime(80);
             expect(form.value).toBe(123);
 
@@ -2567,7 +2567,7 @@ describe(`Dendriform`, () => {
             });
         });
 
-        test.only(`should retain common nodes when data is replaced on array containing objects`, () => {
+        test(`should retain common nodes when data is replaced on array containing objects`, () => {
             const form = new Dendriform<any>([{foo: 123}, {foo: 456}]);
 
             form.branch([0,'foo']);
@@ -2608,7 +2608,7 @@ describe(`Dendriform`, () => {
                 }
             });
 
-            form.set([{foo: 123}, {foo: 456}]);
+            form.set([{foo: 123}, {foo: 456}], {track: false});
 
             expect(form.core.nodes).toEqual({
                 '0': {

@@ -178,13 +178,13 @@ class Core<C> {
     setWithDebounce = (id: string, toProduce: unknown, options: SetOptions): void => {
         const {debounce} = options;
         if(!debounce) {
-            this.set(id, toProduce);
+            this.set(id, toProduce, options);
             return;
         }
 
         const countAtCall = (this.debounceMap.get(id) ?? 0) + 1;
         this.debounceMap.set(id, countAtCall);
-        setTimeout(() => countAtCall === this.debounceMap.get(id) && this.set(id, toProduce), debounce);
+        setTimeout(() => countAtCall === this.debounceMap.get(id) && this.set(id, toProduce, options), debounce);
     };
 
     // if setBuffer exists, then new changes will be merged onto it
@@ -193,12 +193,12 @@ class Core<C> {
     setBuffer?: HistoryPatch;
     replaceByDefault = false;
 
-    set = (id: string, toProduce: unknown): void => {
+    set = (id: string, toProduce: unknown, options: SetOptions): void => {
         const path = this.getPath(id);
         if(!path) return;
 
         // produce patches that describe the change
-        const [, valuePatches, valuePatchesInv] = producePatches(this.getValue(id), toProduce);
+        const [, valuePatches, valuePatchesInv] = producePatches(this.getValue(id), toProduce, options.track);
 
         // transform patches so they have absolute paths
         const valuePatchesZoomed = zoomOutPatches(path, valuePatches);
@@ -489,6 +489,7 @@ export type Val<V,K> = V extends Map<unknown, unknown> ? ValMap<V> : K extends k
 
 export type SetOptions = {
     debounce?: number;
+    track?: boolean;
 };
 
 export class Dendriform<V> {
