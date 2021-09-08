@@ -175,8 +175,9 @@ class Core<C> {
 
     debounceMap = new Map<string,number>();
 
-    setWithDebounce = (id: string, toProduce: unknown, debounce = 0): void => {
-        if(debounce === 0) {
+    setWithDebounce = (id: string, toProduce: unknown, options: SetOptions): void => {
+        const {debounce} = options;
+        if(!debounce) {
             this.set(id, toProduce);
             return;
         }
@@ -469,22 +470,26 @@ const Branch = React.memo(
 // (wrapper around core)
 //
 
-type DendriformBranch = {
+export type DendriformBranch = {
     __branch: {
         core: Core<unknown>;
         id: string;
     };
 };
 
-type Renderer<D> = (form: D) => MaybeReactElement;
+export type Renderer<D> = (form: D) => MaybeReactElement;
 
-type ChildToProduce<V> = (key: PropertyKey) => ToProduce<V>;
+export type ChildToProduce<V> = (key: PropertyKey) => ToProduce<V>;
 
-type KeyMap<M extends Map<unknown, unknown>> = M extends Map<infer K, unknown> ? K : never;
-type ValMap<A> = A extends Map<unknown, infer V> ? V : never;
+export type KeyMap<M extends Map<unknown, unknown>> = M extends Map<infer K, unknown> ? K : never;
+export type ValMap<A> = A extends Map<unknown, infer V> ? V : never;
 
-type Key<V> = V extends Map<unknown, unknown> ? KeyMap<V> : keyof V;
-type Val<V,K> = V extends Map<unknown, unknown> ? ValMap<V> : K extends keyof V ? V[K] : never;
+export type Key<V> = V extends Map<unknown, unknown> ? KeyMap<V> : keyof V;
+export type Val<V,K> = V extends Map<unknown, unknown> ? ValMap<V> : K extends keyof V ? V[K] : never;
+
+export type SetOptions = {
+    debounce?: number;
+};
 
 export class Dendriform<V> {
 
@@ -531,14 +536,14 @@ export class Dendriform<V> {
         return this.core.historyState;
     }
 
-    set = (toProduce: ToProduce<V>, debounce = 0): void => {
-        this.core.setWithDebounce(this.id, toProduce, debounce);
+    set = (toProduce: ToProduce<V>, options: SetOptions = {}): void => {
+        this.core.setWithDebounce(this.id, toProduce, options);
     };
 
-    setParent = (childToProduce: ChildToProduce<unknown>, debounce = 0): void => {
+    setParent = (childToProduce: ChildToProduce<unknown>, options: SetOptions = {}): void => {
         const basePath = this.core.getPathOrError(this.id);
         const parent = this.core.getFormAt(basePath.slice(0,-1));
-        this.core.setWithDebounce(parent.id, childToProduce(basePath[basePath.length - 1]), debounce);
+        this.core.setWithDebounce(parent.id, childToProduce(basePath[basePath.length - 1]), options);
     };
 
     onChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): (() => void);

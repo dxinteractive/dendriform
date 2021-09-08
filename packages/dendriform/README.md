@@ -499,14 +499,18 @@ function MyComponent(props) {
 }
 ```
 
-The `.set()` function can also be debounced by passing a number of milliseconds as the second argument to `.set()`.
+The `.set()` function can also accept an options object as the second argument which can affect how the set is executed.
+
+#### options.debounce
+
+The `.set()` action can be debounced by passing a number of milliseconds.
 
 ```js
 function MyComponent(props) {
     const form = useDendriform(0);
 
     const countUpDebounced = useCallback(() => {
-        form.set(count => count + 1, 100);
+        form.set(count => count + 1, {debounce: 100});
     }, []);
 
     return <div>
