@@ -31,16 +31,14 @@ export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap;
 
 export type Nodes = {[id: string]: NodeAny};
 
-export type CountRef = {
-    current: number;
-};
+export type GetNextId = () => string;
 
 export type NewNodeCreator = (value: unknown, parentId?: string) => NodeAny;
 
-export const newNode = (countRef: CountRef): NewNodeCreator => {
+export const newNode = (getNextId: GetNextId): NewNodeCreator => {
     return (value: unknown, parentId = ''): NodeAny => {
         const type = getType(value);
-        const id = `${countRef.current++}`;
+        const id = getNextId();
         return {
             type,
             child: create(type),

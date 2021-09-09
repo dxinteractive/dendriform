@@ -27,10 +27,9 @@ import {producePatches} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {die} from './errors';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './Nodes';
-import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
+import type {Nodes, NodeAny, NewNodeCreator} from './Nodes';
 
 //
-
 // core
 //
 
@@ -83,12 +82,24 @@ type CoreConfig<C> = {
     options: Options;
 };
 
+type State<C> = {
+    // value
+    value: C;
+    // nodes
+    nodes: Nodes;
+    nodeCount: number;
+    // history
+    historyIndex: number;
+    historyStack: HistoryItem[];
+    historyState: HistoryState;
+};
+
 const emptyHistoryPatch = (): HistoryPatch => ({value: [], nodes: []});
 
 class Core<C> {
 
-    // the value in the form
-    value: C;
+    // state
+    state: State<C>;
     // cached Dendriform instances
     dendriforms = new Map<string,Dendriform<unknown>>();
     // derive callback refs, will be called while values are changing and require data to be derived
@@ -96,17 +107,30 @@ class Core<C> {
     // change callback refs, will be called when values are to be pushed out to subscribers
     changeCallbackRefs = new Set<ChangeCallbackRef>();
 
-    // nodes
-    // responsible for id-ing data pieces within the value tree
-    // makes it possible to uniquely id parts of a data shape, even while paths change
-    nodes: Nodes = {};
-    nodeCountRef: CountRef = {current: 0};
-    newNodeCreator: NewNodeCreator = newNode(this.nodeCountRef);
+    newNodeCreator: NewNodeCreator;
 
     constructor(config: CoreConfig<C>) {
-        this.value = config.initialValue;
+
+        this.state = {
+            // value - the .value stored in the form
+            value: config.initialValue,
+            // nodes - responsible for id-ing data pieces within the value tree
+            // makes it possible to uniquely id parts of a data shape, even while paths change
+            nodes: {},
+            nodeCount: 0,
+            // history
+            historyIndex: 0,
+            historyStack: [],
+            historyState: {
+                canUndo: false,
+                canRedo: false
+            }
+        };
+
+        this.newNodeCreator = newNode(() => `${this.state.nodeCount++}`);
+
         // create a root node for the value
-        addNode(this.nodes, this.newNodeCreator(this.value));
+        addNode(this.state.nodes, this.newNodeCreator(this.state.value));
 
         this.historyLimit = config.options.history || 0;
         this.replaceByDefault = !!config.options.replace;
@@ -117,7 +141,7 @@ class Core<C> {
     //
 
     getPath = (id: string): Path|undefined => {
-        return getPath(this.nodes, id);
+        return getPath(this.state.nodes, id);
     };
 
     getPathOrError = (id: string): Path => {
@@ -129,7 +153,7 @@ class Core<C> {
     getValue = (id: string): unknown => {
         const path = this.getPath(id);
         if(!path) return undefined;
-        return getIn(this.value, path);
+        return getIn(this.state.value, path);
     };
 
     getIndex = (id: string): number => {
@@ -144,7 +168,7 @@ class Core<C> {
         value: this.getValue,
         index: this.getIndex,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        history: (_id) => this.historyState
+        history: (_id) => this.state.historyState
     };
 
     createForm = (id: string): Dendriform<unknown> => {
@@ -159,8 +183,8 @@ class Core<C> {
         let node: NodeAny|undefined;
 
         if(path) {
-            this.nodes = produce(this.nodes, draft => {
-                const found = getNodeByPath(draft, this.newNodeCreator, this.value, path);
+            this.state.nodes = produce(this.state.nodes, draft => {
+                const found = getNodeByPath(draft, this.newNodeCreator, this.state.value, path);
                 node = isDraft(found) ? original(found) : found;
             });
         }
@@ -207,9 +231,9 @@ class Core<C> {
         // produce node patches, so that changes in the value
         // are accompanied by corresponding changes in the nodes
         const [, nodesPatches, nodesPatchesInv] = produceNodePatches(
-            this.nodes,
+            this.state.nodes,
             this.newNodeCreator,
-            this.value,
+            this.state.value,
             valuePatchesZoomed
         );
 
@@ -258,8 +282,8 @@ class Core<C> {
 
     applyChanges = (historyPatch: HistoryPatch): void => {
         // apply changes to .value and .nodes
-        this.value = applyPatches(this.value, historyPatch.value);
-        this.nodes = applyPatches(this.nodes, historyPatch.nodes);
+        this.state.value = applyPatches(this.state.value, historyPatch.value);
+        this.state.nodes = applyPatches(this.state.nodes, historyPatch.nodes);
 
         // add changes to change buffer
         this.changeBuffer = {
@@ -304,7 +328,7 @@ class Core<C> {
 
         const [deriveCallback] = deriveCallbackRef;
         const patches = this.changeBuffer ?? emptyHistoryPatch();
-        deriveCallback(this.value, {go, replace, patches});
+        deriveCallback(this.state.value, {go, replace, patches});
 
         this.deriving = false;
     };
@@ -357,30 +381,27 @@ class Core<C> {
     // history
     //
 
-    historyIndex = 0;
-    historyStack: HistoryItem[] = [];
     historyLimit: number;
-    historyState: HistoryState = {canUndo: false, canRedo: false};
 
     historyPush = (historyItem: HistoryItem) => {
-        this.historyStack.length = this.historyIndex;
-        this.historyStack.push(historyItem);
+        this.state.historyStack.length = this.state.historyIndex;
+        this.state.historyStack.push(historyItem);
 
-        if(this.historyStack.length > this.historyLimit) {
-            this.historyStack.shift();
+        if(this.state.historyStack.length > this.historyLimit) {
+            this.state.historyStack.shift();
         } else {
-            this.historyIndex++;
+            this.state.historyIndex++;
         }
         this.updateHistoryState();
     };
 
     historyReplace = (historyItem: HistoryItem) => {
-        if(this.historyIndex === 0) return;
-        this.historyStack.length = this.historyIndex;
+        if(this.state.historyIndex === 0) return;
+        this.state.historyStack.length = this.state.historyIndex;
 
-        const last = this.historyStack[this.historyIndex - 1];
+        const last = this.state.historyStack[this.state.historyIndex - 1];
 
-        this.historyStack[this.historyIndex - 1] = {
+        this.state.historyStack[this.state.historyIndex - 1] = {
             do: {
                 value: last.do.value.concat(historyItem.do.value),
                 nodes: last.do.nodes.concat(historyItem.do.nodes)
@@ -400,15 +421,15 @@ class Core<C> {
         this.going = true;
 
         const newIndex = Math.min(
-            Math.max(0, this.historyIndex + offset),
-            this.historyStack.length
+            Math.max(0, this.state.historyIndex + offset),
+            this.state.historyStack.length
         );
 
         const historyPatches: HistoryPatch[] = offset > 0
-            ? this.historyStack
-                .slice(this.historyIndex, newIndex)
+            ? this.state.historyStack
+                .slice(this.state.historyIndex, newIndex)
                 .map(item => item.do)
-            : this.historyStack.slice(newIndex, this.historyIndex)
+            : this.state.historyStack.slice(newIndex, this.state.historyIndex)
                 .reverse()
                 .map(item => item.undo);
 
@@ -418,7 +439,7 @@ class Core<C> {
             buffer.nodes.push(...thisPatch.nodes);
         });
 
-        this.historyIndex = newIndex;
+        this.state.historyIndex = newIndex;
 
         this.updateHistoryState();
 
@@ -435,10 +456,10 @@ class Core<C> {
     };
 
     updateHistoryState = () => {
-        const canUndo = this.historyIndex > 0;
-        const canRedo = this.historyIndex < this.historyStack.length;
-        if(canUndo !== this.historyState.canUndo || canRedo !== this.historyState.canRedo) {
-            this.historyState = {canUndo, canRedo};
+        const canUndo = this.state.historyIndex > 0;
+        const canRedo = this.state.historyIndex < this.state.historyStack.length;
+        if(canUndo !== this.state.historyState.canUndo || canRedo !== this.state.historyState.canRedo) {
+            this.state.historyState = {canUndo, canRedo};
         }
     };
 }
@@ -534,7 +555,7 @@ export class Dendriform<V> {
     }
 
     get history(): HistoryState {
-        return this.core.historyState;
+        return this.core.state.historyState;
     }
 
     set = (toProduce: ToProduce<V>, options: SetOptions = {}): void => {
@@ -611,7 +632,7 @@ export class Dendriform<V> {
     }
 
     useHistory(): HistoryState {
-        const [historyState, setHistoryState] = useState<HistoryState>(this.core.historyState);
+        const [historyState, setHistoryState] = useState<HistoryState>(this.core.state.historyState);
         this.useChange(setHistoryState, 'history');
         return historyState;
     }

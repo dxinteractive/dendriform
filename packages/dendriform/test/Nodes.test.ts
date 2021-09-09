@@ -6,7 +6,7 @@ import produce from 'immer';
 
 const createNodesFrom = (value: unknown, current: number = 0): [Nodes, NewNodeCreator] => {
     const countRef = {current};
-    const newNodeCreator = newNode(countRef);
+    const newNodeCreator = newNode(() => `${countRef.current++}`);
 
     // use immer to add this, because immer freezes things and the tests must cope with that
     const nodes = produce({}, draft => {
@@ -45,27 +45,27 @@ describe(`Nodes`, () => {
                 id: '0'
             };
 
-            expect(newNode(countRef)(undefined)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(undefined)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(null)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(null)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(1)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)('string')).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)('string')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(true)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(true)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(NaN)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(NaN)).toEqual(expected);
             expect(countRef.current).toBe(1);
         });
 
@@ -79,7 +79,7 @@ describe(`Nodes`, () => {
                 bar: 'bar!'
             };
 
-            expect(newNode(countRef)(obj)).toEqual({
+            expect(newNode(() => `${countRef.current++}`)(obj)).toEqual({
                 type: OBJECT,
                 child: {},
                 parentId: '',
@@ -94,7 +94,7 @@ describe(`Nodes`, () => {
 
             const arr = ['a','b','c'];
 
-            expect(newNode(countRef)(arr)).toEqual({
+            expect(newNode(() => `${countRef.current++}`)(arr)).toEqual({
                 type: ARRAY,
                 child: [],
                 parentId: '',
@@ -112,7 +112,7 @@ describe(`Nodes`, () => {
                 [2, 'two']
             ]);
 
-            expect(newNode(countRef)(map)).toEqual({
+            expect(newNode(() => `${countRef.current++}`)(map)).toEqual({
                 type: MAP,
                 child: new Map(),
                 parentId: '',
