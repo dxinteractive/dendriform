@@ -1809,6 +1809,107 @@ function MyComponent(props) {
 `;
 
 //
+// set() track
+//
+
+function SetTrack(): React.ReactElement {
+
+    const form = useDendriform(() => ({
+        pets: [
+            {name: 'Spike'},
+            {name: 'Spoke'}
+        ]
+    }));
+
+    const addPet = useCallback(() => {
+        form.branch('pets').set(draft => {
+            draft.push({name: 'new pet'});
+        });
+    }, []);
+
+    const reverseStrict = useCallback(() => {
+        const value = JSON.parse(JSON.stringify(form.value));
+        form.set(draft => {
+            draft.pets.reverse();
+        });
+    }, []);
+
+    const reverseValue = useCallback(() => {
+        form.set(draft => {
+            // deliberately create new object references
+            draft.pets = JSON.parse(JSON.stringify(draft.pets));
+            draft.pets.reverse();
+        });
+    }, []);
+
+    return <Region>
+        <fieldset>
+            <legend>pets</legend>
+
+            <ul>
+                {form.renderAll('pets', form => <Region of="li">
+                    {form.render('name', form => (
+                        <Region of="label">name <input {...useInput(form, 150)} /></Region>
+                    ))}
+                    <code>(id: {form.id})</code>
+                </Region>)}
+            </ul>
+
+            <button type="button" onClick={addPet}>Add pet</button>
+        </fieldset>
+        <button type="button" onClick={reverseStrict}>Reverse pets with strictly equal array element object references (ids will track)</button>
+        <button type="button" onClick={reverseValue}>Reverse pets with equal-by-value array element object references (ids won't track)</button>
+    </Region>;
+}
+
+const SetTrackCode = `
+import React, {useCallback} from 'react';
+import {useDendriform, useInput} from 'dendriform';
+
+function MyComponent(props) {
+
+    const form = useDendriform(() => ({
+        pets: [
+            {name: 'Spike'},
+            {name: 'Spoke'}
+        ]
+    });
+
+    const reverseStrict = useCallback(() => {
+        const value = JSON.parse(JSON.stringify(form.value));
+        form.set(draft => {
+            draft.pets.reverse();
+        });
+    }, []);
+
+    const reverseValue = useCallback(() => {
+        form.set(draft => {
+            // deliberately create new object references
+            draft.pets = JSON.parse(JSON.stringify(draft.pets));
+            draft.pets.reverse();
+        });
+    }, []);
+
+    return <div>
+        <fieldset>
+            <legend>pets</legend>
+            <ul>
+                {form.renderAll('pets', form => <li>
+                    {form.render('name', form => (
+                        <label>name <input {...useInput(form, 150)} /></label>
+                    ))}
+                    <code>(id: {form.id})</code>
+                </li>)}
+            </ul>
+            <button type="button" onClick={addPet}>Add pet</button>
+        </fieldset>
+        <button type="button" onClick={reverseStrict}>Reverse pets with strictly equal array element object references (ids will track)</button>
+        <button type="button" onClick={reverseValue}>Reverse pets with equal-by-value array element object references (ids won't track)</button>
+    </div>;
+};
+`;
+
+//
 // region
 //
 
@@ -1969,6 +2070,13 @@ const DEMOS: DemoObject[] = [
         more: 'array-operations'
     },
     {
+        title: 'Array element tracking',
+        Demo: SetTrack,
+        code: SetTrackCode,
+        description: `This demonstrates how Dendriform uses strict equality to track array element movement over time, which it uses for React element keying.`,
+        anchor: 'set-track'
+    },
+    {
         title: 'History',
         Demo: History,
         code: HistoryCode,
@@ -1983,6 +2091,24 @@ const DEMOS: DemoObject[] = [
         description: `Shows how you can control how changes are grouped within the history stack. Use any of the buttons, and then use undo and redo to see how the changes are grouped within history.`,
         anchor: 'historygroup',
         more: 'history'
+    },
+    {
+        title: 'Drag and drop with react-beautiful-dnd',
+        Demo: DragAndDrop,
+        code: DragAndDropCode,
+        description: `An example of how one might implement drag and drop with react-beautiful-dnd. Dendriform's .renderAll() function, and its automatic id management on array elements simplifies this greatly.`,
+        anchor: 'draganddrop',
+        more: 'drag-and-drop'
+    }
+];
+
+const ADVANCED_DEMOS: DemoObject[] = [
+    {
+        title: 'Validation example',
+        Demo: Validation,
+        code: ValidationCode,
+        description: `An example of how it's possible to perform validation on an array of items.`,
+        anchor: 'validation'
     },
     {
         title: 'Deriving data in a single form',
@@ -2016,14 +2142,6 @@ const DEMOS: DemoObject[] = [
         anchor: 'syncderive',
         more: 'synchronising-forms'
     },
-    {
-        title: 'Drag and drop with react-beautiful-dnd',
-        Demo: DragAndDrop,
-        code: DragAndDropCode,
-        description: `An example of how one might implement drag and drop with react-beautiful-dnd. Dendriform's .renderAll() function, and its automatic id management on array elements simplifies this greatly.`,
-        anchor: 'draganddrop',
-        more: 'drag-and-drop'
-    },
 //    {
 //        title: 'Keeping track of input refs',
 //        Demo: InputRefs,
@@ -2031,18 +2149,17 @@ const DEMOS: DemoObject[] = [
 //        description: `It's possible to use Dendriform forms to store refs to inputs being rendered. This allows you to access the refs from outside of the local component instances, which is particularly useful for focus management.`,
 //        anchor: 'refs'
 //    },
-    {
-        title: 'Validation example',
-        Demo: Validation,
-        code: ValidationCode,
-        description: `An example of how it's possible to perform validation on an array of items.`,
-        anchor: 'validation'
-    }
 ];
 
 export function Demos(): React.ReactElement {
     return <Flex flexWrap="wrap">
         {DEMOS.map(demo => <Demo demo={demo} key={demo.anchor} />)}
+    </Flex>;
+}
+
+export function AdvancedDemos(): React.ReactElement {
+    return <Flex flexWrap="wrap">
+        {ADVANCED_DEMOS.map(demo => <Demo demo={demo} key={demo.anchor} />)}
     </Flex>;
 }
 

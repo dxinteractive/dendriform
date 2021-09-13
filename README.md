@@ -11,7 +11,7 @@ Build feature-rich data-editing React UIs with great performance and little code
 
 **[See the demos](http://dendriform.xyz)**
 
-*Available on npm only as pre-release for now. All docs refer to the upcoming version 2.0.0.*
+[*Available on npm*](https://www.npmjs.com/package/dendriform)
 
 ```js
 import React, {useCallback} from 'react';
@@ -129,8 +129,12 @@ npm install --save dendriform
 - [Subscribing to changes](#subscribing-to-changes)
 - [Array operations](#array-operations)
 - [History](#history)
-- [Synchronising forms](#synchronising-forms)
 - [Drag and drop](#drag-and-drop)
+
+Advanced usage
+
+- [Deriving data](#deriving-data)
+- [Synchronising forms](#synchronising-forms)
 
 ### Creation
 
@@ -522,33 +526,6 @@ function MyComponent(props) {
         <button onClick={countUpDebounced}>Count up</button>
     </div>;
 }
-```
-
-#### options.track (advanced users)
-
-Dendriform automatically assigns a unique id to every nested property and array element of the data shape it contains. It uses these ids to track the movement of array elements over time, and uniquely keys any rendered React elements. By default a call to `.set()` will analyse the resulting data shape and track how any array elements may have moved by identifying each element with strict equality checks.
-
-However you may want to disable this tracking temporarily, for example if you want to replace an array with another whose elements maybe be equal by value but are not strictly equal. This can occur sometimes when setting a form's value based on props that have not been memoised properly.
-
-```js
-const form = new Dendriform([{foo: 123}, {foo: 456}]);
-
-// form.branch(0).id is '1'
-// form.branch(1).id is '2'
-
-form.set([{foo: 123}, {foo: 456}]);
-// ^ these 2 new objects are not recognised as they are not strictly equal
-// to the previous objects, so these will be given new ids
-
-// form.branch(0).id is '3'
-// form.branch(1).id is '4'
-
-form.set([{foo: 123}, {foo: 456}], {track: false});
-// ^ with track: false, Dendriform will not attempt to track array element movement
-// so the ids for each element will remain as they are
-
-// form.branch(0).id is '3'
-// form.branch(1).id is '4'
 ```
 
 #### Buffering
@@ -1046,6 +1023,79 @@ form.done();
 
 [Demo](http://dendriform.xyz#historygroup)
 
+### Drag and drop
+
+Drag and drop can be implemented easily with libraries such as [react-beautiful-dnd](https://github.com/atlassian/react-beautiful-dnd), because dendriform takes care of the unique keying of array elements for you.
+
+```js
+import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
+
+const dndReorder = (result) => (draft) => {
+    if(!result.destination) return;
+
+    const startIndex = result.source.index;
+    const endIndex = result.destination.index;
+    if(endIndex === startIndex) return;
+
+    const [removed] = draft.splice(startIndex, 1);
+    draft.splice(endIndex, 0, removed);
+};
+
+function DragAndDrop() {
+
+    const form = useDendriform({
+        colours: ['Red', 'Green', 'Blue']
+    });
+
+    const onDragEnd = useCallback(result => {
+        form.branch('colours').set(dndReorder(result));
+    }, []);
+
+    const onAdd = useCallback(() => {
+        form.branch('colours').set(array.push('Puce'));
+    }, []);
+
+    return <div>
+        <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="list">
+                {provided => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                        <DragAndDropList form={form.branch('colours')} />
+                        {provided.placeholder}
+                    </div>
+                )}
+            </Droppable>
+        </DragDropContext>
+
+        <button onClick={push}>add new</button>
+    </div>;
+}
+
+function DragAndDropList(props) {
+    return props.form.renderAll(form => {
+
+        const id = \`$\{form.id}\`;
+        const index = form.useIndex();
+        const remove = useCallback(() => form.set(array.remove()), []);
+
+        return <Draggable key={id} draggableId={id} index={index}>
+            {provided => <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+            >
+                <label>colour: <input {...useInput(form, 150)} /></label>
+                <button onClick={remove}>remove</button>
+            </div>}
+        </Draggable>;
+    });
+}
+```
+
+[Demo](http://dendriform.xyz#draganddrop)
+
+## Advanced usage
+
 ### Deriving data
 
 When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, and then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, after which `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
@@ -1177,77 +1227,6 @@ sync(nameForm, addressForm, names => {
 ```
 
 [Demo](http://dendriform.xyz#syncderive)
-
-## Drag and drop
-
-Drag and drop can be implemented easily with libraries such as [react-beautiful-dnd](https://github.com/atlassian/react-beautiful-dnd), because dendriform takes care of the unique keying of array elements for you.
-
-```js
-import {DragDropContext, Droppable, Draggable} from 'react-beautiful-dnd';
-
-const dndReorder = (result) => (draft) => {
-    if(!result.destination) return;
-
-    const startIndex = result.source.index;
-    const endIndex = result.destination.index;
-    if(endIndex === startIndex) return;
-
-    const [removed] = draft.splice(startIndex, 1);
-    draft.splice(endIndex, 0, removed);
-};
-
-function DragAndDrop() {
-
-    const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
-    });
-
-    const onDragEnd = useCallback(result => {
-        form.branch('colours').set(dndReorder(result));
-    }, []);
-
-    const onAdd = useCallback(() => {
-        form.branch('colours').set(array.push('Puce'));
-    }, []);
-
-    return <div>
-        <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="list">
-                {provided => (
-                    <div ref={provided.innerRef} {...provided.droppableProps}>
-                        <DragAndDropList form={form.branch('colours')} />
-                        {provided.placeholder}
-                    </div>
-                )}
-            </Droppable>
-        </DragDropContext>
-
-        <button onClick={push}>add new</button>
-    </div>;
-}
-
-function DragAndDropList(props) {
-    return props.form.renderAll(form => {
-
-        const id = \`$\{form.id}\`;
-        const index = form.useIndex();
-        const remove = useCallback(() => form.set(array.remove()), []);
-
-        return <Draggable key={id} draggableId={id} index={index}>
-            {provided => <div
-                ref={provided.innerRef}
-                {...provided.draggableProps}
-                {...provided.dragHandleProps}
-            >
-                <label>colour: <input {...useInput(form, 150)} /></label>
-                <button onClick={remove}>remove</button>
-            </div>}
-        </Draggable>;
-    });
-}
-```
-
-[Demo](http://dendriform.xyz#draganddrop)
 
 ## Etymology
 
