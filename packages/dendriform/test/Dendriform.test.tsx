@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable, revert} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 import {BASIC, OBJECT, ARRAY} from 'dendriform-immer-patch-optimiser';
 
@@ -1299,7 +1299,8 @@ describe(`Dendriform`, () => {
             expect(deriver.mock.calls[0][1]).toEqual({
                 go: 0,
                 patches: {nodes: [], value: []},
-                replace: true
+                replace: true,
+                force: false
             });
 
             expect(changer).toHaveBeenCalledTimes(1);
@@ -1402,7 +1403,8 @@ describe(`Dendriform`, () => {
             expect(deriver1.mock.calls[0][1]).toEqual({
                 go: 0,
                 patches: {nodes: [], value: []},
-                replace: true
+                replace: true,
+                force: false
             });
             expect(form.value).toEqual({
                 name: 'boo',
@@ -1425,7 +1427,8 @@ describe(`Dendriform`, () => {
             expect(deriver2.mock.calls[0][1]).toEqual({
                 go: 0,
                 patches: {nodes: [], value: []},
-                replace: true
+                replace: true,
+                force: false
             });
             expect(form.value).toEqual({
                 name: 'boo',
@@ -2160,6 +2163,188 @@ describe(`Dendriform`, () => {
                     const form2 = new Dendriform('', {history: 100});;
 
                     expect(() => sync(form, form2)).toThrow('[Dendriform] sync() forms must have the same maximum number of history items configured');
+                });
+            });
+
+            describe('revert', () => {
+
+                test(`should error if onDerive() has a deriver that throws an error`, () => {
+
+                    const form = new Dendriform(1);
+                    const form2 = new Dendriform(0);
+
+                    const callback = jest.fn();
+                    form.onChange(callback);
+
+                    const deriver1 = jest.fn((value) => {
+                        form2.set(value * 2);
+                    });
+
+                    const deriver2 = jest.fn((_value) => {
+                        throw revert('!!!');
+                    });
+
+                    form.onDerive(deriver1);
+
+                    expect(() => form.onDerive(deriver2)).toThrow('onDerive() callback must not throw errors on first call.');
+                    expect(callback).toHaveBeenCalledTimes(0);
+                });
+
+                test(`should revert when deriver throws an error (and prior successful derives should be reverted too)`, () => {
+
+                    const form = new Dendriform(1, {history: 5});
+                    const form2 = new Dendriform(0);
+
+                    const callback = jest.fn();
+                    const callback2 = jest.fn();
+                    form.onChange(callback);
+                    form2.onChange(callback2);
+
+                    const revertCallback = jest.fn();
+                    form.onRevert(revertCallback);
+
+                    const deriver1 = jest.fn((value) => {
+                        form2.set(value * 2);
+                    });
+
+                    const deriver2 = jest.fn((value) => {
+                        if(value === 2) {
+                            throw revert('Two not allowed');
+                        }
+                    });
+
+                    form.onDerive(deriver1);
+                    form.onDerive(deriver2);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(2);
+                    expect(callback).toHaveBeenCalledTimes(0);
+                    expect(callback2).toHaveBeenCalledTimes(1);
+                    expect(form.history.canUndo).toBe(false);
+                    expect(revertCallback).toHaveBeenCalledTimes(0);
+
+                    // this should cause deriver2 to throw
+                    // and everything should be reverted
+                    form.set(2);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(2);
+                    expect(callback).toHaveBeenCalledTimes(0);
+                    expect(callback2).toHaveBeenCalledTimes(1);
+                    expect(form.history.canUndo).toBe(false);
+                    expect(revertCallback).toHaveBeenCalledTimes(1);
+                    expect(revertCallback.mock.calls[0][0]).toBe('Two not allowed');
+
+                    // this should NOT cause deriver2 to throw
+                    // and everything should succeed
+                    form.set(3);
+
+                    expect(form.value).toBe(3);
+                    expect(form2.value).toBe(6);
+                    expect(callback).toHaveBeenCalledTimes(1);
+                    expect(callback2).toHaveBeenCalledTimes(2);
+                    expect(form.history.canUndo).toBe(true);
+                    expect(revertCallback).toHaveBeenCalledTimes(1);
+                });
+
+                test(`should revert when deriver throws an error in a chain`, () => {
+
+                    const form = new Dendriform(1, {history: 5});
+                    const form2 = new Dendriform(0);
+
+                    const callback = jest.fn();
+                    const callback2 = jest.fn();
+                    form.onChange(callback);
+                    form2.onChange(callback2);
+
+                    const deriver1 = jest.fn((value) => {
+                        form2.set(value * 2);
+                    });
+
+                    const deriver2 = jest.fn((value) => {
+                        if(value === 4) {
+                            throw revert('Four not allowed');
+                        }
+                    });
+
+                    form.onDerive(deriver1);
+                    form2.onDerive(deriver2);
+
+                    // this should cause deriver2 to throw
+                    // and everything should be reverted
+                    form.set(2);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(2);
+                    expect(callback).toHaveBeenCalledTimes(0);
+                    expect(callback2).toHaveBeenCalledTimes(1);
+                    expect(form.history.canUndo).toBe(false);
+
+                    // this should NOT cause deriver2 to throw
+                    // and everything should succeed
+                    form.set(3);
+
+                    expect(form.value).toBe(3);
+                    expect(form2.value).toBe(6);
+                    expect(callback).toHaveBeenCalledTimes(1);
+                    expect(callback2).toHaveBeenCalledTimes(2);
+                    expect(form.history.canUndo).toBe(true);
+                });
+
+                test(`should not revert when using force`, () => {
+
+                    const form = new Dendriform(1, {history: 5});
+                    const form2 = new Dendriform(0);
+
+                    const deriver = jest.fn((value, {force}) => {
+                        if(value === 2 && !force) {
+                            throw revert('Two not allowed');
+                        }
+                        form2.set(value);
+                    });
+
+                    form.onDerive(deriver);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(1);
+
+                    // this should cause deriver to throw
+                    // and everything should be reverted
+                    form.set(2);
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(1);
+
+                    // this should NOT cause deriver to throw
+                    // and everything should be changed
+                    form.set(2, {force: true});
+                    expect(form.value).toBe(2);
+                    expect(form2.value).toBe(2);
+                });
+
+                test(`should use useRevert`, () => {
+
+                    const firstHook = renderHook(() => useDendriform(1));
+
+                    const deriver = jest.fn((value, _details) => {
+                        if(value === 2) {
+                            throw revert('Two not allowed');
+                        }
+                    });
+
+                    const revertCallback = jest.fn();
+
+                    const form = firstHook.result.current;
+                    renderHook(() => {
+                        form.useDerive(deriver);
+                        form.useRevert(revertCallback);
+                    });
+
+                    act(() => {
+                        form.set(2);
+                    });
+
+                    expect(revertCallback).toHaveBeenCalledTimes(1);
+                    expect(revertCallback.mock.calls[0][0]).toBe('Two not allowed');
                 });
             });
         });

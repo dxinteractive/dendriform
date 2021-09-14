@@ -4,7 +4,8 @@ const errors = {
     2: 'branchAll() can only be called on forms containing arrays',
     3: 'renderAll() can only be called on forms containing arrays',
     4: (path: unknown[]) => `useIndex() can only be called on array element forms, can't be called at path ${path.map(a => JSON.stringify(a)).join('","')}`,
-    5: `sync() forms must have the same maximum number of history items configured`
+    5: `sync() forms must have the same maximum number of history items configured`,
+    6: (msg: string) => `onDerive() callback must not throw errors on first call. Threw: ${msg}`
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,8 +15,9 @@ export function die(error: keyof typeof errors, ...args: any[]): never {
         const msg = !e
             ? `unknown error #${error}`
             : typeof e === 'function'
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ? e(args as any)
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                ? e(args)
                 : e;
 
         throw new Error(`[Dendriform] ${msg}`);
