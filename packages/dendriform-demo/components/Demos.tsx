@@ -1828,7 +1828,6 @@ function SetTrack(): React.ReactElement {
     }, []);
 
     const reverseStrict = useCallback(() => {
-        const value = JSON.parse(JSON.stringify(form.value));
         form.set(draft => {
             draft.pets.reverse();
         });
@@ -1858,7 +1857,7 @@ function SetTrack(): React.ReactElement {
             <button type="button" onClick={addPet}>Add pet</button>
         </fieldset>
         <button type="button" onClick={reverseStrict}>Reverse pets with strictly equal array element object references (ids will track)</button>
-        <button type="button" onClick={reverseValue}>Reverse pets with equal-by-value array element object references (ids won't track)</button>
+        <button type="button" onClick={reverseValue}>Reverse pets with equal-by-value array element object references (ids won{"'"}t track)</button>
     </Region>;
 }
 
@@ -1876,7 +1875,6 @@ function MyComponent(props) {
     });
 
     const reverseStrict = useCallback(() => {
-        const value = JSON.parse(JSON.stringify(form.value));
         form.set(draft => {
             draft.pets.reverse();
         });
@@ -2141,7 +2139,7 @@ const ADVANCED_DEMOS: DemoObject[] = [
         description: `The useSync() hook can also accept a deriver to derive data in one direction.  This has the effect of caching each derived form state in history, and calling undo and redo will just restore the relevant derived data at that point in history.`,
         anchor: 'syncderive',
         more: 'synchronising-forms'
-    },
+    }
 //    {
 //        title: 'Keeping track of input refs',
 //        Demo: InputRefs,
