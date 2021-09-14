@@ -2,7 +2,7 @@
 import styled from 'styled-components';
 import {Box, Flex, Wrapper, FloatZone} from '../components/Layout';
 import {Text, H1, Link} from '../components/Text';
-import {Demos} from '../components/Demos';
+import {Demos, AdvancedDemos} from '../components/Demos';
 import type {ThemeProps} from '../pages/_app';
 
 export default function Main(): React.ReactElement {
@@ -32,8 +32,15 @@ export default function Main(): React.ReactElement {
         <Box mb={4}>
             White flashes indicate regions of the page that React has re-rendered. You can see how performant Dendriform&apos;s rendering is by how localised these flashes are.
         </Box>
-        <Box mb={3}>
+        <Box mb={5}>
             <Demos />
+        </Box>
+        <Hr />
+        <Box mb={3}>
+            <H1>Advanced Demos</H1>
+        </Box>
+        <Box mb={3}>
+            <AdvancedDemos />
         </Box>
     </Wrapper>;
 }
