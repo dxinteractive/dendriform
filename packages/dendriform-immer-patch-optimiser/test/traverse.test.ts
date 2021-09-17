@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, getIn, set, entries, clone, create} from '../src/index';
+import {BASIC, OBJECT, ARRAY, MAP, SET, getType, has, get, getIn, set, entries, clone, create} from '../src/index';
 
 describe(`getType`, () => {
     test(`should identify basics`, () => {
@@ -21,6 +21,10 @@ describe(`getType`, () => {
 
     test(`should identify map`, () => {
         expect(getType(new Map())).toBe(MAP);
+    });
+
+    test(`should identify set`, () => {
+        expect(getType(new Set())).toBe(SET);
     });
 });
 
@@ -49,6 +53,13 @@ describe(`has`, () => {
         expect(has(map, 1)).toBe(false);
         expect(has(map, 2)).toBe(true);
     });
+
+    test(`should work with set`, () => {
+        const set = new Set<number>([0,2]);
+        expect(has(set, 0)).toBe(true);
+        expect(has(set, 1)).toBe(false);
+        expect(has(set, 2)).toBe(true);
+    });
 });
 
 describe(`get`, () => {
@@ -76,6 +87,16 @@ describe(`get`, () => {
     test(`should work with map and miss`, () => {
         const map = new Map<number,boolean>([[0,true],[2,false]]);
         expect(get(map, 1)).toBe(undefined);
+    });
+
+    test(`should work with set`, () => {
+        const set = new Set<number>([0,2]);
+        expect(get(set, 2)).toBe(2);
+    });
+
+    test(`should work with set and miss`, () => {
+        const set = new Set<number>([0,2]);
+        expect(get(set, 1)).toBe(undefined);
     });
 
     test(`should error on basic types`, () => {
@@ -127,6 +148,12 @@ describe(`set`, () => {
         expect(map.get(2)).toBe(true);
     });
 
+    test(`should work with map`, () => {
+        const s = new Set<number>([0,2]);
+        set(s, 2, 3);
+        expect(Array.from(s.values())).toEqual([0,3]);
+    });
+
     test(`should error on basic types`, () => {
         expect(() => set(100, 4, 4)).toThrow(`Cant access property 4 of 100`);
         expect(() => set("str", 4, 4)).toThrow(`Cant access property 4 of str`);
@@ -156,6 +183,13 @@ describe(`entries`, () => {
 
         const result = entries(map);
         expect(result).toEqual([['foo',1],['bar',2]]);
+    });
+
+    test(`should work with set`, () => {
+        const set = new Set(['foo','bar']);
+
+        const result = entries(set);
+        expect(result).toEqual([['foo','foo'],['bar','bar']]);
     });
 
     test(`should error on basic types`, () => {
@@ -195,6 +229,14 @@ describe(`clone`, () => {
         expect(cloned.get('foo')).toBe(1);
         expect(cloned.get('bar')).toBe(2);
     });
+
+    test(`should work with set`, () => {
+        const set = new Set(['foo','bar']);
+        const cloned = clone(set);
+
+        expect(cloned).not.toBe(set);
+        expect(Array.from(set.values())).toEqual(['foo','bar']);
+    });
 });
 
 describe(`create`, () => {
@@ -212,5 +254,9 @@ describe(`create`, () => {
 
     test(`MAP should create map`, () => {
         expect(create(MAP) instanceof Map).toBe(true);
+    });
+
+    test(`SET should create set`, () => {
+        expect(create(SET) instanceof Set).toBe(true);
     });
 });

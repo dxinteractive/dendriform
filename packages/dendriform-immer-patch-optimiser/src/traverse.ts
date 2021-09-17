@@ -4,13 +4,15 @@ export const BASIC = 0;
 export const OBJECT = 1;
 export const ARRAY = 2;
 export const MAP = 3;
+export const SET = 4;
 
-export type DataType = typeof ARRAY|typeof OBJECT|typeof BASIC|typeof MAP;
+export type DataType = typeof ARRAY|typeof OBJECT|typeof BASIC|typeof MAP|typeof SET;
 
 const cantAccess = (thing: unknown, key: Key) => new Error(`Cant access property ${String(key)} of ${String(thing)}`);
 
 export function getType(thing: unknown): DataType {
     if(thing instanceof Map) return MAP;
+    if(thing instanceof Set) return SET;
     if(Array.isArray(thing)) return ARRAY;
     if(thing instanceof Object) return OBJECT;
     return BASIC;
@@ -26,7 +28,7 @@ export function has(thing: any, key: Key): boolean {
         const index = key as number;
         return index < thing.length && index > -1;
     }
-    if(type === MAP) {
+    if(type === MAP || type === SET) {
         return thing.has(key);
     }
     throw cantAccess(thing, key);
@@ -40,6 +42,9 @@ export function get(thing: any, key: Key): unknown {
     }
     if(type === MAP) {
         return thing.get(key);
+    }
+    if(type === SET) {
+        return thing.has(key) ? key : undefined;
     }
     return thing[key];
 }
@@ -58,6 +63,11 @@ export function set(thing: any, key: Key, value: unknown): void {
     if(type === MAP) {
         return thing.set(key, value);
     }
+    if(type === SET) {
+        thing.delete(key);
+        thing.add(value);
+        return;
+    }
     thing[key] = value;
 }
 
@@ -67,7 +77,7 @@ export type EachCallback = (value: unknown, key: Key) => void;
 export function entries(thing: any): [Key,any][] {
     const type = getType(thing);
     if(type === OBJECT) return Object.entries(thing);
-    if(type === ARRAY || type === MAP) return Array.from(thing.entries());
+    if(type === ARRAY || type === MAP || type === SET) return Array.from(thing.entries());
     throw cantAccess(thing, 'any');
 }
 
@@ -77,6 +87,7 @@ export function clone(thing: any): any {
     if(type === OBJECT) return {...thing};
     if(type === ARRAY) return thing.slice();
     if(type === MAP) return new Map(thing);
+    if(type === SET) return new Set(thing);
     return thing;
 }
 
@@ -85,5 +96,6 @@ export function create(type: DataType): any {
     if(type === OBJECT) return {};
     if(type === ARRAY) return [];
     if(type === MAP) return new Map();
+    if(type === SET) return new Set();
     return undefined;
 }
