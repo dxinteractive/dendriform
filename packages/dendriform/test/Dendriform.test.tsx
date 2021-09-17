@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable, revert} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable, cancel} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 import {BASIC, OBJECT, ARRAY} from 'dendriform-immer-patch-optimiser';
 
@@ -606,6 +606,21 @@ describe(`Dendriform`, () => {
             // @ts-expect-error
             expect(form.branch('foo').branch('bar').value).toBe(true);
         });
+
+        test(`should get child value of es6 map`, () => {
+            const form = new Dendriform(new Map([['a','A'],['b','B'],['c','C']]));
+
+            const bForm = form.branch('a');
+            expect(bForm.value).toBe('A');
+            expect(bForm.id).toBe('1');
+        });
+
+        test(`should set child value of es6 map`, () => {
+            const form = new Dendriform(new Map([['a','A'],['b','B'],['c','C']]));
+
+            form.branch('a').set('!');
+            expect(form.value.get('a')).toBe('!');
+        });
     });
 
     describe(`.branch() deep`, () => {
@@ -728,10 +743,17 @@ describe(`Dendriform`, () => {
             expect(form.branchAll()).toEqual(form.branchAll());
         });
 
-        test(`should error if getting a non-array`, () => {
+        test(`should work with es6 Map`, () => {
+            const form = new Dendriform(new Map([['a','A'],['b','B'],['c','C']]));
+            const forms = form.branchAll();
+
+            expect(forms.map(f => f.value)).toEqual(['A','B','C']);
+        });
+
+        test(`should error if getting a basic type`, () => {
             const form = new Dendriform(123);
 
-            expect(() => form.branchAll()).toThrow('branchAll() can only be called on forms containing arrays');
+            expect(() => form.branchAll()).toThrow('branchAll() can only be called on forms containing an array, object, es6 map or es6 set');
         });
 
         // TODO what about misses?
@@ -999,7 +1021,7 @@ describe(`Dendriform`, () => {
 
         describe(`rendering`, () => {
 
-            test(`should error if rendering a non-array`, () => {
+            test(`should error if rendering a basic type`, () => {
                 const consoleError = console.error;
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 console.error = () => {};
@@ -1012,7 +1034,7 @@ describe(`Dendriform`, () => {
                     return props.form.renderAll(renderer);
                 };
 
-                expect(() => mount(<MyComponent form={form} foo={1} />)).toThrow('renderAll() can only be called on forms containing arrays');
+                expect(() => mount(<MyComponent form={form} foo={1} />)).toThrow('renderAll() can only be called on forms containing an array, object, es6 map or es6 set');
 
                 console.error = consoleError;
             });
@@ -1085,6 +1107,40 @@ describe(`Dendriform`, () => {
                 expect(renderer).toHaveBeenCalledTimes(2);
                 expect(renderer.mock.calls[0][0].value).toBe(form.branch([0,0,0]).value);
                 expect(renderer.mock.calls[1][0].value).toBe(form.branch([0,0,1]).value);
+                expect(wrapper.find('.branch').length).toBe(2);
+            });
+
+            test(`should renderAll es6 map return React element`, () => {
+                const form = new Dendriform(new Map([['foo',1],['bar',2]]));
+
+                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+
+                const MyComponent = (props: MyComponentProps<Map<string,number>>) => {
+                    return props.form.renderAll(renderer);
+                };
+
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
+
+                expect(renderer).toHaveBeenCalledTimes(2);
+                expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
+                expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
+                expect(wrapper.find('.branch').length).toBe(2);
+            });
+
+            test(`should renderAll object return React element`, () => {
+                const form = new Dendriform<{[key: string]: number}>({foo: 1, bar: 2});
+
+                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+
+                const MyComponent = (props: MyComponentProps<{[key: string]: number}>) => {
+                    return props.form.renderAll(renderer);
+                };
+
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
+
+                expect(renderer).toHaveBeenCalledTimes(2);
+                expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
+                expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
                 expect(wrapper.find('.branch').length).toBe(2);
             });
         });
@@ -1850,7 +1906,7 @@ describe(`Dendriform`, () => {
 
             test(`should have a slave form whose history only contains snapshots that correspond to a master form's changes`, () => {
 
-                // could be useful for independent state that needs to revert and respond
+                // could be useful for independent state that needs to cancel and respond
                 // to history changes in application data
                 // such as focus, window position
 
@@ -2166,7 +2222,7 @@ describe(`Dendriform`, () => {
                 });
             });
 
-            describe('revert', () => {
+            describe('cancel', () => {
 
                 test(`should error if onDerive() has a deriver that throws an error`, () => {
 
@@ -2181,7 +2237,7 @@ describe(`Dendriform`, () => {
                     });
 
                     const deriver2 = jest.fn((_value) => {
-                        throw revert('!!!');
+                        throw cancel('!!!');
                     });
 
                     form.onDerive(deriver1);
@@ -2190,7 +2246,7 @@ describe(`Dendriform`, () => {
                     expect(callback).toHaveBeenCalledTimes(0);
                 });
 
-                test(`should revert when deriver throws an error (and prior successful derives should be reverted too)`, () => {
+                test(`should cancel when deriver throws an error (and prior successful derives should be cancelled too)`, () => {
 
                     const form = new Dendriform(1, {history: 5});
                     const form2 = new Dendriform(0);
@@ -2200,8 +2256,8 @@ describe(`Dendriform`, () => {
                     form.onChange(callback);
                     form2.onChange(callback2);
 
-                    const revertCallback = jest.fn();
-                    form.onRevert(revertCallback);
+                    const cancelCallback = jest.fn();
+                    form.onCancel(cancelCallback);
 
                     const deriver1 = jest.fn((value) => {
                         form2.set(value * 2);
@@ -2209,7 +2265,7 @@ describe(`Dendriform`, () => {
 
                     const deriver2 = jest.fn((value) => {
                         if(value === 2) {
-                            throw revert('Two not allowed');
+                            throw cancel('Two not allowed');
                         }
                     });
 
@@ -2221,10 +2277,10 @@ describe(`Dendriform`, () => {
                     expect(callback).toHaveBeenCalledTimes(0);
                     expect(callback2).toHaveBeenCalledTimes(1);
                     expect(form.history.canUndo).toBe(false);
-                    expect(revertCallback).toHaveBeenCalledTimes(0);
+                    expect(cancelCallback).toHaveBeenCalledTimes(0);
 
                     // this should cause deriver2 to throw
-                    // and everything should be reverted
+                    // and everything should be cancelled
                     form.set(2);
 
                     expect(form.value).toBe(1);
@@ -2232,8 +2288,8 @@ describe(`Dendriform`, () => {
                     expect(callback).toHaveBeenCalledTimes(0);
                     expect(callback2).toHaveBeenCalledTimes(1);
                     expect(form.history.canUndo).toBe(false);
-                    expect(revertCallback).toHaveBeenCalledTimes(1);
-                    expect(revertCallback.mock.calls[0][0]).toBe('Two not allowed');
+                    expect(cancelCallback).toHaveBeenCalledTimes(1);
+                    expect(cancelCallback.mock.calls[0][0]).toBe('Two not allowed');
 
                     // this should NOT cause deriver2 to throw
                     // and everything should succeed
@@ -2244,10 +2300,10 @@ describe(`Dendriform`, () => {
                     expect(callback).toHaveBeenCalledTimes(1);
                     expect(callback2).toHaveBeenCalledTimes(2);
                     expect(form.history.canUndo).toBe(true);
-                    expect(revertCallback).toHaveBeenCalledTimes(1);
+                    expect(cancelCallback).toHaveBeenCalledTimes(1);
                 });
 
-                test(`should revert when deriver throws an error in a chain`, () => {
+                test(`should cancel when deriver throws an error in a chain`, () => {
 
                     const form = new Dendriform(1, {history: 5});
                     const form2 = new Dendriform(0);
@@ -2263,7 +2319,7 @@ describe(`Dendriform`, () => {
 
                     const deriver2 = jest.fn((value) => {
                         if(value === 4) {
-                            throw revert('Four not allowed');
+                            throw cancel('Four not allowed');
                         }
                     });
 
@@ -2271,7 +2327,7 @@ describe(`Dendriform`, () => {
                     form2.onDerive(deriver2);
 
                     // this should cause deriver2 to throw
-                    // and everything should be reverted
+                    // and everything should be cancelled
                     form.set(2);
 
                     expect(form.value).toBe(1);
@@ -2291,14 +2347,14 @@ describe(`Dendriform`, () => {
                     expect(form.history.canUndo).toBe(true);
                 });
 
-                test(`should not revert when using force`, () => {
+                test(`should not cancel when using force`, () => {
 
                     const form = new Dendriform(1, {history: 5});
                     const form2 = new Dendriform(0);
 
                     const deriver = jest.fn((value, {force}) => {
                         if(value === 2 && !force) {
-                            throw revert('Two not allowed');
+                            throw cancel('Two not allowed');
                         }
                         form2.set(value);
                     });
@@ -2309,7 +2365,7 @@ describe(`Dendriform`, () => {
                     expect(form2.value).toBe(1);
 
                     // this should cause deriver to throw
-                    // and everything should be reverted
+                    // and everything should be cancelled
                     form.set(2);
                     expect(form.value).toBe(1);
                     expect(form2.value).toBe(1);
@@ -2321,30 +2377,30 @@ describe(`Dendriform`, () => {
                     expect(form2.value).toBe(2);
                 });
 
-                test(`should use useRevert`, () => {
+                test(`should use useCancel`, () => {
 
                     const firstHook = renderHook(() => useDendriform(1));
 
                     const deriver = jest.fn((value, _details) => {
                         if(value === 2) {
-                            throw revert('Two not allowed');
+                            throw cancel('Two not allowed');
                         }
                     });
 
-                    const revertCallback = jest.fn();
+                    const cancelCallback = jest.fn();
 
                     const form = firstHook.result.current;
                     renderHook(() => {
                         form.useDerive(deriver);
-                        form.useRevert(revertCallback);
+                        form.useCancel(cancelCallback);
                     });
 
                     act(() => {
                         form.set(2);
                     });
 
-                    expect(revertCallback).toHaveBeenCalledTimes(1);
-                    expect(revertCallback.mock.calls[0][0]).toBe('Two not allowed');
+                    expect(cancelCallback).toHaveBeenCalledTimes(1);
+                    expect(cancelCallback.mock.calls[0][0]).toBe('Two not allowed');
                 });
             });
         });

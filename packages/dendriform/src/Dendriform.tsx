@@ -20,12 +20,13 @@
 import React from 'react';
 import {useState, useEffect} from 'react';
 import {shallowEqualArrays} from 'shallow-equal';
-import {getIn, applyPatches, zoomOutPatches} from 'dendriform-immer-patch-optimiser';
+import {getIn, entries, applyPatches, zoomOutPatches} from 'dendriform-immer-patch-optimiser';
 import type {DendriformPatch, Path} from 'dendriform-immer-patch-optimiser';
 import produce, {isDraft, original} from 'immer';
 import {producePatches} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {die} from './errors';
+import type {ErrorKey} from './errors';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './Nodes';
 import type {Nodes, NodeAny, NewNodeCreator} from './Nodes';
 
@@ -617,6 +618,21 @@ const Branch = React.memo(
     (prevProps, nextProps) => shallowEqualArrays(prevProps.deps, nextProps.deps)
 );
 
+type Allable = unknown[]
+    | Map<string,unknown>;
+
+type AllableChild<A> = A extends unknown[] ? A[0]
+    : A extends Map<any, infer V> ? V
+    : never;
+
+const entriesOrDie = (thing: any, error: ErrorKey) => {
+    try {
+        return entries(thing);
+    } catch(e) {
+        die(error);
+    }
+};
+
 //
 // Dendriform
 //
@@ -801,20 +817,17 @@ export class Dendriform<V> {
         return this.core.getFormAt(basePath?.concat(appendPath));
     }
 
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & unknown[]>(path: [K1, K2, K3, K4]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & unknown[]>(path: [K1, K2, K3]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & unknown[]>(path: [K1, K2]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(path: [K1]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(key: K1): Dendriform<W[0]>[];
-    branchAll<W extends V & unknown[]>(path?: []): Dendriform<W[0]>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & Allable>(path: [K1, K2, K3, K4]): Dendriform<AllableChild<W>>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & Allable>(path: [K1, K2, K3]): Dendriform<AllableChild<W>>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & Allable>(path: [K1, K2]): Dendriform<AllableChild<W>>[];
+    branchAll<K1 extends Key<V>, W extends Val<V,K1> & Allable>(path: [K1]): Dendriform<AllableChild<W>>[];
+    branchAll<K1 extends Key<V>, W extends Val<V,K1> & Allable>(key: K1): Dendriform<AllableChild<W>>[];
+    branchAll<W extends V & Allable>(path?: []): Dendriform<AllableChild<W>>[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     branchAll(pathOrKey: any): any {
         const got = this.branch(pathOrKey);
-        const array = got.value;
-        if(!Array.isArray(array)) die(2);
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return array.map((_element, index) => got.branch(index as any));
+        return entriesOrDie(got.value, 2).map(([key]) => got.branch(key as any));
     }
 
     render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4]>>, deps?: unknown[]): React.ReactElement;
@@ -833,13 +846,13 @@ export class Dendriform<V> {
         return <Branch renderer={() => renderer(form)} deps={deps} />;
     }
 
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & unknown[]>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & unknown[]>(path: [K1, K2, K3], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & unknown[]>(path: [K1, K2], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(path: [K1], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<W extends V & unknown[]>(path: [], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(key: K1, renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<W extends V & unknown[]>(renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & Allable>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<AllableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & Allable>(path: [K1, K2, K3], renderer: Renderer<Dendriform<AllableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & Allable>(path: [K1, K2], renderer: Renderer<Dendriform<AllableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, W extends Val<V,K1> & Allable>(path: [K1], renderer: Renderer<Dendriform<AllableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<W extends V & Allable>(path: [], renderer: Renderer<Dendriform<AllableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, W extends Val<V,K1> & Allable>(key: K1, renderer: Renderer<Dendriform<AllableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<W extends V & Allable>(renderer: Renderer<Dendriform<AllableChild<W>>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     renderAll(a: any, b: any, c: any): React.ReactElement {
         const aIsRenderer = typeof a === 'function';
@@ -848,12 +861,10 @@ export class Dendriform<V> {
         const form = aIsRenderer ? this : this.branch(a);
 
         const containerRenderer = (): React.ReactElement[] => {
-            const array = form.useValue();
-            if(!Array.isArray(array)) die(3);
-
-            return array.map((_element, index): React.ReactElement => {
+            const value = form.useValue();
+            return entriesOrDie(value, 3).map(([key]): React.ReactElement => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const child = form.branch(index as any);
+                const child = form.branch(key as any);
                 return <Branch key={child.id} renderer={() => renderer(child)} deps={deps} />;
             });
         };
