@@ -31,44 +31,44 @@ import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './No
 import type {Nodes, NodeAny, NewNodeCreator} from './Nodes';
 
 //
-// revert
+// cancel
 //
 
-class Revert extends Error {
-    DENDRIFORM_REVERT = true;
+class Cancel extends Error {
+    DENDRIFORM_CANCEL = true;
 }
 
-export const revert = (message: string): Revert => new Revert(message);
+export const cancel = (message: string): Cancel => new Cancel(message);
 
 //
 // core
 //
 
-type HistoryItem = {
+export type HistoryItem = {
     do: HistoryPatch;
     undo: HistoryPatch;
 };
 
-type HistoryPatch = {
+export type HistoryPatch = {
     value: DendriformPatch[];
     nodes: DendriformPatch[];
 };
 
-type HistoryState = {
+export type HistoryState = {
     canUndo: boolean;
     canRedo: boolean;
 };
 
-type ChangeCallbackDetails = {
+export type ChangeCallbackDetails = {
     patches: HistoryPatch
 };
-type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
-type ChangeTypeValue = 'value';
-type ChangeTypeIndex = 'index';
-type ChangeTypeHistory = 'history';
-type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
+export type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
+export type ChangeTypeValue = 'value';
+export type ChangeTypeIndex = 'index';
+export type ChangeTypeHistory = 'history';
+export type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ChangeCallbackRef = [ChangeType, string, ChangeCallback<any>, any];
+export type ChangeCallbackRef = [ChangeType, string, ChangeCallback<any>, any];
 
 export type DeriveCallbackDetails = {
     go: number;
@@ -78,9 +78,9 @@ export type DeriveCallbackDetails = {
 };
 export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DeriveCallbackRef = [DeriveCallback<any>];
+export type DeriveCallbackRef = [DeriveCallback<any>];
 
-export type RevertCallback = (message: string) => void;
+export type CancelCallback = (message: string) => void;
 
 //
 // core
@@ -153,8 +153,8 @@ export class Core<C> {
     deriveCallbackRefs = new Set<DeriveCallbackRef>();
     // change callback refs, will be called when values are to be pushed out to subscribers
     changeCallbackRefs = new Set<ChangeCallbackRef>();
-    // change callback refs, will be called when values are to be pushed out to subscribers
-    revertCallbacks = new Set<RevertCallback>();
+    // cancel callback refs, will be called when a change is cancelled
+    cancelCallbacks = new Set<CancelCallback>();
     // set of forms currently hvaing their set() functions called
     static changingForms = new Set<Core<unknown>>();
     // debounce ids and count numbers to identify when each id has debounced
@@ -288,7 +288,7 @@ export class Core<C> {
             // add form to the set of forms that are currently undergoing a change
             Core.changingForms.add(this);
 
-            // set revert point to restore state from here if change is reverted
+            // set revert point to restore state from here if change is cancelled
             this.setRevertPoint();
 
             // call executor to make the changes
@@ -312,9 +312,9 @@ export class Core<C> {
                 throw e;
             }
 
-            // if the originator but error is not a revert
+            // if the originator but error is not a cancel
             // close off the change and throw the error further up
-            if(!e.DENDRIFORM_REVERT) {
+            if(!e.DENDRIFORM_CANCEL) {
                 this.finaliseChange();
                 throw e;
             }
@@ -323,7 +323,7 @@ export class Core<C> {
             Core.changingForms.forEach(core => core.revert());
 
             // call all revert callbacks
-            this.revertCallbacks.forEach(revertCallback => revertCallback(e.message));
+            this.cancelCallbacks.forEach(cancelCallback => cancelCallback(e.message));
             this.finaliseChange();
         }
     };
@@ -733,10 +733,10 @@ export class Dendriform<V> {
         return () => void this.core.deriveCallbackRefs.delete(deriveCallback);
     }
 
-    onRevert(callback: RevertCallback): (() => void) {
-        this.core.revertCallbacks.add(callback);
+    onCancel(callback: CancelCallback): (() => void) {
+        this.core.cancelCallbacks.add(callback);
         // return unsubscriber
-        return () => void this.core.revertCallbacks.delete(callback);
+        return () => void this.core.cancelCallbacks.delete(callback);
     }
 
     onChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): (() => void);
@@ -790,8 +790,8 @@ export class Dendriform<V> {
         useEffect(() => this.onDerive(callback), []);
     }
 
-    useRevert(callback: RevertCallback): void {
-        useEffect(() => this.onRevert(callback), []);
+    useCancel(callback: CancelCallback): void {
+        useEffect(() => this.onCancel(callback), []);
     }
 
     useHistory(): HistoryState {
