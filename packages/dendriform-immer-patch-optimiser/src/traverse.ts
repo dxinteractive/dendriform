@@ -1,3 +1,5 @@
+import type {Key} from './types';
+
 export const BASIC = 0;
 export const OBJECT = 1;
 export const ARRAY = 2;
@@ -5,7 +7,7 @@ export const MAP = 3;
 
 export type DataType = typeof ARRAY|typeof OBJECT|typeof BASIC|typeof MAP;
 
-const cantAccess = (thing: unknown, key: PropertyKey) => new Error(`Cant access property ${String(key)} of ${String(thing)}`);
+const cantAccess = (thing: unknown, key: Key) => new Error(`Cant access property ${String(key)} of ${String(thing)}`);
 
 export function getType(thing: unknown): DataType {
     if(thing instanceof Map) return MAP;
@@ -15,7 +17,7 @@ export function getType(thing: unknown): DataType {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
-export function has(thing: any, key: PropertyKey): boolean {
+export function has(thing: any, key: Key): boolean {
     const type = getType(thing);
     if(type === OBJECT) {
         return key in thing;
@@ -31,7 +33,7 @@ export function has(thing: any, key: PropertyKey): boolean {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
-export function get(thing: any, key: PropertyKey): unknown {
+export function get(thing: any, key: Key): unknown {
     const type = getType(thing);
     if(type === BASIC) {
         throw cantAccess(thing, key);
@@ -43,12 +45,12 @@ export function get(thing: any, key: PropertyKey): unknown {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
-export function getIn(thing: unknown, path: PropertyKey[]): unknown {
+export function getIn(thing: unknown, path: Key[]): unknown {
     return path.reduce((red, key) => get(red, key), thing);
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
-export function set(thing: any, key: PropertyKey, value: unknown): void {
+export function set(thing: any, key: Key, value: unknown): void {
     const type = getType(thing);
     if(type === BASIC) {
         throw cantAccess(thing, key);
@@ -59,20 +61,14 @@ export function set(thing: any, key: PropertyKey, value: unknown): void {
     thing[key] = value;
 }
 
-export type EachCallback = (value: unknown, key: PropertyKey) => void;
+export type EachCallback = (value: unknown, key: Key) => void;
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
-export function each(thing: any, callback: EachCallback): void {
+export function entries(thing: any): [Key,any][] {
     const type = getType(thing);
-    if(type === BASIC) {
-        throw cantAccess(thing, 'any');
-    }
-    if(type === OBJECT) {
-        Object.keys(thing).forEach((key: string) => callback(thing[key], key));
-    }
-    if(type === ARRAY || type === MAP) {
-        thing.forEach(callback);
-    }
+    if(type === OBJECT) return Object.entries(thing);
+    if(type === ARRAY || type === MAP) return Array.from(thing.entries());
+    throw cantAccess(thing, 'any');
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any

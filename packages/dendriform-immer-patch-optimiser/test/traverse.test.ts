@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, getIn, set, each, clone, create} from '../src/index';
+import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, getIn, set, entries, clone, create} from '../src/index';
 
 describe(`getType`, () => {
     test(`should identify basics`, () => {
@@ -136,56 +136,33 @@ describe(`set`, () => {
 });
 
 
-describe(`each`, () => {
+describe(`entries`, () => {
     test(`should work with object`, () => {
-        const callback = jest.fn();
         const obj = {foo: 1, bar: 2};
 
-        each(obj, callback);
-
-        expect(callback).toHaveBeenCalledTimes(2);
-        expect(callback.mock.calls[0][0]).toBe(1);
-        expect(callback.mock.calls[0][1]).toBe('foo');
-        expect(callback.mock.calls[1][0]).toBe(2);
-        expect(callback.mock.calls[1][1]).toBe('bar');
+        const result = entries(obj);
+        expect(result).toEqual([['foo',1],['bar',2]]);
     });
 
     test(`should work with array`, () => {
-        const callback = jest.fn();
         const arr = ['a','b','c'];
 
-        each(arr, callback);
-
-        expect(callback).toHaveBeenCalledTimes(3);
-        expect(callback.mock.calls[0][0]).toBe('a');
-        expect(callback.mock.calls[0][1]).toBe(0);
-        expect(callback.mock.calls[1][0]).toBe('b');
-        expect(callback.mock.calls[1][1]).toBe(1);
-        expect(callback.mock.calls[2][0]).toBe('c');
-        expect(callback.mock.calls[2][1]).toBe(2);
+        const result = entries(arr);
+        expect(result).toEqual([[0,'a'],[1,'b'],[2,'c']]);
     });
 
     test(`should work with map`, () => {
-        const callback = jest.fn();
         const map = new Map([['foo', 1], ['bar', 2]]);
 
-        each(map, callback);
-
-        expect(callback).toHaveBeenCalledTimes(2);
-        expect(callback.mock.calls[0][0]).toBe(1);
-        expect(callback.mock.calls[0][1]).toBe('foo');
-        expect(callback.mock.calls[1][0]).toBe(2);
+        const result = entries(map);
+        expect(result).toEqual([['foo',1],['bar',2]]);
     });
 
     test(`should error on basic types`, () => {
-        const callback = jest.fn();
-
-        expect(() => each(100, callback)).toThrow(`Cant access property any of 100`);
-        expect(() => each("str", callback)).toThrow(`Cant access property any of str`);
-        expect(() => each(null, callback)).toThrow(`Cant access property any of null`);
-        expect(() => each(undefined, callback)).toThrow(`Cant access property any of undefined`);
-
-        expect(callback).toHaveBeenCalledTimes(0);
+        expect(() => entries(100)).toThrow(`Cant access property any of 100`);
+        expect(() => entries("str")).toThrow(`Cant access property any of str`);
+        expect(() => entries(null)).toThrow(`Cant access property any of null`);
+        expect(() => entries(undefined)).toThrow(`Cant access property any of undefined`);
     });
 });
 

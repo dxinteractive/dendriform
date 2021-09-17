@@ -2,7 +2,7 @@ import {applyPatches, enablePatches, nothing} from 'immer';
 import {getIn} from './traverse';
 import {zoomInPatches, zoomOutPatches} from './zoomPatches';
 import type {Patch as ImmerPatch} from 'immer';
-import type {DendriformPatch, Path} from './types';
+import type {DendriformPatch, Path, Key} from './types';
 
 enablePatches();
 
@@ -33,7 +33,7 @@ export const optimise = <B,>(base: B, patches: ImmerPatch[]): DendriformPatch[] 
 
     // check path is array (memoised)
     let lastResult: CheckPathResult|undefined;
-    const checkPathIsArray = <B,>(base: B, path: PropertyKey[]): boolean => {
+    const checkPathIsArray = <B,>(base: B, path: Key[]): boolean => {
         const pathString = JSON.stringify(path);
         if(lastResult && lastResult[1] === pathString) return lastResult[0];
         const isArray = Array.isArray(getIn(base, path));
