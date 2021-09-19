@@ -1,7 +1,9 @@
-import {produceWithPatches, nothing} from 'immer';
+import {produceWithPatches, nothing, enableMapSet} from 'immer';
 import {optimise, applyPatches} from '../src/index';
 import type {Patch as ImmerPatch} from 'immer';
 import type {DendriformPatch} from '../src/types';
+
+enableMapSet();
 
 type Expected = {
     vanilla: ImmerPatch[],
@@ -539,4 +541,59 @@ describe('immer bug fix: nothings in patches should be replaced with undefineds'
         expect(optimisedPatches[0].value).toBe(undefined);
     });
 
+});
+
+describe('immer Set patches', () => {
+
+
+    it('demonstrate immer Set patches with numbers', () => {
+        const base = new Set([0,1,2]);
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const [result, recordedPatches] = produceWithPatches(base, draft => {
+            draft.delete(2);
+            draft.add(3);
+        });
+
+        expect(recordedPatches).toEqual([
+            {op: 'remove', path: [2], value: 2},
+            {op: 'add', path: [2], value: 3}
+        ]);
+    });
+
+    it('demonstrate immer Set patches with strings', () => {
+        const base = new Set(['a','b','c']);
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const [result, recordedPatches] = produceWithPatches(base, draft => {
+            draft.delete('b');
+            draft.add('d');
+        });
+
+        expect(recordedPatches).toEqual([
+            {op: 'remove', path: [1], value: 'b'},
+            {op: 'add', path: [2], value: 'd'}
+        ]);
+    });
+
+    it('demonstrate immer Set patches with objects', () => {
+        const obj1 = {foo: true};
+        const obj2 = {bar: true};
+        const obj3 = {baz: true};
+        const base = new Set<{[key: string]: boolean}>([obj1, obj2]);
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const [result, recordedPatches] = produceWithPatches(base, draft => {
+            draft.delete(obj1);
+            draft.add(obj3);
+        });
+
+        expect(recordedPatches).toEqual([
+            {op: 'remove', path: [0], value: obj1},
+            {op: 'add', path: [0], value: obj3}
+        ]);
+    });
 });
