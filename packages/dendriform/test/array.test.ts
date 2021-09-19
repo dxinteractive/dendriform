@@ -11,7 +11,8 @@ describe(`array`, () => {
             const value = ['a','b','c'];
             const expectedNewValue = ['d','a','b','c'];
 
-            const [newValue, patches, inversePatches] = producePatches(value, array.unshift('d'));
+            const [patches, inversePatches] = producePatches(value, array.unshift('d'));
+            const newValue = applyPatches(value, patches);
 
             expect(newValue).toEqual(expectedNewValue);
             expect(applyPatches(value, patches)).toEqual(expectedNewValue);
@@ -75,7 +76,8 @@ describe(`array`, () => {
             const value = ['a','b','c'];
             const expectedNewValue = ['a','b','c','d'];
 
-            const [newValue, patches, inversePatches] = producePatches(value, array.push('d'));
+            const [patches, inversePatches] = producePatches(value, array.push('d'));
+            const newValue = applyPatches(value, patches);
 
             expect(newValue).toEqual(expectedNewValue);
             expect(applyPatches(value, patches)).toEqual(expectedNewValue);
@@ -110,7 +112,8 @@ describe(`array`, () => {
             const value = ['a','b','c'];
             const expectedNewValue = ['a','b'];
 
-            const [newValue, patches, inversePatches] = producePatches(value, array.pop());
+            const [patches, inversePatches] = producePatches(value, array.pop());
+            const newValue = applyPatches(value, patches);
 
             expect(newValue).toEqual(expectedNewValue);
             expect(applyPatches(value, patches)).toEqual(expectedNewValue);
@@ -142,7 +145,8 @@ describe(`array`, () => {
             const value = ['a','b','c'];
             const expectedNewValue = ['b','c'];
 
-            const [newValue, patches, inversePatches] = producePatches(value, array.shift());
+            const [patches, inversePatches] = producePatches(value, array.shift());
+            const newValue = applyPatches(value, patches);
 
             expect(newValue).toEqual(expectedNewValue);
             expect(applyPatches(value, patches)).toEqual(expectedNewValue);
@@ -171,7 +175,7 @@ describe(`array`, () => {
     describe(`remove`, () => {
 
         test(`with producePatches`, () => {
-            const [, patches, inversePatches] = producePatches('a', array.remove());
+            const [patches, inversePatches] = producePatches('a', array.remove());
             // ignore newValue in this test
             // Dendriform doesnt use it anyway
             expect(patches).toEqual([
@@ -199,7 +203,8 @@ describe(`array`, () => {
             const value = ['a','b','c','d'];
             const expectedNewValue = ['a','d','b','c'];
 
-            const [newValue, patches, inversePatches] = producePatches(value, array.move(3,1));
+            const [patches, inversePatches] = producePatches(value, array.move(3,1));
+            const newValue = applyPatches(value, patches);
 
             expect(newValue).toEqual(expectedNewValue);
             expect(applyPatches(value, patches)).toEqual(expectedNewValue);
@@ -217,7 +222,8 @@ describe(`array`, () => {
             const value = ['a','b','c','d'];
             const expectedNewValue = ['d','a','b','c'];
 
-            const [newValue, patches, inversePatches] = producePatches(value, array.move(3,4));
+            const [patches, inversePatches] = producePatches(value, array.move(3,4));
+            const newValue = applyPatches(value, patches);
 
             expect(newValue).toEqual(expectedNewValue);
             expect(applyPatches(value, patches)).toEqual(expectedNewValue);
@@ -235,7 +241,8 @@ describe(`array`, () => {
             const value = ['a','b','c','d'];
             const expectedNewValue = ['b','c','d','a'];
 
-            const [newValue, patches, inversePatches] = producePatches(value, array.move(0,-1));
+            const [patches, inversePatches] = producePatches(value, array.move(0,-1));
+            const newValue = applyPatches(value, patches);
 
             expect(newValue).toEqual(expectedNewValue);
             expect(applyPatches(value, patches)).toEqual(expectedNewValue);
