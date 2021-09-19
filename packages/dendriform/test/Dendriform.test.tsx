@@ -1185,22 +1185,22 @@ describe(`Dendriform`, () => {
                 expect(wrapper.find('.branch').length).toBe(2);
             });
 
-            //test(`should renderAll es6 set return React element`, () => {
-            //    const form = new Dendriform<Set<string>>(new Set(['foo','bar']));
-//
-            //    const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
-//
-            //    const MyComponent = (props: MyComponentProps<Set<string>>) => {
-            //        return props.form.renderAll(renderer);
-            //    };
-//
-            //    const wrapper = mount(<MyComponent form={form} foo={1} />);
-//
-            //    expect(renderer).toHaveBeenCalledTimes(2);
-            //    expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
-            //    expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
-            //    expect(wrapper.find('.branch').length).toBe(2);
-            //});
+            test(`should renderAll es6 set return React element`, () => {
+                const form = new Dendriform<Set<string>>(new Set(['foo','bar']));
+
+                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+
+                const MyComponent = (props: MyComponentProps<Set<string>>) => {
+                    return props.form.renderAll(renderer);
+                };
+
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
+
+                expect(renderer).toHaveBeenCalledTimes(2);
+                expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
+                expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
+                expect(wrapper.find('.branch').length).toBe(2);
+            });
         });
 
         describe(`react memo and deps`, () => {
