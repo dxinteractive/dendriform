@@ -1,8 +1,10 @@
 import {newNode, addNode, getNode, getPath, getNodeByPath, updateNode, removeNode, produceNodePatches} from '../src/index';
 import type {Nodes, NodeAny, NewNodeCreator} from '../src/index';
-import {BASIC, OBJECT, ARRAY, MAP, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, SET, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path} from 'dendriform-immer-patch-optimiser';
-import produce from 'immer';
+import produce, {enableMapSet} from 'immer';
+
+enableMapSet();
 
 const createNodesFrom = (value: unknown, current: number = 0): [Nodes, NewNodeCreator] => {
     const countRef = {current};
@@ -115,6 +117,21 @@ describe(`Nodes`, () => {
             expect(newNode(() => `${countRef.current++}`)(map)).toEqual({
                 type: MAP,
                 child: new Map(),
+                parentId: '',
+                id: '0'
+            });
+        });
+
+        test(`should accept sets`, () => {
+            const countRef = {
+                current: 0
+            };
+
+            const set = new Set<string>(['one', 'two']);
+
+            expect(newNode(() => `${countRef.current++}`)(set)).toEqual({
+                type: SET,
+                child: new Map(), // should be a Map
                 parentId: '',
                 id: '0'
             });
@@ -313,6 +330,93 @@ describe(`Nodes`, () => {
             });
 
             expect(newNodes2['0'].child).toEqual(['2',undefined,undefined,'1']);
+        });
+
+        test(`should accept maps and getNodeByPath()`, () => {
+            const value = new Map([['foo', 'foo!'], ['bar', 'bar!']]);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
+
+            const [newNodes, node] = produceNodeByPath(nodes, newNodeCreator, value, ['foo']);
+
+            expect(node).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            expect(newNodes['0'].child).toEqual(new Map([
+                ['foo', '1']
+            ]));
+
+            expect(newNodes['1']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            const [newNodes2, node2] = produceNodeByPath(newNodes, newNodeCreator, value, ['bar']);
+
+            expect(node2).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
+
+            expect(newNodes2['0'].child).toEqual(new Map([
+                ['foo', '1'],
+                ['bar', '2']
+            ]));;
+
+            expect(newNodes2['2']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
+        });
+
+        test(`should accept sets and getNodeByPath()`, () => {
+            const value = new Set(['foo', 'bar']);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
+
+            const [newNodes, node] = produceNodeByPath(nodes, newNodeCreator, value, ['foo']);
+
+            expect(node).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            expect(newNodes['0'].child).toEqual(new Map([['foo','1']]));
+
+            expect(newNodes['1']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            const [newNodes2, node2] = produceNodeByPath(newNodes, newNodeCreator, value, ['bar']);
+
+            expect(node2).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
+
+            expect(newNodes2['0'].child).toEqual(new Map([['foo','1'],['bar','2']]));
+
+            expect(newNodes2['2']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
         });
     });
 

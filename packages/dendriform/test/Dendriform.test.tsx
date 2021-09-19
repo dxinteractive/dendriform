@@ -540,6 +540,15 @@ describe(`Dendriform`, () => {
             expect(form.core.state.nodes).toEqual(nodesBefore);
         });
 
+        test(`should produce non-immerable child value with new value`, () => {
+            const d = new Date();
+            const d2 = new Date();
+            const form = new Dendriform<Date[]>([d]);
+            form.branch(0).set(d2);
+
+            expect(form.value).toEqual([d2]);
+        });
+
         test(`should produce child value with immer producer`, () => {
             const form = new Dendriform({foo: [1,2]});
 
@@ -620,6 +629,31 @@ describe(`Dendriform`, () => {
 
             form.branch('a').set('!');
             expect(form.value.get('a')).toBe('!');
+        });
+
+        test(`should get child value of es6 set`, () => {
+           const form = new Dendriform<Set<number>>(new Set([0,2]));
+
+           const bForm = form.branch(0);
+           expect(bForm.value).toBe(0);
+
+           const cForm = form.branch(1);
+           expect(cForm.value).toBe(undefined);
+        });
+
+        test(`should error when trying to set child value of es6 set`, () => {
+           const form = new Dendriform<Set<number>[]>([new Set([0,2])]);
+
+           expect(() => form.branch(0).branch(0).set(3)).toThrow('Cannot call .set() on an element of an es6 Set');
+        });
+
+        test(`should set value of es6 set from parent`, () => {
+           const form = new Dendriform<Set<number>>(new Set([0,2]));
+
+           form.set(draft => {
+               draft.delete(0);
+           });
+           expect(Array.from(form.value.values())).toEqual([2]);
         });
     });
 
@@ -748,6 +782,13 @@ describe(`Dendriform`, () => {
             const forms = form.branchAll();
 
             expect(forms.map(f => f.value)).toEqual(['A','B','C']);
+        });
+
+        test(`should work with es6 set`, () => {
+            const form = new Dendriform(new Set([0,1]));
+            const forms = form.branchAll();
+
+            expect(forms.map(f => f.value)).toEqual([0,1]);
         });
 
         test(`should error if getting a basic type`, () => {
@@ -1143,6 +1184,23 @@ describe(`Dendriform`, () => {
                 expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
                 expect(wrapper.find('.branch').length).toBe(2);
             });
+
+            //test(`should renderAll es6 set return React element`, () => {
+            //    const form = new Dendriform<Set<string>>(new Set(['foo','bar']));
+//
+            //    const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+//
+            //    const MyComponent = (props: MyComponentProps<Set<string>>) => {
+            //        return props.form.renderAll(renderer);
+            //    };
+//
+            //    const wrapper = mount(<MyComponent form={form} foo={1} />);
+//
+            //    expect(renderer).toHaveBeenCalledTimes(2);
+            //    expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
+            //    expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
+            //    expect(wrapper.find('.branch').length).toBe(2);
+            //});
         });
 
         describe(`react memo and deps`, () => {

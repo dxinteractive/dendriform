@@ -7,7 +7,8 @@ const errors = {
     3: `renderAll() ${all}`,
     4: (path: unknown[]) => `useIndex() can only be called on array element forms, can't be called at path ${path.map(a => JSON.stringify(a)).join('","')}`,
     5: `sync() forms must have the same maximum number of history items configured`,
-    6: (msg: string) => `onDerive() callback must not throw errors on first call. Threw: ${msg}`
+    6: (msg: string) => `onDerive() callback must not throw errors on first call. Threw: ${msg}`,
+    7: `Cannot call .set() on an element of an es6 Set`
 } as const;
 
 export type ErrorKey = keyof typeof errors;

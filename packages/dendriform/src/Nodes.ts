@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, set, entries, create, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, SET, getType, has, get, set, entries, create, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path, DendriformPatch} from 'dendriform-immer-patch-optimiser';
 import {produceWithPatches} from 'immer';
 
@@ -22,12 +22,17 @@ export type NodeMap = {
     child?: Map<string|number,string>;
 } & NodeCommon;
 
+export type NodeSet = {
+    type: typeof SET;
+    child?: Map<string|number,string>;
+} & NodeCommon;
+
 export type NodeBasic = {
     type: typeof BASIC;
     child: undefined;
 } & NodeCommon;
 
-export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap;
+export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap|NodeSet;
 
 export type Nodes = {[id: string]: NodeAny};
 
@@ -41,7 +46,7 @@ export const newNode = (getNextId: GetNextId): NewNodeCreator => {
         const id = getNextId();
         return {
             type,
-            child: create(type),
+            child: create(type === SET ? MAP : type),
             parentId,
             id
         };
