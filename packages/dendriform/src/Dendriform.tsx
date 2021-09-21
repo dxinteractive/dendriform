@@ -59,10 +59,17 @@ export type HistoryState = {
     canRedo: boolean;
 };
 
-export type ChangeCallbackDetails = {
-    patches: HistoryPatch
+export type StateDiff<V,N> = {
+    value: V;
+    nodes: N;
 };
-export type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
+
+export type ChangeCallbackDetails<V> = {
+    patches: HistoryPatch;
+    prev: StateDiff<V|undefined,Nodes|undefined>;
+    next: StateDiff<V,Nodes>;
+};
+export type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails<V>) => void;
 export type ChangeTypeValue = 'value';
 export type ChangeTypeIndex = 'index';
 export type ChangeTypeHistory = 'history';
@@ -70,13 +77,15 @@ export type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ChangeCallbackRef = [ChangeType, string, ChangeCallback<any>, any];
 
-export type DeriveCallbackDetails = {
+export type DeriveCallbackDetails<V> = {
     go: number;
     replace: boolean;
     force: boolean;
     patches: HistoryPatch
+    prev: StateDiff<V|undefined,Nodes|undefined>;
+    next: StateDiff<V,Nodes>;
 };
-export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails) => void;
+export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails<V>) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DeriveCallbackRef = [DeriveCallback<any>];
 
@@ -296,9 +305,8 @@ export class Core<C> {
 
             // call all change callbacks involved in this form and clear revert points
             if(originator) {
-                Core.changingForms.forEach(form => form.callChangeCallbacks());
+                Core.changingForms.forEach(form => form.callAllChangeCallbacks());
             }
-            // this.callChangeCallbacks();
 
             // all forms are done changing, clear the set and revert points
             if(originator) {
@@ -448,7 +456,23 @@ export class Core<C> {
 
         const [deriveCallback] = deriveCallbackRef;
         const patches = this.internalState.changeBuffer ?? emptyHistoryPatch();
-        deriveCallback(this.state.value, {go, replace, patches, force});
+
+        const details = {
+            go,
+            replace,
+            force,
+            patches,
+            prev: {
+                value: this.stateRevert?.value,
+                nodes: this.stateRevert?.nodes
+            },
+            next: {
+                value: this.state.value,
+                nodes: this.state.nodes
+            }
+        };
+
+        deriveCallback(this.state.value, details);
         this.internalState.deriving = false;
     };
 
@@ -463,10 +487,10 @@ export class Core<C> {
 
     done = (): void => {
         this.internalState.bufferingChanges = false;
-        this.callChangeCallbacks();
+        this.callAllChangeCallbacks();
     };
 
-    callChangeCallbacks = (): void => {
+    callAllChangeCallbacks = (): void => {
         // if buffering changes, dont do requested change
         if(this.internalState.bufferingChanges) return;
 
@@ -474,24 +498,30 @@ export class Core<C> {
         if(!this.internalState.changeBuffer) return;
 
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
-            const [changeType, id] = changeCallbackRef;
+            const [changeType, id, changeCallback, prevValue] = changeCallbackRef;
             const nextValue = this.valueGettersByType[changeType](id);
-            this.change(changeCallbackRef, nextValue, this.internalState.changeBuffer as HistoryPatch);
+
+            // only update a callback if it is not equal to the previous value
+            if(!Object.is(nextValue, prevValue)) {
+                const patches = this.internalState.changeBuffer as HistoryPatch;
+
+                const details = {
+                    patches,
+                    prev: {
+                        value: prevValue,
+                        nodes: this.stateRevert?.nodes
+                    },
+                    next: {
+                        value: nextValue,
+                        nodes: this.state.nodes
+                    }
+                };
+
+                changeCallback(nextValue, details);
+                changeCallbackRef[3] = nextValue;
+            }
         });
         this.internalState.changeBuffer = undefined;
-    };
-
-    change = (
-        changeCallbackRef: ChangeCallbackRef,
-        nextValue: unknown,
-        patches: HistoryPatch
-    ): void => {
-        // only update a callback if it is not equal to the previous value
-        const [,, changeCallback, prevValue] = changeCallbackRef;
-        if(!Object.is(nextValue, prevValue)) {
-            changeCallback(nextValue, {patches});
-            changeCallbackRef[3] = nextValue;
-        }
     };
 
     //
@@ -740,7 +770,7 @@ export class Dendriform<V> {
         } catch(e) {
             die(6, '?');
         }
-        this.core.callChangeCallbacks();
+        this.core.callAllChangeCallbacks();
 
         // return unsubscriber
         return () => void this.core.deriveCallbackRefs.delete(deriveCallback);

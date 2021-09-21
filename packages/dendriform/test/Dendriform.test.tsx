@@ -1328,6 +1328,28 @@ describe(`Dendriform`, () => {
             expect(callback.mock.calls[0][1].patches.value).toEqual([
                 {op: 'replace', path: [], value: 456}
             ]);
+            expect(callback.mock.calls[0][1].prev).toEqual({
+                value: 123,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
+            expect(callback.mock.calls[0][1].next).toEqual({
+                value: 456,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
 
             // should not be called if value is the same
             form.set(456);
@@ -1339,6 +1361,28 @@ describe(`Dendriform`, () => {
 
             expect(callback).toHaveBeenCalledTimes(2);
             expect(callback.mock.calls[1][0]).toBe(457);
+            expect(callback.mock.calls[1][1].prev).toEqual({
+                value: 456,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
+            expect(callback.mock.calls[1][1].next).toEqual({
+                value: 457,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
 
             // should not be called once cancel is called
             cancel();
@@ -1414,7 +1458,25 @@ describe(`Dendriform`, () => {
                 go: 0,
                 patches: {nodes: [], value: []},
                 replace: true,
-                force: false
+                force: false,
+                prev: {
+                    nodes: undefined,
+                    value: undefined
+                },
+                next: {
+                    nodes: {
+                        '0': {
+                            child: {},
+                            id: '0',
+                            parentId: '',
+                            type: 1
+                        }
+                    },
+                    value: {
+                        name: 'boo',
+                        letters: 0
+                    }
+                }
             });
 
             expect(changer).toHaveBeenCalledTimes(1);
@@ -1518,7 +1580,26 @@ describe(`Dendriform`, () => {
                 go: 0,
                 patches: {nodes: [], value: []},
                 replace: true,
-                force: false
+                force: false,
+                prev: {
+                    nodes: undefined,
+                    value: undefined
+                },
+                next: {
+                    nodes: {
+                        '0': {
+                            child: {},
+                            id: '0',
+                            parentId: '',
+                            type: 1
+                        }
+                    },
+                    value: {
+                        name: 'boo',
+                        letters: 0,
+                        lettersDoubled: 0
+                    }
+                }
             });
             expect(form.value).toEqual({
                 name: 'boo',
@@ -1542,7 +1623,34 @@ describe(`Dendriform`, () => {
                 go: 0,
                 patches: {nodes: [], value: []},
                 replace: true,
-                force: false
+                force: false,
+                prev: {
+                    nodes: undefined,
+                    value: undefined
+                },
+                next: {
+                    nodes: {
+                        '0': {
+                            child: {
+                                letters: '1'
+                            },
+                            id: '0',
+                            parentId: '',
+                            type: 1
+                        },
+                        '1': {
+                            child: undefined,
+                            id: '1',
+                            parentId: '0',
+                            type: 0
+                        }
+                    },
+                    value: {
+                        name: 'boo',
+                        letters: 3,
+                        lettersDoubled: 0
+                    }
+                }
             });
             expect(form.value).toEqual({
                 name: 'boo',
