@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, set, each, create, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, SET, getType, has, get, set, entries, create, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path, DendriformPatch} from 'dendriform-immer-patch-optimiser';
 import {produceWithPatches} from 'immer';
 
@@ -22,28 +22,31 @@ export type NodeMap = {
     child?: Map<string|number,string>;
 } & NodeCommon;
 
+export type NodeSet = {
+    type: typeof SET;
+    child?: Map<string|number,string>;
+} & NodeCommon;
+
 export type NodeBasic = {
     type: typeof BASIC;
     child: undefined;
 } & NodeCommon;
 
-export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap;
+export type NodeAny = NodeObject|NodeArray|NodeBasic|NodeMap|NodeSet;
 
 export type Nodes = {[id: string]: NodeAny};
 
-export type CountRef = {
-    current: number;
-};
+export type GetNextId = () => string;
 
 export type NewNodeCreator = (value: unknown, parentId?: string) => NodeAny;
 
-export const newNode = (countRef: CountRef): NewNodeCreator => {
+export const newNode = (getNextId: GetNextId): NewNodeCreator => {
     return (value: unknown, parentId = ''): NodeAny => {
         const type = getType(value);
-        const id = `${countRef.current++}`;
+        const id = getNextId();
         return {
             type,
-            child: create(type),
+            child: create(type === SET ? MAP : type),
             parentId,
             id
         };
@@ -95,13 +98,7 @@ export const getNodeByPath = <P = unknown>(
 };
 
 const _getKey = (parentNode: NodeAny, childNode: NodeAny): number|string|undefined => {
-    let key = undefined;
-    each(parentNode.child, (childId, childKey) => {
-        if(childId === childNode.id) {
-            key = childKey;
-        }
-    });
-    return key;
+    return entries(parentNode.child).find(([,childId]) => childId === childNode.id)?.[0];
 };
 
 export const getPath = (nodes: Nodes, id: string): Path|undefined => {
@@ -125,7 +122,7 @@ export const removeNode = (nodes: Nodes, id: string, onlyChildren = false): void
     if(!node) return;
 
     if(node.child) {
-        each(node.child, id => removeNode(nodes, id as string));
+        entries(node.child).forEach(([,id]) => removeNode(nodes, id as string));
     }
     if(!onlyChildren) {
         delete nodes[id];
@@ -139,7 +136,7 @@ export const updateNode = (nodes: Nodes, id: string, value: unknown): void => {
     const type = getType(value);
     if(type === node.type) {
         if(type === BASIC) return;
-        each(node.child, (childId, childKey) => {
+        entries(node.child).forEach(([childKey,childId]) => {
             if(has(value, childKey)) {
                 updateNode(nodes, childId as string, get(value, childKey));
             } else {

@@ -1,4 +1,4 @@
-import {BASIC, OBJECT, ARRAY, MAP, getType, has, get, getIn, set, each, clone, create} from '../src/index';
+import {BASIC, OBJECT, ARRAY, MAP, SET, getType, has, get, getIn, set, entries, clone, create} from '../src/index';
 
 describe(`getType`, () => {
     test(`should identify basics`, () => {
@@ -21,6 +21,10 @@ describe(`getType`, () => {
 
     test(`should identify map`, () => {
         expect(getType(new Map())).toBe(MAP);
+    });
+
+    test(`should identify set`, () => {
+        expect(getType(new Set())).toBe(SET);
     });
 });
 
@@ -49,6 +53,13 @@ describe(`has`, () => {
         expect(has(map, 1)).toBe(false);
         expect(has(map, 2)).toBe(true);
     });
+
+    test(`should work with set`, () => {
+        const set = new Set<number>([0,2]);
+        expect(has(set, 0)).toBe(true);
+        expect(has(set, 1)).toBe(false);
+        expect(has(set, 2)).toBe(true);
+    });
 });
 
 describe(`get`, () => {
@@ -76,6 +87,16 @@ describe(`get`, () => {
     test(`should work with map and miss`, () => {
         const map = new Map<number,boolean>([[0,true],[2,false]]);
         expect(get(map, 1)).toBe(undefined);
+    });
+
+    test(`should work with set`, () => {
+        const set = new Set<number>([0,2]);
+        expect(get(set, 2)).toBe(2);
+    });
+
+    test(`should work with set and miss`, () => {
+        const set = new Set<number>([0,2]);
+        expect(get(set, 1)).toBe(undefined);
     });
 
     test(`should error on basic types`, () => {
@@ -127,6 +148,12 @@ describe(`set`, () => {
         expect(map.get(2)).toBe(true);
     });
 
+    test(`should work with map`, () => {
+        const s = new Set<number>([0,2]);
+        set(s, 2, 3);
+        expect(Array.from(s.values())).toEqual([0,3]);
+    });
+
     test(`should error on basic types`, () => {
         expect(() => set(100, 4, 4)).toThrow(`Cant access property 4 of 100`);
         expect(() => set("str", 4, 4)).toThrow(`Cant access property 4 of str`);
@@ -136,56 +163,40 @@ describe(`set`, () => {
 });
 
 
-describe(`each`, () => {
+describe(`entries`, () => {
     test(`should work with object`, () => {
-        const callback = jest.fn();
         const obj = {foo: 1, bar: 2};
 
-        each(obj, callback);
-
-        expect(callback).toHaveBeenCalledTimes(2);
-        expect(callback.mock.calls[0][0]).toBe(1);
-        expect(callback.mock.calls[0][1]).toBe('foo');
-        expect(callback.mock.calls[1][0]).toBe(2);
-        expect(callback.mock.calls[1][1]).toBe('bar');
+        const result = entries(obj);
+        expect(result).toEqual([['foo',1],['bar',2]]);
     });
 
     test(`should work with array`, () => {
-        const callback = jest.fn();
         const arr = ['a','b','c'];
 
-        each(arr, callback);
-
-        expect(callback).toHaveBeenCalledTimes(3);
-        expect(callback.mock.calls[0][0]).toBe('a');
-        expect(callback.mock.calls[0][1]).toBe(0);
-        expect(callback.mock.calls[1][0]).toBe('b');
-        expect(callback.mock.calls[1][1]).toBe(1);
-        expect(callback.mock.calls[2][0]).toBe('c');
-        expect(callback.mock.calls[2][1]).toBe(2);
+        const result = entries(arr);
+        expect(result).toEqual([[0,'a'],[1,'b'],[2,'c']]);
     });
 
     test(`should work with map`, () => {
-        const callback = jest.fn();
         const map = new Map([['foo', 1], ['bar', 2]]);
 
-        each(map, callback);
+        const result = entries(map);
+        expect(result).toEqual([['foo',1],['bar',2]]);
+    });
 
-        expect(callback).toHaveBeenCalledTimes(2);
-        expect(callback.mock.calls[0][0]).toBe(1);
-        expect(callback.mock.calls[0][1]).toBe('foo');
-        expect(callback.mock.calls[1][0]).toBe(2);
+    test(`should work with set`, () => {
+        const set = new Set(['foo','bar']);
+
+        const result = entries(set);
+        expect(result).toEqual([['foo','foo'],['bar','bar']]);
     });
 
     test(`should error on basic types`, () => {
-        const callback = jest.fn();
-
-        expect(() => each(100, callback)).toThrow(`Cant access property any of 100`);
-        expect(() => each("str", callback)).toThrow(`Cant access property any of str`);
-        expect(() => each(null, callback)).toThrow(`Cant access property any of null`);
-        expect(() => each(undefined, callback)).toThrow(`Cant access property any of undefined`);
-
-        expect(callback).toHaveBeenCalledTimes(0);
+        expect(() => entries(100)).toThrow(`Cant access property any of 100`);
+        expect(() => entries("str")).toThrow(`Cant access property any of str`);
+        expect(() => entries(null)).toThrow(`Cant access property any of null`);
+        expect(() => entries(undefined)).toThrow(`Cant access property any of undefined`);
     });
 });
 
@@ -218,6 +229,14 @@ describe(`clone`, () => {
         expect(cloned.get('foo')).toBe(1);
         expect(cloned.get('bar')).toBe(2);
     });
+
+    test(`should work with set`, () => {
+        const set = new Set(['foo','bar']);
+        const cloned = clone(set);
+
+        expect(cloned).not.toBe(set);
+        expect(Array.from(set.values())).toEqual(['foo','bar']);
+    });
 });
 
 describe(`create`, () => {
@@ -235,5 +254,9 @@ describe(`create`, () => {
 
     test(`MAP should create map`, () => {
         expect(create(MAP) instanceof Map).toBe(true);
+    });
+
+    test(`SET should create set`, () => {
+        expect(create(SET) instanceof Set).toBe(true);
     });
 });

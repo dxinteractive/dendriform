@@ -14,13 +14,13 @@
   "scripts": {
     "dev": "tsdx watch",
     "build": "tsdx build",
-    "test": "tsdx test --passWithNoTests --coverage --maxWorkers=2",
+    "test": "tsdx test --passWithNoTests --coverage --runInBand",
     "lint": "yarn eslint src/**/* --ext .js,.ts,.jsx,.tsx",
     "size": "yarn size-limit",
     "prepare": "tsdx build"
   },
   "dependencies": {
-    "dendriform-immer-patch-optimiser": "^1.0.0-alpha.4",
+    "dendriform-immer-patch-optimiser": "^2.0.0",
     "immer": "9.0.1",
     "shallow-equal": "1.2.1"
   },

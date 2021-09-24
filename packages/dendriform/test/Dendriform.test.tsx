@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable, cancel} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 import {BASIC, OBJECT, ARRAY} from 'dendriform-immer-patch-optimiser';
 
@@ -108,6 +108,13 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe('.key', () => {
+        test(`should provide key`, () => {
+            const form = new Dendriform({foo: 'bar'});
+            expect(form.branch('foo').key).toBe('foo');
+        });
+    });
+
     describe('.index and .useIndex()', () => {
         test(`should provide index and produce an update`, () => {
 
@@ -176,37 +183,37 @@ describe(`Dendriform`, () => {
         test(`should undo`, () => {
             const form = new Dendriform(123, {history: 100});
 
-            expect(form.core.historyStack.length).toBe(0);
-            expect(form.core.historyIndex).toBe(0);
+            expect(form.core.state.historyStack.length).toBe(0);
+            expect(form.core.state.historyIndex).toBe(0);
 
             form.set(456);
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(1);
 
             form.set(789);
 
-            expect(form.core.historyStack.length).toBe(2);
-            expect(form.core.historyIndex).toBe(2);
+            expect(form.core.state.historyStack.length).toBe(2);
+            expect(form.core.state.historyIndex).toBe(2);
             expect(form.value).toBe(789);
 
             form.undo();
 
             expect(form.value).toBe(456);
-            expect(form.core.historyStack.length).toBe(2);
-            expect(form.core.historyIndex).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(2);
+            expect(form.core.state.historyIndex).toBe(1);
 
             form.undo();
 
             expect(form.value).toBe(123);
-            expect(form.core.historyStack.length).toBe(2);
-            expect(form.core.historyIndex).toBe(0);
+            expect(form.core.state.historyStack.length).toBe(2);
+            expect(form.core.state.historyIndex).toBe(0);
 
             form.undo();
 
             expect(form.value).toBe(123);
-            expect(form.core.historyStack.length).toBe(2);
-            expect(form.core.historyIndex).toBe(0);
+            expect(form.core.state.historyStack.length).toBe(2);
+            expect(form.core.state.historyIndex).toBe(0);
         });
 
         test(`should not undo if no history is configured`, () => {
@@ -365,18 +372,18 @@ describe(`Dendriform`, () => {
             form.set(200);
 
             expect(form.value).toBe(200);
-            expect(form.core.historyStack.length).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
 
             form.replace();
             form.set(300);
 
             expect(form.value).toBe(300);
-            expect(form.core.historyStack.length).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
 
             form.set(400);
 
             expect(form.value).toBe(400);
-            expect(form.core.historyStack.length).toBe(2);
+            expect(form.core.state.historyStack.length).toBe(2);
 
             form.undo();
 
@@ -402,7 +409,7 @@ describe(`Dendriform`, () => {
             form.done();
 
             expect(form.value).toBe(400);
-            expect(form.core.historyStack.length).toBe(3);
+            expect(form.core.state.historyStack.length).toBe(3);
 
             form.undo();
 
@@ -427,7 +434,7 @@ describe(`Dendriform`, () => {
             form.done();
 
             expect(form.value).toBe(300);
-            expect(form.core.historyStack.length).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
 
             form.undo();
 
@@ -533,11 +540,20 @@ describe(`Dendriform`, () => {
             const form = new Dendriform(['A','B','C']);
 
             const secondElement = form.branch(1);
-            const nodesBefore = form.core.nodes;
+            const nodesBefore = form.core.state.nodes;
             secondElement.set('B!');
 
             expect(form.value).toEqual(['A','B!','C']);
-            expect(form.core.nodes).toEqual(nodesBefore);
+            expect(form.core.state.nodes).toEqual(nodesBefore);
+        });
+
+        test(`should produce non-immerable child value with new value`, () => {
+            const d = new Date();
+            const d2 = new Date();
+            const form = new Dendriform<Date[]>([d]);
+            form.branch(0).set(d2);
+
+            expect(form.value).toEqual([d2]);
         });
 
         test(`should produce child value with immer producer`, () => {
@@ -574,11 +590,11 @@ describe(`Dendriform`, () => {
                 const form = new Dendriform<NotSetTestValue>({foo: 'a'});
 
                 const bForm = form.branch('bar');
-                const nodesBefore = form.core.nodes;
+                const nodesBefore = form.core.state.nodes;
                 bForm.set('B!');
 
                 expect(form.value).toEqual({foo: 'a', bar: 'B!'});
-                expect(form.core.nodes).toEqual(nodesBefore);
+                expect(form.core.state.nodes).toEqual(nodesBefore);
             });
         });
 
@@ -605,6 +621,46 @@ describe(`Dendriform`, () => {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-expect-error
             expect(form.branch('foo').branch('bar').value).toBe(true);
+        });
+
+        test(`should get child value of es6 map`, () => {
+            const form = new Dendriform(new Map([['a','A'],['b','B'],['c','C']]));
+
+            const bForm = form.branch('a');
+            expect(bForm.value).toBe('A');
+            expect(bForm.id).toBe('1');
+        });
+
+        test(`should set child value of es6 map`, () => {
+            const form = new Dendriform(new Map([['a','A'],['b','B'],['c','C']]));
+
+            form.branch('a').set('!');
+            expect(form.value.get('a')).toBe('!');
+        });
+
+        test(`should get child value of es6 set`, () => {
+           const form = new Dendriform<Set<number>>(new Set([0,2]));
+
+           const bForm = form.branch(0);
+           expect(bForm.value).toBe(0);
+
+           const cForm = form.branch(1);
+           expect(cForm.value).toBe(undefined);
+        });
+
+        test(`should error when trying to set child value of es6 set`, () => {
+           const form = new Dendriform<Set<number>[]>([new Set([0,2])]);
+
+           expect(() => form.branch(0).branch(0).set(3)).toThrow('Cannot call .set() on an element of an es6 Set');
+        });
+
+        test(`should set value of es6 set from parent`, () => {
+           const form = new Dendriform<Set<number>>(new Set([0,2]));
+
+           form.set(draft => {
+               draft.delete(0);
+           });
+           expect(Array.from(form.value.values())).toEqual([2]);
         });
     });
 
@@ -715,11 +771,11 @@ describe(`Dendriform`, () => {
             const form = new Dendriform(['A','B','C']);
 
             const forms = form.branchAll();
-            const nodesBefore = form.core.nodes;
+            const nodesBefore = form.core.state.nodes;
             forms[1].set('B!');
 
             expect(form.value).toEqual(['A','B!','C']);
-            expect(form.core.nodes).toEqual(nodesBefore);
+            expect(form.core.state.nodes).toEqual(nodesBefore);
         });
 
         test(`should return same instance for all .branchAll()s to same child`, () => {
@@ -728,10 +784,24 @@ describe(`Dendriform`, () => {
             expect(form.branchAll()).toEqual(form.branchAll());
         });
 
-        test(`should error if getting a non-array`, () => {
+        test(`should work with es6 Map`, () => {
+            const form = new Dendriform(new Map([['a','A'],['b','B'],['c','C']]));
+            const forms = form.branchAll();
+
+            expect(forms.map(f => f.value)).toEqual(['A','B','C']);
+        });
+
+        test(`should work with es6 set`, () => {
+            const form = new Dendriform(new Set([0,1]));
+            const forms = form.branchAll();
+
+            expect(forms.map(f => f.value)).toEqual([0,1]);
+        });
+
+        test(`should error if getting a basic type`, () => {
             const form = new Dendriform(123);
 
-            expect(() => form.branchAll()).toThrow('branchAll() can only be called on forms containing arrays');
+            expect(() => form.branchAll()).toThrow('branchAll() can only be called on forms containing an array, object, es6 map or es6 set');
         });
 
         // TODO what about misses?
@@ -999,7 +1069,7 @@ describe(`Dendriform`, () => {
 
         describe(`rendering`, () => {
 
-            test(`should error if rendering a non-array`, () => {
+            test(`should error if rendering a basic type`, () => {
                 const consoleError = console.error;
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 console.error = () => {};
@@ -1012,7 +1082,7 @@ describe(`Dendriform`, () => {
                     return props.form.renderAll(renderer);
                 };
 
-                expect(() => mount(<MyComponent form={form} foo={1} />)).toThrow('renderAll() can only be called on forms containing arrays');
+                expect(() => mount(<MyComponent form={form} foo={1} />)).toThrow('renderAll() can only be called on forms containing an array, object, es6 map or es6 set');
 
                 console.error = consoleError;
             });
@@ -1085,6 +1155,57 @@ describe(`Dendriform`, () => {
                 expect(renderer).toHaveBeenCalledTimes(2);
                 expect(renderer.mock.calls[0][0].value).toBe(form.branch([0,0,0]).value);
                 expect(renderer.mock.calls[1][0].value).toBe(form.branch([0,0,1]).value);
+                expect(wrapper.find('.branch').length).toBe(2);
+            });
+
+            test(`should renderAll es6 map return React element`, () => {
+                const form = new Dendriform(new Map([['foo',1],['bar',2]]));
+
+                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+
+                const MyComponent = (props: MyComponentProps<Map<string,number>>) => {
+                    return props.form.renderAll(renderer);
+                };
+
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
+
+                expect(renderer).toHaveBeenCalledTimes(2);
+                expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
+                expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
+                expect(wrapper.find('.branch').length).toBe(2);
+            });
+
+            test(`should renderAll object return React element`, () => {
+                const form = new Dendriform<{[key: string]: number}>({foo: 1, bar: 2});
+
+                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+
+                const MyComponent = (props: MyComponentProps<{[key: string]: number}>) => {
+                    return props.form.renderAll(renderer);
+                };
+
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
+
+                expect(renderer).toHaveBeenCalledTimes(2);
+                expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
+                expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
+                expect(wrapper.find('.branch').length).toBe(2);
+            });
+
+            test(`should renderAll es6 set return React element`, () => {
+                const form = new Dendriform<Set<string>>(new Set(['foo','bar']));
+
+                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+
+                const MyComponent = (props: MyComponentProps<Set<string>>) => {
+                    return props.form.renderAll(renderer);
+                };
+
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
+
+                expect(renderer).toHaveBeenCalledTimes(2);
+                expect(renderer.mock.calls[0][0].value).toBe(form.branch('foo').value);
+                expect(renderer.mock.calls[1][0].value).toBe(form.branch('bar').value);
                 expect(wrapper.find('.branch').length).toBe(2);
             });
         });
@@ -1214,6 +1335,28 @@ describe(`Dendriform`, () => {
             expect(callback.mock.calls[0][1].patches.value).toEqual([
                 {op: 'replace', path: [], value: 456}
             ]);
+            expect(callback.mock.calls[0][1].prev).toEqual({
+                value: 123,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
+            expect(callback.mock.calls[0][1].next).toEqual({
+                value: 456,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
 
             // should not be called if value is the same
             form.set(456);
@@ -1225,6 +1368,28 @@ describe(`Dendriform`, () => {
 
             expect(callback).toHaveBeenCalledTimes(2);
             expect(callback.mock.calls[1][0]).toBe(457);
+            expect(callback.mock.calls[1][1].prev).toEqual({
+                value: 456,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
+            expect(callback.mock.calls[1][1].next).toEqual({
+                value: 457,
+                nodes: {
+                    '0': {
+                        child: undefined,
+                        id: '0',
+                        parentId: '',
+                        type: 0
+                    }
+                }
+            });
 
             // should not be called once cancel is called
             cancel();
@@ -1298,8 +1463,28 @@ describe(`Dendriform`, () => {
             });
             expect(deriver.mock.calls[0][1]).toEqual({
                 go: 0,
+                id: '0',
                 patches: {nodes: [], value: []},
-                replace: true
+                replace: true,
+                force: false,
+                prev: {
+                    nodes: undefined,
+                    value: undefined
+                },
+                next: {
+                    nodes: {
+                        '0': {
+                            child: {},
+                            id: '0',
+                            parentId: '',
+                            type: 1
+                        }
+                    },
+                    value: {
+                        name: 'boo',
+                        letters: 0
+                    }
+                }
             });
 
             expect(changer).toHaveBeenCalledTimes(1);
@@ -1401,8 +1586,29 @@ describe(`Dendriform`, () => {
             });
             expect(deriver1.mock.calls[0][1]).toEqual({
                 go: 0,
+                id: '0',
                 patches: {nodes: [], value: []},
-                replace: true
+                replace: true,
+                force: false,
+                prev: {
+                    nodes: undefined,
+                    value: undefined
+                },
+                next: {
+                    nodes: {
+                        '0': {
+                            child: {},
+                            id: '0',
+                            parentId: '',
+                            type: 1
+                        }
+                    },
+                    value: {
+                        name: 'boo',
+                        letters: 0,
+                        lettersDoubled: 0
+                    }
+                }
             });
             expect(form.value).toEqual({
                 name: 'boo',
@@ -1424,8 +1630,37 @@ describe(`Dendriform`, () => {
             });
             expect(deriver2.mock.calls[0][1]).toEqual({
                 go: 0,
+                id: '0',
                 patches: {nodes: [], value: []},
-                replace: true
+                replace: true,
+                force: false,
+                prev: {
+                    nodes: undefined,
+                    value: undefined
+                },
+                next: {
+                    nodes: {
+                        '0': {
+                            child: {
+                                letters: '1'
+                            },
+                            id: '0',
+                            parentId: '',
+                            type: 1
+                        },
+                        '1': {
+                            child: undefined,
+                            id: '1',
+                            parentId: '0',
+                            type: 0
+                        }
+                    },
+                    value: {
+                        name: 'boo',
+                        letters: 3,
+                        lettersDoubled: 0
+                    }
+                }
             });
             expect(form.value).toEqual({
                 name: 'boo',
@@ -1527,8 +1762,8 @@ describe(`Dendriform`, () => {
 
             form.branch('name').set('boooo');
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(1);
 
             expect(deriver).toHaveBeenCalledTimes(2);
             expect(deriver.mock.calls[1][0]).toEqual({
@@ -1557,8 +1792,8 @@ describe(`Dendriform`, () => {
 
             form.undo();
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(0);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(0);
 
             expect(deriver).toHaveBeenCalledTimes(3);
             expect(deriver.mock.calls[2][0]).toEqual({
@@ -1590,8 +1825,8 @@ describe(`Dendriform`, () => {
 
             form.redo();
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(1);
 
             expect(deriver).toHaveBeenCalledTimes(4);
             expect(deriver.mock.calls[3][0]).toEqual({
@@ -1639,8 +1874,8 @@ describe(`Dendriform`, () => {
 
             form.branch('name').set('boooo');
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(1);
 
             expect(deriver).toHaveBeenCalledTimes(2);
             expect(deriver.mock.calls[1][0]).toEqual({
@@ -1670,8 +1905,8 @@ describe(`Dendriform`, () => {
             form.replace();
             form.branch('name').set('!!!!!!!');
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(1);
 
             expect(deriver).toHaveBeenCalledTimes(3);
             expect(deriver.mock.calls[2][0]).toEqual({
@@ -1700,8 +1935,8 @@ describe(`Dendriform`, () => {
 
             form.undo();
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(0);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(0);
 
             expect(deriver).toHaveBeenCalledTimes(4);
             expect(deriver.mock.calls[3][0]).toEqual({
@@ -1738,8 +1973,8 @@ describe(`Dendriform`, () => {
 
             form.redo();
 
-            expect(form.core.historyStack.length).toBe(1);
-            expect(form.core.historyIndex).toBe(1);
+            expect(form.core.state.historyStack.length).toBe(1);
+            expect(form.core.state.historyIndex).toBe(1);
 
             expect(deriver).toHaveBeenCalledTimes(5);
             expect(deriver.mock.calls[4][0]).toEqual({
@@ -1847,7 +2082,7 @@ describe(`Dendriform`, () => {
 
             test(`should have a slave form whose history only contains snapshots that correspond to a master form's changes`, () => {
 
-                // could be useful for independent state that needs to revert and respond
+                // could be useful for independent state that needs to cancel and respond
                 // to history changes in application data
                 // such as focus, window position
 
@@ -1871,19 +2106,19 @@ describe(`Dendriform`, () => {
                 form2.set(2);
 
                 expect(form2.value).toBe(2);
-                expect(form2.core.historyStack.length).toBe(0);
-                expect(form2.core.historyIndex).toBe(0);
+                expect(form2.core.state.historyStack.length).toBe(0);
+                expect(form2.core.state.historyIndex).toBe(0);
 
                 // make a change to master, and now slave should have a history item
 
                 form.set(200);
 
                 expect(form.value).toBe(200);
-                expect(form.core.historyStack.length).toBe(1);
-                expect(form.core.historyIndex).toBe(1);
+                expect(form.core.state.historyStack.length).toBe(1);
+                expect(form.core.state.historyIndex).toBe(1);
                 expect(form2.value).toBe(2);
-                expect(form2.core.historyStack.length).toBe(1);
-                expect(form2.core.historyIndex).toBe(1);
+                expect(form2.core.state.historyStack.length).toBe(1);
+                expect(form2.core.state.historyIndex).toBe(1);
 
                 // make a couple more changes to slave
 
@@ -1896,11 +2131,11 @@ describe(`Dendriform`, () => {
                 form.undo();
 
                 expect(form.value).toBe(100);
-                expect(form.core.historyStack.length).toBe(1);
-                expect(form.core.historyIndex).toBe(0);
+                expect(form.core.state.historyStack.length).toBe(1);
+                expect(form.core.state.historyIndex).toBe(0);
                 expect(form2.value).toBe(2);
-                expect(form2.core.historyStack.length).toBe(1);
-                expect(form2.core.historyIndex).toBe(0);
+                expect(form2.core.state.historyStack.length).toBe(1);
+                expect(form2.core.state.historyIndex).toBe(0);
 
                 // now redo master, slave should go back to the state it was in
                 // when master change #2 happened
@@ -1908,11 +2143,11 @@ describe(`Dendriform`, () => {
                 form.redo();
 
                 expect(form.value).toBe(200);
-                expect(form.core.historyStack.length).toBe(1);
-                expect(form.core.historyIndex).toBe(1);
+                expect(form.core.state.historyStack.length).toBe(1);
+                expect(form.core.state.historyIndex).toBe(1);
                 expect(form2.value).toBe(4);
-                expect(form2.core.historyStack.length).toBe(1);
-                expect(form2.core.historyIndex).toBe(1);
+                expect(form2.core.state.historyStack.length).toBe(1);
+                expect(form2.core.state.historyIndex).toBe(1);
 
 
             });
@@ -1941,10 +2176,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('1');
                     expect(form2.value).toBe('1?');
-                    expect(form.core.historyStack.length).toBe(0);
-                    expect(form2.core.historyStack.length).toBe(0);
-                    expect(form.core.historyIndex).toBe(0);
-                    expect(form2.core.historyIndex).toBe(0);
+                    expect(form.core.state.historyStack.length).toBe(0);
+                    expect(form2.core.state.historyStack.length).toBe(0);
+                    expect(form.core.state.historyIndex).toBe(0);
+                    expect(form2.core.state.historyIndex).toBe(0);
 
                     // set value of form 1
 
@@ -1952,10 +2187,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('2');
                     expect(form2.value).toBe('2?');
-                    expect(form.core.historyStack.length).toBe(1);
-                    expect(form2.core.historyStack.length).toBe(1);
-                    expect(form.core.historyIndex).toBe(1);
-                    expect(form2.core.historyIndex).toBe(1);
+                    expect(form.core.state.historyStack.length).toBe(1);
+                    expect(form2.core.state.historyStack.length).toBe(1);
+                    expect(form.core.state.historyIndex).toBe(1);
+                    expect(form2.core.state.historyIndex).toBe(1);
 
                     // set value of form 2
 
@@ -1963,10 +2198,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('2');
                     expect(form2.value).toBe('!!!');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(2);
-                    expect(form2.core.historyIndex).toBe(2);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(2);
+                    expect(form2.core.state.historyIndex).toBe(2);
 
                     // should undo()
 
@@ -1974,10 +2209,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('2');
                     expect(form2.value).toBe('2?');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(1);
-                    expect(form2.core.historyIndex).toBe(1);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(1);
+                    expect(form2.core.state.historyIndex).toBe(1);
 
                     // should redo()
 
@@ -1985,10 +2220,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('2');
                     expect(form2.value).toBe('!!!');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(2);
-                    expect(form2.core.historyIndex).toBe(2);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(2);
+                    expect(form2.core.state.historyIndex).toBe(2);
 
                     // should undo() other
 
@@ -1996,8 +2231,8 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('2');
                     expect(form2.value).toBe('2?');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
 
                     // should redo() other
 
@@ -2005,8 +2240,8 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('2');
                     expect(form2.value).toBe('!!!');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
 
                     // should unsync
 
@@ -2027,10 +2262,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('');
                     expect(form2.value).toBe('');
-                    expect(form.core.historyStack.length).toBe(0);
-                    expect(form2.core.historyStack.length).toBe(0);
-                    expect(form.core.historyIndex).toBe(0);
-                    expect(form2.core.historyIndex).toBe(0);
+                    expect(form.core.state.historyStack.length).toBe(0);
+                    expect(form2.core.state.historyStack.length).toBe(0);
+                    expect(form.core.state.historyIndex).toBe(0);
+                    expect(form2.core.state.historyIndex).toBe(0);
 
                     // set value of form 1
 
@@ -2038,10 +2273,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('A');
                     expect(form2.value).toBe('');
-                    expect(form.core.historyStack.length).toBe(1);
-                    expect(form2.core.historyStack.length).toBe(1);
-                    expect(form.core.historyIndex).toBe(1);
-                    expect(form2.core.historyIndex).toBe(1);
+                    expect(form.core.state.historyStack.length).toBe(1);
+                    expect(form2.core.state.historyStack.length).toBe(1);
+                    expect(form.core.state.historyIndex).toBe(1);
+                    expect(form2.core.state.historyIndex).toBe(1);
 
                     // set value of form 2
 
@@ -2049,10 +2284,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('A');
                     expect(form2.value).toBe('B');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(2);
-                    expect(form2.core.historyIndex).toBe(2);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(2);
+                    expect(form2.core.state.historyIndex).toBe(2);
 
                     // should undo()
 
@@ -2060,10 +2295,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('A');
                     expect(form2.value).toBe('');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(1);
-                    expect(form2.core.historyIndex).toBe(1);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(1);
+                    expect(form2.core.state.historyIndex).toBe(1);
 
                     // should undo() again
 
@@ -2071,10 +2306,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('');
                     expect(form2.value).toBe('');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(0);
-                    expect(form2.core.historyIndex).toBe(0);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(0);
+                    expect(form2.core.state.historyIndex).toBe(0);
                 });
 
                 test(`should sync history stacks between 2 forms, and replace`, () => {
@@ -2094,10 +2329,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('1');
                     expect(form2.value).toBe('1?');
-                    expect(form.core.historyStack.length).toBe(0);
-                    expect(form2.core.historyStack.length).toBe(0);
-                    expect(form.core.historyIndex).toBe(0);
-                    expect(form2.core.historyIndex).toBe(0);
+                    expect(form.core.state.historyStack.length).toBe(0);
+                    expect(form2.core.state.historyStack.length).toBe(0);
+                    expect(form.core.state.historyIndex).toBe(0);
+                    expect(form2.core.state.historyIndex).toBe(0);
 
                     // set value of form 1
 
@@ -2105,10 +2340,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('2');
                     expect(form2.value).toBe('2?');
-                    expect(form.core.historyStack.length).toBe(1);
-                    expect(form2.core.historyStack.length).toBe(1);
-                    expect(form.core.historyIndex).toBe(1);
-                    expect(form2.core.historyIndex).toBe(1);
+                    expect(form.core.state.historyStack.length).toBe(1);
+                    expect(form2.core.state.historyStack.length).toBe(1);
+                    expect(form.core.state.historyIndex).toBe(1);
+                    expect(form2.core.state.historyIndex).toBe(1);
 
                     // set and replace
 
@@ -2117,10 +2352,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('3');
                     expect(form2.value).toBe('3?');
-                    expect(form.core.historyStack.length).toBe(1);
-                    expect(form2.core.historyStack.length).toBe(1);
-                    expect(form.core.historyIndex).toBe(1);
-                    expect(form2.core.historyIndex).toBe(1);
+                    expect(form.core.state.historyStack.length).toBe(1);
+                    expect(form2.core.state.historyStack.length).toBe(1);
+                    expect(form.core.state.historyIndex).toBe(1);
+                    expect(form2.core.state.historyIndex).toBe(1);
 
                     // set regularly again
 
@@ -2128,10 +2363,10 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('4');
                     expect(form2.value).toBe('4?');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(2);
-                    expect(form2.core.historyIndex).toBe(2);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(2);
+                    expect(form2.core.state.historyIndex).toBe(2);
 
                     // should undo()
 
@@ -2139,19 +2374,19 @@ describe(`Dendriform`, () => {
 
                     expect(form.value).toBe('3');
                     expect(form2.value).toBe('3?');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(1);
-                    expect(form2.core.historyIndex).toBe(1);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(1);
+                    expect(form2.core.state.historyIndex).toBe(1);
 
                     form.undo();
 
                     expect(form.value).toBe('1');
                     expect(form2.value).toBe('1?');
-                    expect(form.core.historyStack.length).toBe(2);
-                    expect(form2.core.historyStack.length).toBe(2);
-                    expect(form.core.historyIndex).toBe(0);
-                    expect(form2.core.historyIndex).toBe(0);
+                    expect(form.core.state.historyStack.length).toBe(2);
+                    expect(form2.core.state.historyStack.length).toBe(2);
+                    expect(form.core.state.historyIndex).toBe(0);
+                    expect(form2.core.state.historyIndex).toBe(0);
                 });
 
                 test(`should error if synced forms do not have the same history items`, () => {
@@ -2160,6 +2395,188 @@ describe(`Dendriform`, () => {
                     const form2 = new Dendriform('', {history: 100});;
 
                     expect(() => sync(form, form2)).toThrow('[Dendriform] sync() forms must have the same maximum number of history items configured');
+                });
+            });
+
+            describe('cancel', () => {
+
+                test(`should error if onDerive() has a deriver that throws an error`, () => {
+
+                    const form = new Dendriform(1);
+                    const form2 = new Dendriform(0);
+
+                    const callback = jest.fn();
+                    form.onChange(callback);
+
+                    const deriver1 = jest.fn((value) => {
+                        form2.set(value * 2);
+                    });
+
+                    const deriver2 = jest.fn((_value) => {
+                        throw cancel('!!!');
+                    });
+
+                    form.onDerive(deriver1);
+
+                    expect(() => form.onDerive(deriver2)).toThrow('onDerive() callback must not throw errors on first call.');
+                    expect(callback).toHaveBeenCalledTimes(0);
+                });
+
+                test(`should cancel when deriver throws an error (and prior successful derives should be cancelled too)`, () => {
+
+                    const form = new Dendriform(1, {history: 5});
+                    const form2 = new Dendriform(0);
+
+                    const callback = jest.fn();
+                    const callback2 = jest.fn();
+                    form.onChange(callback);
+                    form2.onChange(callback2);
+
+                    const cancelCallback = jest.fn();
+                    form.onCancel(cancelCallback);
+
+                    const deriver1 = jest.fn((value) => {
+                        form2.set(value * 2);
+                    });
+
+                    const deriver2 = jest.fn((value) => {
+                        if(value === 2) {
+                            throw cancel('Two not allowed');
+                        }
+                    });
+
+                    form.onDerive(deriver1);
+                    form.onDerive(deriver2);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(2);
+                    expect(callback).toHaveBeenCalledTimes(0);
+                    expect(callback2).toHaveBeenCalledTimes(1);
+                    expect(form.history.canUndo).toBe(false);
+                    expect(cancelCallback).toHaveBeenCalledTimes(0);
+
+                    // this should cause deriver2 to throw
+                    // and everything should be cancelled
+                    form.set(2);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(2);
+                    expect(callback).toHaveBeenCalledTimes(0);
+                    expect(callback2).toHaveBeenCalledTimes(1);
+                    expect(form.history.canUndo).toBe(false);
+                    expect(cancelCallback).toHaveBeenCalledTimes(1);
+                    expect(cancelCallback.mock.calls[0][0]).toBe('Two not allowed');
+
+                    // this should NOT cause deriver2 to throw
+                    // and everything should succeed
+                    form.set(3);
+
+                    expect(form.value).toBe(3);
+                    expect(form2.value).toBe(6);
+                    expect(callback).toHaveBeenCalledTimes(1);
+                    expect(callback2).toHaveBeenCalledTimes(2);
+                    expect(form.history.canUndo).toBe(true);
+                    expect(cancelCallback).toHaveBeenCalledTimes(1);
+                });
+
+                test(`should cancel when deriver throws an error in a chain`, () => {
+
+                    const form = new Dendriform(1, {history: 5});
+                    const form2 = new Dendriform(0);
+
+                    const callback = jest.fn();
+                    const callback2 = jest.fn();
+                    form.onChange(callback);
+                    form2.onChange(callback2);
+
+                    const deriver1 = jest.fn((value) => {
+                        form2.set(value * 2);
+                    });
+
+                    const deriver2 = jest.fn((value) => {
+                        if(value === 4) {
+                            throw cancel('Four not allowed');
+                        }
+                    });
+
+                    form.onDerive(deriver1);
+                    form2.onDerive(deriver2);
+
+                    // this should cause deriver2 to throw
+                    // and everything should be cancelled
+                    form.set(2);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(2);
+                    expect(callback).toHaveBeenCalledTimes(0);
+                    expect(callback2).toHaveBeenCalledTimes(1);
+                    expect(form.history.canUndo).toBe(false);
+
+                    // this should NOT cause deriver2 to throw
+                    // and everything should succeed
+                    form.set(3);
+
+                    expect(form.value).toBe(3);
+                    expect(form2.value).toBe(6);
+                    expect(callback).toHaveBeenCalledTimes(1);
+                    expect(callback2).toHaveBeenCalledTimes(2);
+                    expect(form.history.canUndo).toBe(true);
+                });
+
+                test(`should not cancel when using force`, () => {
+
+                    const form = new Dendriform(1, {history: 5});
+                    const form2 = new Dendriform(0);
+
+                    const deriver = jest.fn((value, {force}) => {
+                        if(value === 2 && !force) {
+                            throw cancel('Two not allowed');
+                        }
+                        form2.set(value);
+                    });
+
+                    form.onDerive(deriver);
+
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(1);
+
+                    // this should cause deriver to throw
+                    // and everything should be cancelled
+                    form.set(2);
+                    expect(form.value).toBe(1);
+                    expect(form2.value).toBe(1);
+
+                    // this should NOT cause deriver to throw
+                    // and everything should be changed
+                    form.set(2, {force: true});
+                    expect(form.value).toBe(2);
+                    expect(form2.value).toBe(2);
+                });
+
+                test(`should use useCancel`, () => {
+
+                    const firstHook = renderHook(() => useDendriform(1));
+
+                    const deriver = jest.fn((value, _details) => {
+                        if(value === 2) {
+                            throw cancel('Two not allowed');
+                        }
+                    });
+
+                    const cancelCallback = jest.fn();
+
+                    const form = firstHook.result.current;
+                    renderHook(() => {
+                        form.useDerive(deriver);
+                        form.useCancel(cancelCallback);
+                    });
+
+                    act(() => {
+                        form.set(2);
+                    });
+
+                    expect(cancelCallback).toHaveBeenCalledTimes(1);
+                    expect(cancelCallback.mock.calls[0][0]).toBe('Two not allowed');
                 });
             });
         });
@@ -2226,7 +2643,7 @@ describe(`Dendriform`, () => {
             });
 
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {},
                     id: '0',
@@ -2237,7 +2654,7 @@ describe(`Dendriform`, () => {
 
             form.branch('foo');
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2256,7 +2673,7 @@ describe(`Dendriform`, () => {
 
             form.branch(['foo','bar']);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2291,7 +2708,7 @@ describe(`Dendriform`, () => {
 
             form.branch(['foo','bar']);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2317,7 +2734,7 @@ describe(`Dendriform`, () => {
 
             form.branch('foo').set({});
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2345,7 +2762,7 @@ describe(`Dendriform`, () => {
 
             form.branch(['foo','bar']);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2371,7 +2788,7 @@ describe(`Dendriform`, () => {
 
             form.branch('foo').set([]);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2400,7 +2817,7 @@ describe(`Dendriform`, () => {
             form.branch(['foo','bar']);
             form.branch(['foo','baz']);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2436,7 +2853,7 @@ describe(`Dendriform`, () => {
                 }
             });
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2472,7 +2889,7 @@ describe(`Dendriform`, () => {
             form.branch(['foo','bar']);
             form.branch(['foo','baz']);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {
                         foo: '1'
@@ -2504,7 +2921,7 @@ describe(`Dendriform`, () => {
 
             form.set({});
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: {},
                     id: '0',
@@ -2521,7 +2938,7 @@ describe(`Dendriform`, () => {
             form.branch(1);
             form.branch(0);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: ['3','2','1'],
                     id: '0',
@@ -2547,7 +2964,7 @@ describe(`Dendriform`, () => {
 
             form.set([123, 456]);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: ['3','2'],
                     id: '0',
@@ -2573,7 +2990,7 @@ describe(`Dendriform`, () => {
             form.branch([0,'foo']);
             form.branch([1,'foo']);
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: ['1','3'],
                     id: '0',
@@ -2610,7 +3027,7 @@ describe(`Dendriform`, () => {
 
             form.set([{foo: 123}, {foo: 456}], {track: false});
 
-            expect(form.core.nodes).toEqual({
+            expect(form.core.state.nodes).toEqual({
                 '0': {
                     child: ['1','3'],
                     id: '0',

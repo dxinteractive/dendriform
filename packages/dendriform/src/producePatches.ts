@@ -1,7 +1,7 @@
-import {produceWithPatches, nothing} from 'immer';
-import {applyPatches, optimise} from 'dendriform-immer-patch-optimiser';
+import {produceWithPatches} from 'immer';
+import {optimise} from 'dendriform-immer-patch-optimiser';
 
-import type {Draft} from 'immer';
+import type {Draft, Patch} from 'immer';
 import type {DendriformPatch} from 'dendriform-immer-patch-optimiser';
 
 export type PatchCreator<V> = (base: V) => DendriformPatch[];
@@ -38,33 +38,38 @@ export const patches = <V,>(patches: DendriformPatch[]|PatchCreator<V>, patchesI
 
 export const noChange = patches([], []);
 
-export const producePatches = <V>(base: V, toProduce: ToProduce<V>, track = true): [V, DendriformPatch[], DendriformPatch[]] => {
-    if(isPatchPair(toProduce)) {
-        const patches = toProduce.__patches(base);
-        const patchesInverse = toProduce.__patchesInverse(base);
-        const newValue = applyPatches(base, patches);
-
+const optimisePatches = <V,>(base: V, newValue: V, track: boolean, patches?: Patch[], patchesInverse?: Patch[]): [DendriformPatch[], DendriformPatch[]] => {
+    if(!patches) {
+        patches = [{op: 'replace', path: [], value: newValue}];
+    }
+    if(!patchesInverse) {
+        patchesInverse = [{op: 'replace', path: [], value: base}];
+    }
+    if(!track) {
         return [
-            newValue as V,
             patches,
             patchesInverse
         ];
     }
-
-    const [newValue, patches, inversePatches] = produceWithPatches(base, draft => {
-        if(isImmerProducer(toProduce)) {
-            return toProduce(draft);
-        }
-        return toProduce === undefined ? nothing : toProduce;
-    });
-
     return [
-        newValue as V,
-        patches
-            ? (track ? optimise(base, patches) : patches)
-            : [{op: 'replace', path: [], value: newValue}],
-        inversePatches
-            ? (track ? optimise(newValue, inversePatches) : inversePatches)
-            : [{op: 'replace', path: [], value: base}]
+        optimise(base, patches),
+        optimise(newValue, patchesInverse)
     ];
+};
+
+export const producePatches = <V>(base: V, toProduce: ToProduce<V>, track = true): [DendriformPatch[], DendriformPatch[]] => {
+
+    if(isPatchPair(toProduce)) {
+        return [
+            toProduce.__patches(base),
+            toProduce.__patchesInverse(base)
+        ];
+    }
+
+    if(isImmerProducer(toProduce)) {
+        const [newValue, patches, patchesInverse] = produceWithPatches<V>(base, toProduce);
+        return optimisePatches<V>(base, newValue as V, track, patches, patchesInverse);
+    }
+
+    return optimisePatches<V>(base, toProduce, track);
 };

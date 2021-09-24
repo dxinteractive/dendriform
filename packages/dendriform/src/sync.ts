@@ -13,7 +13,7 @@ export const sync = <V,S>(
         die(5);
     }
 
-    const unsubMaster = masterForm.onDerive((newValue: V, details: DeriveCallbackDetails) => {
+    const unsubMaster = masterForm.onDerive((newValue: V, details: DeriveCallbackDetails<V>) => {
         const {go, replace} = details;
         // if master form calls go(), slave form calls go()
         if(go) return slaveForm.go(go);
@@ -22,7 +22,7 @@ export const sync = <V,S>(
         derive ? derive(newValue, details) : slaveForm.set(noChange);
     });
 
-    const unsubSlave = slaveForm.onDerive((_newValue: S, details: DeriveCallbackDetails) => {
+    const unsubSlave = slaveForm.onDerive((_newValue: S, details: DeriveCallbackDetails<S>) => {
         const {go, replace} = details;
         // if slave form calls go(), master form calls go()
         if(go) return masterForm.go(go);

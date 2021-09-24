@@ -1,12 +1,14 @@
 import {newNode, addNode, getNode, getPath, getNodeByPath, updateNode, removeNode, produceNodePatches} from '../src/index';
 import type {Nodes, NodeAny, NewNodeCreator} from '../src/index';
-import {BASIC, OBJECT, ARRAY, MAP, applyPatches} from 'dendriform-immer-patch-optimiser';
+import {BASIC, OBJECT, ARRAY, MAP, SET, applyPatches} from 'dendriform-immer-patch-optimiser';
 import type {Path} from 'dendriform-immer-patch-optimiser';
-import produce from 'immer';
+import produce, {enableMapSet} from 'immer';
+
+enableMapSet();
 
 const createNodesFrom = (value: unknown, current: number = 0): [Nodes, NewNodeCreator] => {
     const countRef = {current};
-    const newNodeCreator = newNode(countRef);
+    const newNodeCreator = newNode(() => `${countRef.current++}`);
 
     // use immer to add this, because immer freezes things and the tests must cope with that
     const nodes = produce({}, draft => {
@@ -45,27 +47,27 @@ describe(`Nodes`, () => {
                 id: '0'
             };
 
-            expect(newNode(countRef)(undefined)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(undefined)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(null)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(null)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(1)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(1)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)('string')).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)('string')).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(true)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(true)).toEqual(expected);
             expect(countRef.current).toBe(1);
 
             countRef.current = 0;
-            expect(newNode(countRef)(NaN)).toEqual(expected);
+            expect(newNode(() => `${countRef.current++}`)(NaN)).toEqual(expected);
             expect(countRef.current).toBe(1);
         });
 
@@ -79,7 +81,7 @@ describe(`Nodes`, () => {
                 bar: 'bar!'
             };
 
-            expect(newNode(countRef)(obj)).toEqual({
+            expect(newNode(() => `${countRef.current++}`)(obj)).toEqual({
                 type: OBJECT,
                 child: {},
                 parentId: '',
@@ -94,7 +96,7 @@ describe(`Nodes`, () => {
 
             const arr = ['a','b','c'];
 
-            expect(newNode(countRef)(arr)).toEqual({
+            expect(newNode(() => `${countRef.current++}`)(arr)).toEqual({
                 type: ARRAY,
                 child: [],
                 parentId: '',
@@ -112,9 +114,24 @@ describe(`Nodes`, () => {
                 [2, 'two']
             ]);
 
-            expect(newNode(countRef)(map)).toEqual({
+            expect(newNode(() => `${countRef.current++}`)(map)).toEqual({
                 type: MAP,
                 child: new Map(),
+                parentId: '',
+                id: '0'
+            });
+        });
+
+        test(`should accept sets`, () => {
+            const countRef = {
+                current: 0
+            };
+
+            const set = new Set<string>(['one', 'two']);
+
+            expect(newNode(() => `${countRef.current++}`)(set)).toEqual({
+                type: SET,
+                child: new Map(), // should be a Map
                 parentId: '',
                 id: '0'
             });
@@ -313,6 +330,93 @@ describe(`Nodes`, () => {
             });
 
             expect(newNodes2['0'].child).toEqual(['2',undefined,undefined,'1']);
+        });
+
+        test(`should accept maps and getNodeByPath()`, () => {
+            const value = new Map([['foo', 'foo!'], ['bar', 'bar!']]);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
+
+            const [newNodes, node] = produceNodeByPath(nodes, newNodeCreator, value, ['foo']);
+
+            expect(node).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            expect(newNodes['0'].child).toEqual(new Map([
+                ['foo', '1']
+            ]));
+
+            expect(newNodes['1']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            const [newNodes2, node2] = produceNodeByPath(newNodes, newNodeCreator, value, ['bar']);
+
+            expect(node2).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
+
+            expect(newNodes2['0'].child).toEqual(new Map([
+                ['foo', '1'],
+                ['bar', '2']
+            ]));;
+
+            expect(newNodes2['2']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
+        });
+
+        test(`should accept sets and getNodeByPath()`, () => {
+            const value = new Set(['foo', 'bar']);
+            const [nodes, newNodeCreator] = createNodesFrom(value);
+
+            const [newNodes, node] = produceNodeByPath(nodes, newNodeCreator, value, ['foo']);
+
+            expect(node).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            expect(newNodes['0'].child).toEqual(new Map([['foo','1']]));
+
+            expect(newNodes['1']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '1'
+            });
+
+            const [newNodes2, node2] = produceNodeByPath(newNodes, newNodeCreator, value, ['bar']);
+
+            expect(node2).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
+
+            expect(newNodes2['0'].child).toEqual(new Map([['foo','1'],['bar','2']]));
+
+            expect(newNodes2['2']).toEqual({
+                type: BASIC,
+                child: undefined,
+                parentId: '0',
+                id: '2'
+            });
         });
     });
 

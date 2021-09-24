@@ -20,54 +20,78 @@
 import React from 'react';
 import {useState, useEffect} from 'react';
 import {shallowEqualArrays} from 'shallow-equal';
-import {getIn, applyPatches, zoomOutPatches} from 'dendriform-immer-patch-optimiser';
+import {getIn, entries, applyPatches, zoomOutPatches, SET} from 'dendriform-immer-patch-optimiser';
 import type {DendriformPatch, Path} from 'dendriform-immer-patch-optimiser';
 import produce, {isDraft, original} from 'immer';
 import {producePatches} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {die} from './errors';
-import {newNode, addNode, getPath, getNodeByPath, produceNodePatches} from './Nodes';
-import type {Nodes, NodeAny, CountRef, NewNodeCreator} from './Nodes';
+import type {ErrorKey} from './errors';
+import {newNode, addNode, getPath, getNodeByPath, produceNodePatches, getNode} from './Nodes';
+import type {Nodes, NodeAny, NewNodeCreator} from './Nodes';
 
 //
+// cancel
+//
 
+class Cancel extends Error {
+    DENDRIFORM_CANCEL = true;
+}
+
+export const cancel = (message: string): Cancel => new Cancel(message);
+
+//
 // core
 //
 
-type HistoryItem = {
+export type HistoryItem = {
     do: HistoryPatch;
     undo: HistoryPatch;
 };
 
-type HistoryPatch = {
+export type HistoryPatch = {
     value: DendriformPatch[];
     nodes: DendriformPatch[];
 };
 
-type HistoryState = {
+export type HistoryState = {
     canUndo: boolean;
     canRedo: boolean;
 };
 
-type ChangeCallbackDetails = {
-    patches: HistoryPatch
+export type StateDiff<V,N> = {
+    value: V;
+    nodes: N;
 };
-type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails) => void;
-type ChangeTypeValue = 'value';
-type ChangeTypeIndex = 'index';
-type ChangeTypeHistory = 'history';
-type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ChangeCallbackRef = [ChangeType, string, ChangeCallback<any>, any];
 
-export type DeriveCallbackDetails = {
+export type ChangeCallbackDetails<V> = {
+    patches: HistoryPatch;
+    prev: StateDiff<V|undefined,Nodes|undefined>;
+    next: StateDiff<V,Nodes>;
+    id: string;
+};
+export type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails<V>) => void;
+export type ChangeTypeValue = 'value';
+export type ChangeTypeIndex = 'index';
+export type ChangeTypeHistory = 'history';
+export type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ChangeCallbackRef = [ChangeType, string, ChangeCallback<any>, any];
+
+export type DeriveCallbackDetails<V> = {
     go: number;
     replace: boolean;
+    force: boolean;
     patches: HistoryPatch
+    prev: StateDiff<V|undefined,Nodes|undefined>;
+    next: StateDiff<V,Nodes>;
+    id: string;
 };
-export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails) => void;
+export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails<V>) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DeriveCallbackRef = [DeriveCallback<any>];
+export type DeriveCallbackRef = [DeriveCallback<any>];
+
+export type CancelCallback = (message: string) => void;
 
 //
 // core
@@ -83,30 +107,114 @@ type CoreConfig<C> = {
     options: Options;
 };
 
+type State<C> = {
+    // value
+    value: C;
+    // nodes
+    nodes: Nodes;
+    nodeCount: number;
+    // history
+    historyIndex: number;
+    historyStack: HistoryItem[];
+    historyState: HistoryState;
+};
+
+type InternalState = {
+    // user controlled internal state
+    bufferingChanges: boolean;
+    // if setBuffer exists, then new changes will be merged onto it
+    // if not, a new change will push a new history item
+    setBuffer?: HistoryPatch;
+    // state during changes
+    changeBuffer?: HistoryPatch;
+    deriving: boolean;
+    going: boolean;
+};
+
 const emptyHistoryPatch = (): HistoryPatch => ({value: [], nodes: []});
 
-class Core<C> {
+export class Core<C> {
 
-    // the value in the form
-    value: C;
+    //
+    // state
+    //
+
+    // persistent state - value, nodes, history...
+    state: State<C>;
+    // internal state - push or replace etc...
+    internalState: InternalState;
+    // revert
+    stateRevert: State<C>|undefined;
+    internalStateRevert: InternalState|undefined;
+
+    //
+    // config
+    //
+
+    historyLimit: number;
+    replaceByDefault: boolean;
+
+    //
+    // internal collections
+    //
+
     // cached Dendriform instances
     dendriforms = new Map<string,Dendriform<unknown>>();
     // derive callback refs, will be called while values are changing and require data to be derived
     deriveCallbackRefs = new Set<DeriveCallbackRef>();
     // change callback refs, will be called when values are to be pushed out to subscribers
     changeCallbackRefs = new Set<ChangeCallbackRef>();
+    // cancel callback refs, will be called when a change is cancelled
+    cancelCallbacks = new Set<CancelCallback>();
+    // set of forms currently hvaing their set() functions called
+    static changingForms = new Set<Core<unknown>>();
+    // debounce ids and count numbers to identify when each id has debounced
+    debounceMap = new Map<string,number>();
 
-    // nodes
-    // responsible for id-ing data pieces within the value tree
-    // makes it possible to uniquely id parts of a data shape, even while paths change
-    nodes: Nodes = {};
-    nodeCountRef: CountRef = {current: 0};
-    newNodeCreator: NewNodeCreator = newNode(this.nodeCountRef);
+    //
+    // node counter
+    //
+
+    newNodeCreator: NewNodeCreator;
+
+    //
+    // constructor
+    //
 
     constructor(config: CoreConfig<C>) {
-        this.value = config.initialValue;
+
+        this.state = {
+            // value - the .value stored in the form
+            value: config.initialValue,
+            // nodes - responsible for id-ing data pieces within the value tree
+            // makes it possible to uniquely id parts of a data shape, even while paths change
+            nodes: {},
+            nodeCount: 0,
+            // history
+            historyIndex: 0,
+            historyStack: [],
+            historyState: {
+                canUndo: false,
+                canRedo: false
+            }
+        };
+
+        this.internalState = {
+            // user controlled internal state
+            bufferingChanges: false,
+            // if setBuffer exists, then new changes will be merged onto it
+            // if not, a new change will push a new history item
+            setBuffer: undefined,
+            // state during changes
+            changeBuffer: undefined,
+            deriving: false,
+            going: false
+        };
+
+        this.newNodeCreator = newNode(() => `${this.state.nodeCount++}`);
+
         // create a root node for the value
-        addNode(this.nodes, this.newNodeCreator(this.value));
+        addNode(this.state.nodes, this.newNodeCreator(this.state.value));
 
         this.historyLimit = config.options.history || 0;
         this.replaceByDefault = !!config.options.replace;
@@ -117,7 +225,7 @@ class Core<C> {
     //
 
     getPath = (id: string): Path|undefined => {
-        return getPath(this.nodes, id);
+        return getPath(this.state.nodes, id);
     };
 
     getPathOrError = (id: string): Path => {
@@ -129,13 +237,17 @@ class Core<C> {
     getValue = (id: string): unknown => {
         const path = this.getPath(id);
         if(!path) return undefined;
-        return getIn(this.value, path);
+        return getIn(this.state.value, path);
+    };
+
+    getKey = (id: string): unknown => {
+        const path = this.getPath(id);
+        return path ? path.slice(-1)[0] : undefined;
     };
 
     getIndex = (id: string): number => {
         const path = this.getPath(id);
-        if(!path) return -1;
-        const [key] = path.slice(-1);
+        const key =  path ? path.slice(-1)[0] : -1;
         if(typeof key !== 'number') die(4, path);
         return key;
     };
@@ -144,7 +256,7 @@ class Core<C> {
         value: this.getValue,
         index: this.getIndex,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        history: (_id) => this.historyState
+        history: (_id) => this.state.historyState
     };
 
     createForm = (id: string): Dendriform<unknown> => {
@@ -159,8 +271,8 @@ class Core<C> {
         let node: NodeAny|undefined;
 
         if(path) {
-            this.nodes = produce(this.nodes, draft => {
-                const found = getNodeByPath(draft, this.newNodeCreator, this.value, path);
+            this.state.nodes = produce(this.state.nodes, draft => {
+                const found = getNodeByPath(draft, this.newNodeCreator, this.state.value, path);
                 node = isDraft(found) ? original(found) : found;
             });
         }
@@ -172,8 +284,6 @@ class Core<C> {
     //
     // setting data
     //
-
-    debounceMap = new Map<string,number>();
 
     setWithDebounce = (id: string, toProduce: unknown, options: SetOptions): void => {
         const {debounce} = options;
@@ -187,97 +297,146 @@ class Core<C> {
         setTimeout(() => countAtCall === this.debounceMap.get(id) && this.set(id, toProduce, options), debounce);
     };
 
-    // if setBuffer exists, then new changes will be merged onto it
-    // if not, a new change will push a new history item
-    bufferingChanges = false;
-    setBuffer?: HistoryPatch;
-    replaceByDefault = false;
+    executeChange = (executor: () => void): void => {
+        const originator = Core.changingForms.size === 0;
+        try {
+            // add form to the set of forms that are currently undergoing a change
+            Core.changingForms.add(this);
+
+            // set revert point to restore state from here if change is cancelled
+            this.setRevertPoint();
+
+            // call executor to make the changes
+            executor();
+
+            // call all change callbacks involved in this form and clear revert points
+            if(originator) {
+                Core.changingForms.forEach(form => form.callAllChangeCallbacks());
+            }
+
+            // all forms are done changing, clear the set and revert points
+            if(originator) {
+                this.finaliseChange();
+            }
+
+        } catch(e) {
+            // if not the originator, keep throwing all errors up
+            // the originator will handle them
+            if(!originator) {
+                throw e;
+            }
+
+            // if the originator but error is not a cancel
+            // close off the change and throw the error further up
+            if(!e.DENDRIFORM_CANCEL) {
+                this.finaliseChange();
+                throw e;
+            }
+
+            // error is a revert
+            Core.changingForms.forEach(core => core.revert());
+
+            // call all revert callbacks
+            this.cancelCallbacks.forEach(cancelCallback => cancelCallback(e.message));
+            this.finaliseChange();
+        }
+    };
+
+    finaliseChange = (): void => {
+        Core.changingForms.forEach(form => form.clearRevertPoint());
+        Core.changingForms.clear();
+    };
 
     set = (id: string, toProduce: unknown, options: SetOptions): void => {
         const path = this.getPath(id);
+        // do nothing if this set is not valid due to the node not being part of the node tree anymore
         if(!path) return;
 
-        // produce patches that describe the change
-        const [, valuePatches, valuePatchesInv] = producePatches(this.getValue(id), toProduce, options.track);
+        // error if this set is attempted on the child of an es6 Set
+        const parentId = getNode(this.state.nodes, id)?.parentId;
+        if(parentId && getNode(this.state.nodes, parentId)?.type === SET) die(7);
 
-        // transform patches so they have absolute paths
-        const valuePatchesZoomed = zoomOutPatches(path, valuePatches);
-        const valuePatchesInvZoomed = zoomOutPatches(path, valuePatchesInv);
+        // execute change
+        this.executeChange(() => {
+            // produce patches that describe the change
+            const [valuePatches, valuePatchesInv] = producePatches(this.getValue(id), toProduce, options.track);
 
-        // produce node patches, so that changes in the value
-        // are accompanied by corresponding changes in the nodes
-        const [, nodesPatches, nodesPatchesInv] = produceNodePatches(
-            this.nodes,
-            this.newNodeCreator,
-            this.value,
-            valuePatchesZoomed
-        );
+            // transform patches so they have absolute paths
+            const valuePatchesZoomed = zoomOutPatches(path, valuePatches);
+            const valuePatchesInvZoomed = zoomOutPatches(path, valuePatchesInv);
 
-        // create history item
-        const historyItem: HistoryItem = {
-            do: {
-                value: valuePatchesZoomed,
-                nodes: nodesPatches
-            },
-            undo: {
-                value: valuePatchesInvZoomed,
-                nodes: nodesPatchesInv
+            // produce node patches, so that changes in the value
+            // are accompanied by corresponding changes in the nodes
+            const [, nodesPatches, nodesPatchesInv] = produceNodePatches(
+                this.state.nodes,
+                this.newNodeCreator,
+                this.state.value,
+                valuePatchesZoomed
+            );
+
+            // create history item
+            const historyItem: HistoryItem = {
+                do: {
+                    value: valuePatchesZoomed,
+                    nodes: nodesPatches
+                },
+                undo: {
+                    value: valuePatchesInvZoomed,
+                    nodes: nodesPatchesInv
+                }
+            };
+
+            // apply changes to .value and .nodes
+            this.applyChanges(historyItem.do);
+
+            // if we're in the middle of calling go() or deriving, dont bother with buffers or deriving
+            // derived data shouldn't end up in the history stack, it should always be re-derived
+            if(this.internalState.going || this.internalState.deriving) return;
+
+            // push new history item, or replace last history item
+            const replace = !!this.internalState.setBuffer;
+            if(replace) {
+                this.historyReplace(historyItem);
+            } else {
+                this.historyPush(historyItem);
             }
-        };
 
-        // apply changes to .value and .nodes
-        this.applyChanges(historyItem.do);
+            this.internalState.setBuffer = {
+                value: (this.internalState.setBuffer?.value || []).concat(historyItem.do.value),
+                nodes: (this.internalState.setBuffer?.nodes || []).concat(historyItem.do.nodes)
+            };
 
-        // if we're in the middle of calling go() or deriving, dont bother with buffers or deriving
-        // derived data shouldn't end up in the history stack, it should always be re-derived
-        if(this.going || this.deriving) return;
-
-        // push new history item, or replace last history item
-        const replace = !!this.setBuffer;
-        if(replace) {
-            this.historyReplace(historyItem);
-        } else {
-            this.historyPush(historyItem);
-        }
-
-        this.setBuffer = {
-            value: (this.setBuffer?.value || []).concat(historyItem.do.value),
-            nodes: (this.setBuffer?.nodes || []).concat(historyItem.do.nodes)
-        };
-
-        // call derive callbacks
-        // but only if there are changes, or else this may be a deliberate noChange
-        // e.g. when sync() deliberately adds empty history items
-        if(historyItem.do.value.length > 0) {
-            this.callAllDeriveCallbacks(0, replace);
-        }
-
-        // call change callbacks
-        this.callAllChangeCallbacks();
+            // call derive callbacks
+            // but only if there are changes, or else this may be a deliberate noChange
+            // e.g. when sync() deliberately adds empty history items
+            if(historyItem.do.value.length > 0) {
+                this.callAllDeriveCallbacks(0, replace, options.force ?? false);
+            }
+        });
     };
 
     applyChanges = (historyPatch: HistoryPatch): void => {
         // apply changes to .value and .nodes
-        this.value = applyPatches(this.value, historyPatch.value);
-        this.nodes = applyPatches(this.nodes, historyPatch.nodes);
+        this.state.value = applyPatches(this.state.value, historyPatch.value);
+        this.state.nodes = applyPatches(this.state.nodes, historyPatch.nodes);
 
         // add changes to change buffer
-        this.changeBuffer = {
-            value: (this.changeBuffer?.value || []).concat(historyPatch.value),
-            nodes: (this.changeBuffer?.nodes || []).concat(historyPatch.nodes)
+        this.internalState.changeBuffer = {
+            value: (this.internalState.changeBuffer?.value || []).concat(historyPatch.value),
+            nodes: (this.internalState.changeBuffer?.nodes || []).concat(historyPatch.nodes)
         };
     };
 
-    replace = (replace: boolean) => {
+    replace = (replace: boolean): void => {
         if(!replace) {
-            this.setBuffer = undefined;
-        } else if(!this.setBuffer) {
-            this.setBuffer = emptyHistoryPatch();
+            this.internalState.setBuffer = undefined;
+        } else if(!this.internalState.setBuffer) {
+            this.internalState.setBuffer = emptyHistoryPatch();
         }
     };
 
-    newHistoryItem = () => {
-        this.setBuffer = this.replaceByDefault
+    newHistoryItem = (): void => {
+        this.internalState.setBuffer = this.replaceByDefault
             ? emptyHistoryPatch()
             : undefined;
     };
@@ -286,101 +445,119 @@ class Core<C> {
     // derive
     //
 
-    deriving = false;
-
-    callAllDeriveCallbacks = (go: number, replace: boolean): void => {
+    callAllDeriveCallbacks = (go: number, replace: boolean, force: boolean): void => {
         this.deriveCallbackRefs.forEach((deriveCallbackRef) => {
-            this.derive(deriveCallbackRef, go, replace);
+            this.derive(deriveCallbackRef, go, replace, force);
         });
     };
 
     derive = (
         deriveCallbackRef: DeriveCallbackRef,
         go: number,
-        replace: boolean
+        replace: boolean,
+        force: boolean
     ): void => {
-        if(this.deriving) return;
-        this.deriving = true;
+        if(this.internalState.deriving) return;
+        this.internalState.deriving = true;
 
         const [deriveCallback] = deriveCallbackRef;
-        const patches = this.changeBuffer ?? emptyHistoryPatch();
-        deriveCallback(this.value, {go, replace, patches});
+        const patches = this.internalState.changeBuffer ?? emptyHistoryPatch();
 
-        this.deriving = false;
+        const details = {
+            go,
+            replace,
+            force,
+            patches,
+            prev: {
+                value: this.stateRevert?.value,
+                nodes: this.stateRevert?.nodes
+            },
+            next: {
+                value: this.state.value,
+                nodes: this.state.nodes
+            },
+            id: '0'
+        };
+
+        deriveCallback(this.state.value, details);
+        this.internalState.deriving = false;
     };
 
     //
     // change
     //
 
-    changeBuffer?: HistoryPatch;
-
     buffer = (): void => {
-        this.bufferingChanges = true;
+        this.internalState.bufferingChanges = true;
         this.newHistoryItem();
     };
 
-    done = () => {
-        this.bufferingChanges = false;
+    done = (): void => {
+        this.internalState.bufferingChanges = false;
         this.callAllChangeCallbacks();
     };
 
     callAllChangeCallbacks = (): void => {
         // if buffering changes, dont do requested change
-        if(this.bufferingChanges) return;
+        if(this.internalState.bufferingChanges) return;
 
         this.newHistoryItem();
-        if(!this.changeBuffer) return;
+        if(!this.internalState.changeBuffer) return;
 
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
-            const [changeType, id] = changeCallbackRef;
+            const [changeType, id, changeCallback, prevValue] = changeCallbackRef;
             const nextValue = this.valueGettersByType[changeType](id);
-            this.change(changeCallbackRef, nextValue, this.changeBuffer as HistoryPatch);
-        });
-        this.changeBuffer = undefined;
-    };
 
-    change = (
-        changeCallbackRef: ChangeCallbackRef,
-        nextValue: unknown,
-        patches: HistoryPatch
-    ): void => {
-        // only update a callback if it is not equal to the previous value
-        const [,, changeCallback, prevValue] = changeCallbackRef;
-        if(!Object.is(nextValue, prevValue)) {
-            changeCallback(nextValue, {patches});
-            changeCallbackRef[3] = nextValue;
-        }
+            // only update a callback if it is not equal to the previous value
+            if(!Object.is(nextValue, prevValue)) {
+                const patches = this.internalState.changeBuffer as HistoryPatch;
+
+                const details = {
+                    patches,
+                    prev: {
+                        value: prevValue,
+                        nodes: this.stateRevert?.nodes
+                    },
+                    next: {
+                        value: nextValue,
+                        nodes: this.state.nodes
+                    },
+                    id
+                };
+
+                changeCallback(nextValue, details);
+                changeCallbackRef[3] = nextValue;
+            }
+        });
+        this.internalState.changeBuffer = undefined;
     };
 
     //
     // history
     //
 
-    historyIndex = 0;
-    historyStack: HistoryItem[] = [];
-    historyLimit: number;
-    historyState: HistoryState = {canUndo: false, canRedo: false};
+    historyPush = (historyItem: HistoryItem): void => {
+        const newHistoryStack = this.state.historyStack
+            .slice(0, this.state.historyIndex)
+            .concat(historyItem);
 
-    historyPush = (historyItem: HistoryItem) => {
-        this.historyStack.length = this.historyIndex;
-        this.historyStack.push(historyItem);
-
-        if(this.historyStack.length > this.historyLimit) {
-            this.historyStack.shift();
+        if(newHistoryStack.length > this.historyLimit) {
+            newHistoryStack.shift();
         } else {
-            this.historyIndex++;
+            this.state.historyIndex++;
         }
+        this.state.historyStack = newHistoryStack;
         this.updateHistoryState();
     };
 
-    historyReplace = (historyItem: HistoryItem) => {
-        if(this.historyIndex === 0) return;
-        this.historyStack.length = this.historyIndex;
+    historyReplace = (historyItem: HistoryItem): void => {
+        if(this.state.historyIndex === 0) return;
+        const newHistoryStack = this.state.historyStack
+            .slice(0, this.state.historyIndex);
 
-        const last = this.historyStack[this.historyIndex - 1];
+        const last = newHistoryStack[this.state.historyIndex - 1];
 
-        this.historyStack[this.historyIndex - 1] = {
+        newHistoryStack[this.state.historyIndex - 1] = {
             do: {
                 value: last.do.value.concat(historyItem.do.value),
                 nodes: last.do.nodes.concat(historyItem.do.nodes)
@@ -390,55 +567,76 @@ class Core<C> {
                 nodes: historyItem.undo.nodes.concat(last.undo.nodes)
             }
         };
+        this.state.historyStack = newHistoryStack;
     };
-
-    going = false;
 
     go = (offset: number): void => {
-        if(offset === 0 || this.going) return;
+        if(offset === 0 || this.internalState.going) return;
 
-        this.going = true;
+        this.internalState.going = true;
 
-        const newIndex = Math.min(
-            Math.max(0, this.historyIndex + offset),
-            this.historyStack.length
-        );
+        this.executeChange(() => {
+            const newIndex = Math.min(
+                Math.max(0, this.state.historyIndex + offset),
+                this.state.historyStack.length
+            );
 
-        const historyPatches: HistoryPatch[] = offset > 0
-            ? this.historyStack
-                .slice(this.historyIndex, newIndex)
-                .map(item => item.do)
-            : this.historyStack.slice(newIndex, this.historyIndex)
-                .reverse()
-                .map(item => item.undo);
+            const historyPatches: HistoryPatch[] = offset > 0
+                ? this.state.historyStack
+                    .slice(this.state.historyIndex, newIndex)
+                    .map(item => item.do)
+                : this.state.historyStack.slice(newIndex, this.state.historyIndex)
+                    .reverse()
+                    .map(item => item.undo);
 
-        const buffer: HistoryPatch = emptyHistoryPatch();
-        historyPatches.forEach((thisPatch) => {
-            buffer.value.push(...thisPatch.value);
-            buffer.nodes.push(...thisPatch.nodes);
+            const buffer: HistoryPatch = emptyHistoryPatch();
+            historyPatches.forEach((thisPatch) => {
+                buffer.value.push(...thisPatch.value);
+                buffer.nodes.push(...thisPatch.nodes);
+            });
+
+            this.state.historyIndex = newIndex;
+
+            this.updateHistoryState();
+
+            // apply changes to .value and .nodes
+            this.applyChanges(buffer);
+
+            // call derive callbacks
+            this.callAllDeriveCallbacks(offset, false, false);
         });
 
-        this.historyIndex = newIndex;
-
-        this.updateHistoryState();
-
-        // apply changes to .value and .nodes
-        this.applyChanges(buffer);
-
-        // call derive callbacks
-        this.callAllDeriveCallbacks(offset, false);
-
-        // call change callbacks
-        this.callAllChangeCallbacks();
-
-        this.going = false;
+        this.internalState.going = false;
     };
 
-    updateHistoryState = () => {
-        const canUndo = this.historyIndex > 0;
-        const canRedo = this.historyIndex < this.historyStack.length;
-        if(canUndo !== this.historyState.canUndo || canRedo !== this.historyState.canRedo) {
-            this.historyState = {canUndo, canRedo};
+    updateHistoryState = (): void => {
+        const canUndo = this.state.historyIndex > 0;
+        const canRedo = this.state.historyIndex < this.state.historyStack.length;
+        if(canUndo !== this.state.historyState.canUndo || canRedo !== this.state.historyState.canRedo) {
+            this.state.historyState = {canUndo, canRedo};
+        }
+    };
+
+    //
+    // revert
+    //
+
+    setRevertPoint = (): void => {
+        this.stateRevert = {...this.state};
+        this.internalStateRevert = {...this.internalState};
+    };
+
+    clearRevertPoint = (): void => {
+        this.stateRevert = undefined;
+        this.internalStateRevert = undefined;
+    };
+
+    revert = (): void => {
+        if(this.stateRevert) {
+            this.state = this.stateRevert;
+        }
+        if(this.internalStateRevert) {
+            this.internalState = this.internalStateRevert;
         }
     };
 }
@@ -464,6 +662,15 @@ const Branch = React.memo(
     (prevProps, nextProps) => shallowEqualArrays(prevProps.deps, nextProps.deps)
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const entriesOrDie = (thing: any, error: ErrorKey) => {
+    try {
+        return entries(thing);
+    } catch(e) {
+        die(error);
+    }
+};
+
 //
 // Dendriform
 //
@@ -481,15 +688,32 @@ export type Renderer<D> = (form: D) => MaybeReactElement;
 
 export type ChildToProduce<V> = (key: PropertyKey) => ToProduce<V>;
 
-export type KeyMap<M extends Map<unknown, unknown>> = M extends Map<infer K, unknown> ? K : never;
-export type ValMap<A> = A extends Map<unknown, infer V> ? V : never;
+export type Key<V> = V extends Map<infer K, unknown> ? K
+    : V extends Set<infer V> ? V
+    : keyof V;
 
-export type Key<V> = V extends Map<unknown, unknown> ? KeyMap<V> : keyof V;
-export type Val<V,K> = V extends Map<unknown, unknown> ? ValMap<V> : K extends keyof V ? V[K] : never;
+export type Val<V,K> = V extends Map<unknown, infer V> ? V
+    : V extends Set<infer V> ? V
+    : K extends keyof V ? V[K]
+    : never;
+
+type Branchable = unknown[]
+    | Map<string,unknown>
+    | Set<unknown>
+    | {[key: string]: unknown};
+
+
+type BranchableChild<A> = A extends unknown[] ? A[0]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : A extends Map<any, infer V> ? V
+    : A extends Set<infer V> ? V
+    : A extends {[key: string]: infer V} ? V
+    : never;
 
 export type SetOptions = {
     debounce?: number;
     track?: boolean;
+    force?: boolean;
 };
 
 export class Dendriform<V> {
@@ -529,12 +753,19 @@ export class Dendriform<V> {
         return this.core.getValue(this.id) as V;
     }
 
+    get key(): unknown {
+        // this is typed as unknown for now
+        // in future we could use generics to work out what the key is
+        // but the order of generics in the Dendriform type is not yet decided
+        return this.core.getKey(this.id);
+    }
+
     get index(): number {
         return this.core.getIndex(this.id);
     }
 
     get history(): HistoryState {
-        return this.core.historyState;
+        return this.core.state.historyState;
     }
 
     set = (toProduce: ToProduce<V>, options: SetOptions = {}): void => {
@@ -547,6 +778,28 @@ export class Dendriform<V> {
         this.core.setWithDebounce(parent.id, childToProduce(basePath[basePath.length - 1]), options);
     };
 
+    onDerive(callback: DeriveCallback<V>): (() => void) {
+        const deriveCallback: DeriveCallbackRef = [callback];
+        this.core.deriveCallbackRefs.add(deriveCallback);
+
+        // call immediately, and dont add to history
+        try {
+            this.core.derive(deriveCallback, 0, true, false);
+        } catch(e) {
+            die(6, e.message);
+        }
+        this.core.callAllChangeCallbacks();
+
+        // return unsubscriber
+        return () => void this.core.deriveCallbackRefs.delete(deriveCallback);
+    }
+
+    onCancel(callback: CancelCallback): (() => void) {
+        this.core.cancelCallbacks.add(callback);
+        // return unsubscriber
+        return () => void this.core.cancelCallbacks.delete(callback);
+    }
+
     onChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): (() => void);
     onChange(callback: ChangeCallback<HistoryState>, changeType: ChangeTypeHistory): (() => void);
     onChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): (() => void);
@@ -556,18 +809,6 @@ export class Dendriform<V> {
         this.core.changeCallbackRefs.add(changeCallback);
         // return unsubscriber
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
-    }
-
-    onDerive(callback: DeriveCallback<V>): (() => void) {
-        const deriveCallback: DeriveCallbackRef = [callback];
-        this.core.deriveCallbackRefs.add(deriveCallback);
-
-        // call immediately, and dont add to history
-        this.core.derive(deriveCallback, 0, true);
-        this.core.callAllChangeCallbacks();
-
-        // return unsubscriber
-        return () => void this.core.deriveCallbackRefs.delete(deriveCallback);
     }
 
     undo = (): void => this.core.go(-1);
@@ -610,8 +851,12 @@ export class Dendriform<V> {
         useEffect(() => this.onDerive(callback), []);
     }
 
+    useCancel(callback: CancelCallback): void {
+        useEffect(() => this.onCancel(callback), []);
+    }
+
     useHistory(): HistoryState {
-        const [historyState, setHistoryState] = useState<HistoryState>(this.core.historyState);
+        const [historyState, setHistoryState] = useState<HistoryState>(this.core.state.historyState);
         this.useChange(setHistoryState, 'history');
         return historyState;
     }
@@ -633,20 +878,17 @@ export class Dendriform<V> {
         return this.core.getFormAt(basePath?.concat(appendPath));
     }
 
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & unknown[]>(path: [K1, K2, K3, K4]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & unknown[]>(path: [K1, K2, K3]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & unknown[]>(path: [K1, K2]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(path: [K1]): Dendriform<W[0]>[];
-    branchAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(key: K1): Dendriform<W[0]>[];
-    branchAll<W extends V & unknown[]>(path?: []): Dendriform<W[0]>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & Branchable>(path: [K1, K2, K3, K4]): Dendriform<BranchableChild<W>>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & Branchable>(path: [K1, K2, K3]): Dendriform<BranchableChild<W>>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & Branchable>(path: [K1, K2]): Dendriform<BranchableChild<W>>[];
+    branchAll<K1 extends Key<V>, W extends Val<V,K1> & Branchable>(path: [K1]): Dendriform<BranchableChild<W>>[];
+    branchAll<K1 extends Key<V>, W extends Val<V,K1> & Branchable>(key: K1): Dendriform<BranchableChild<W>>[];
+    branchAll<W extends V & Branchable>(path?: []): Dendriform<BranchableChild<W>>[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     branchAll(pathOrKey: any): any {
         const got = this.branch(pathOrKey);
-        const array = got.value;
-        if(!Array.isArray(array)) die(2);
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return array.map((_element, index) => got.branch(index as any));
+        return entriesOrDie(got.value, 2).map(([key]) => got.branch(key as any));
     }
 
     render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4]>>, deps?: unknown[]): React.ReactElement;
@@ -665,13 +907,13 @@ export class Dendriform<V> {
         return <Branch renderer={() => renderer(form)} deps={deps} />;
     }
 
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & unknown[]>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & unknown[]>(path: [K1, K2, K3], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & unknown[]>(path: [K1, K2], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(path: [K1], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<W extends V & unknown[]>(path: [], renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, W extends Val<V,K1> & unknown[]>(key: K1, renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[]): React.ReactElement;
-    renderAll<W extends V & unknown[]>(renderer: Renderer<Dendriform<W[0]>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4] & Branchable>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3> & Branchable>(path: [K1, K2, K3], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2> & Branchable>(path: [K1, K2], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, W extends Val<V,K1> & Branchable>(path: [K1], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<W extends V & Branchable>(path: [], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, W extends Val<V,K1> & Branchable>(key: K1, renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
+    renderAll<W extends V & Branchable>(renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     renderAll(a: any, b: any, c: any): React.ReactElement {
         const aIsRenderer = typeof a === 'function';
@@ -680,12 +922,10 @@ export class Dendriform<V> {
         const form = aIsRenderer ? this : this.branch(a);
 
         const containerRenderer = (): React.ReactElement[] => {
-            const array = form.useValue();
-            if(!Array.isArray(array)) die(3);
-
-            return array.map((_element, index): React.ReactElement => {
+            const value = form.useValue();
+            return entriesOrDie(value, 3).map(([key]): React.ReactElement => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const child = form.branch(index as any);
+                const child = form.branch(key as any);
                 return <Branch key={child.id} renderer={() => renderer(child)} deps={deps} />;
             });
         };

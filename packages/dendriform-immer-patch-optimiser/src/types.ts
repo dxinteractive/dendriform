@@ -1,4 +1,5 @@
-export type Path = (string|number)[];
+export type Key = number|string;
+export type Path = Key[];
 
 export type DendriformPatch = {
     namespace?: string;
