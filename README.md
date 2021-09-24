@@ -93,14 +93,18 @@ Dendriform is kind of like a very advanced `useState()` hook that:
   - [thanks Immer!](https://immerjs.github.io/immer/)
 - Supports concurrent editing because it produces patches
   - [thanks again Immer!](https://immerjs.github.io/immer/patches)
-- Support for ES6 class and ES6 Maps
-  - see [ES6 classes](#es6-classes) and [ES6 maps](#es6-maps)
+- Support for ES6 classes, ES6 Maps and ES6 Sets
+  - see [ES6 classes](#es6-classes), [ES6 maps](#es6-maps) and [ES6 sets](#es6-sets)
 - Can exist outside of React
   - see [creation](#creation) again
 - Can be subscribed to
   - see [subscribing to changes](#subscribing-to-changes)
+- Can produce diffs of changes
+  - see [diffing changes](#diffing-changes)
 - Can automatically derive data in other forms
   - see [synchronising forms](#synchronising-forms)
+- Can enforce data integrity and prevent invalid states
+  - see [cancel changes based on constraints](#cancel-changes-based-on-constraints)
 - Comes with demos and recipes for building forms and data-editing user interfaces
   - see [the demos](http://dendriform.xyz) 
 
@@ -124,7 +128,7 @@ npm install --save dendriform
 - [Setting data](#setting-data)
 - [ES6 classes](#es6-classes)
 - [ES6 maps](#es6-maps)
-- [Dates and other non-immerable data](#dates-and-other-non-immerable-data)
+- [ES6 sets](#es6-sets)
 - [Form inputs](#form-inputs)
 - [Subscribing to changes](#subscribing-to-changes)
 - [Array operations](#array-operations)
@@ -133,8 +137,10 @@ npm install --save dendriform
 
 Advanced usage
 
+- [Diffing changes](#diffing-changes)
 - [Deriving data](#deriving-data)
 - [Synchronising forms](#synchronising-forms)
+- [Cancel changes based on constraints](#cancel-changes-based-on-constraints)
 
 ### Creation
 
@@ -631,23 +637,33 @@ form.branch(456).set('Janet');
 
 [Demo](http://dendriform.xyz#es6-maps)
 
-### Dates and other non-immerable data
+### ES6 sets
 
-[Immer](https://immerjs.github.io/immer) can't produce non-immerable data such as Dates. For Dendriform users this means that calling `form.branch('myDate').set(new Date())` likely throws the following error:
-
-```
-[Immer] produce can only be called on things that are draftable: plain objects, arrays, Map, Set or classes that are marked with '[immerable]: true'
-```
-
-To set a Date or other non-immerable value, set the value immutably from the parent like so:
+ES6 sets can be stored in a form and its properties can be accessed using branch methods.
 
 ```js
-form.setParent(key => draft => {
-    draft[key] = new Date();
-})
+const form = new Dendriform(new Set([1,2,3]));
+
+// form.branch(1).value will be 1
+// form.branch(3).value will be 3
 ```
 
-This does impose the limitation that you cannot use Dendriform to edit _only_ a Date like `new Dendriform(new Date())`. However this use case would be rare, as Dendriform's main purpose is to make deep data structures easier to edit.
+You can only modify a set's value from the parent form, not from a branched form.
+
+You must also explicitly enabled ES6 Set support by calling `enableMapSet()` [as immer's documentation describes](https://immerjs.github.io/immer/map-set).
+
+```js
+import {enableMapSet} from 'immer';
+
+enableMapSet();
+
+const form = new Dendriform(new Set([1,2,3]));
+
+// works
+form.set(draft => {
+    draft.add(4);
+});
+```
 
 ### Form inputs
 
@@ -820,6 +836,25 @@ function MyComponent(props) {
     </div>;
 }
 ```
+
+Callbacks passed into `.onChange()` are passed a second parameter, an object containing details of the change that took place.
+
+```js
+.onChange((newName, details) => {
+    ...
+});
+```
+
+The detail object contains:
+
+- `patches.value` - Immer patches describing the change to the value.
+- `patches.nodes` - Immer patches describing the change to the nodes.
+  - Nodes are an internal object that keeps track of the existence of parts of the data shape.
+- `prev.value` - The previous value.
+- `prev.nodes` - The previous nodes.
+- `next.value` - The new value.
+- `next.nodes` - The new nodes.
+- `id` - The id of the form that this change is occuring at.
 
 ### Array operations
 
@@ -1096,6 +1131,44 @@ function DragAndDropList(props) {
 
 ## Advanced usage
 
+### Diffing changes
+
+Dendriform can produce diffs of changes in `.onChange` and `.onDerive` callbacks. It does this shallowly, only looking at how the child values / elements of the `newValue` has changed. 
+
+```js
+import {diff} from 'dendriform';
+
+const form = new Dendriform({
+    a: 1,
+    b: 2,
+    c: 3
+});
+
+form.onChange((newValue, details) => {
+    const [added, removed, updated] = diff(details);
+    
+    // - added will be an array of {key: string, value: number} objects
+    //   that have been added by the change
+    // - removed will be an array of {key: string, value: number} objects
+    //   that have been removed by the change
+    // - updated will be an array of {key: string, value: number} objects
+    //   that have been updated by the change
+});
+
+// if form was to be set to the following
+
+form.set({
+    b: 2,
+    c: 33,
+    d: 44
+});
+
+// then diff() will return
+// added: [{key: 'd', value: 44}]
+// removed: [{key: 'a', value: 1}]
+// updated: [{key: 'c', value: 33}]
+```
+
 ### Deriving data
 
 When a change occurs, you can derive additional data in your form using `.onDerive`, or by using the `.useDerive()` hook if you're inside a React component's render method. Each derive function is called once immediately, and then once per change after that. When a change occurs, all derive callbacks are called in the order they were attached, after which `.onChange()`, `.useChange()` and `.useValue()` are updated with the final value.
@@ -1154,6 +1227,28 @@ form.onDerive(newValue => {
 ```
 
 [Demo](http://dendriform.xyz#deriveother)
+
+Callbacks passed into `.onDerive()` are passed a second parameter, an object containing details of the change that took place.
+
+```js
+.onDerive((newName, details) => {
+    ...
+});
+```
+
+The detail object contains:
+
+- `patches.value` - Immer patches describing the change to the value.
+- `patches.nodes` - Immer patches describing the change to the nodes.
+  - Nodes are an internal object that keeps track of the existence of parts of the data shape.
+- `prev.value` - The previous value.
+- `prev.nodes` - The previous nodes.
+- `next.value` - The new value.
+- `next.nodes` - The new nodes.
+- `go: number` - if `undo()`, `redo()` or `go()` triggered this change, this will be the change to the history index. Otherwise (for example when a call to `.set()` triggered the change) it will be 0.
+- `replace: boolean` - a boolean stating whether this change was called with `replace`.
+- `force: boolean` - a boolean stating whether this change was called with `force`.
+- `id` - The id of the form that this derive is occuring at.
 
 ### Synchronising forms
 
@@ -1227,6 +1322,63 @@ sync(nameForm, addressForm, names => {
 ```
 
 [Demo](http://dendriform.xyz#syncderive)
+
+### Cancel changes based on constraints
+
+Forms can have constraints applied to prevent invalid data from being set. An `.onDerive()` / `.useDerive()` callback may optionally throw a `cancel()` to cancel and revert the change that is being currently applied.
+
+```js
+import {cancel} from 'dendriform';
+
+const form = new Dendriform(1);
+
+form.onDerive((value) => {
+    if(value === 2) {
+        throw cancel('Two not allowed');
+    }
+});
+
+// calling form.set(2) will not result in any change
+```
+
+The `.onDerive()` callback can be written to obey a `force` flag, which can be passed into `.set()`.
+
+```js
+const form = new Dendriform(1);
+
+form.onDerive((value, {force}) => {
+    if(value === 2 && !force) {
+        throw cancel('Two not allowed');
+    }
+});
+
+// calling form.set(2) will not result in any change
+// calling form.set(2, {force: true}) will result in a change
+```
+
+You can provide a callback function to be called whenever a change is cancelled using `.onCancel`, or by using the `.useCancel()` hook if you're inside a React component's render method.
+
+```js
+const form = new Dendriform(1);
+
+form.onDerive((value) => {
+    if(value === 2) {
+        throw cancel('Two not allowed');
+    }
+});
+
+form.onCancel((reason) => {
+    console.warn(reason);
+})
+
+// calling form.set(2) will not result in any change
+// and 'Two not allowed' will be logged to the console
+```
+
+The cancel feature can be used to set up data integrity constraints between forms. If a form changes and derives data into other forms, then any other form that updates as a result can trigger the entire change to be cancelled using `cancel()`. This is a powerful feature that can allow you to set up foreign key constraints between forms.
+
+[Demo](http://dendriform.xyz#foreign-key)
+
 
 ## Etymology
 
