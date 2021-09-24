@@ -1,4 +1,4 @@
-const all = `can only be called on forms containing an array, object, es6 map or es6 set`
+const all = `can only be called on forms containing an array, object, es6 map or es6 set`;
 
 const errors = {
     0: (id: number) => `Cannot find path of node ${id}`,

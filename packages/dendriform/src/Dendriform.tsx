@@ -662,6 +662,7 @@ const Branch = React.memo(
     (prevProps, nextProps) => shallowEqualArrays(prevProps.deps, nextProps.deps)
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const entriesOrDie = (thing: any, error: ErrorKey) => {
     try {
         return entries(thing);
@@ -701,7 +702,9 @@ type Branchable = unknown[]
     | Set<unknown>
     | {[key: string]: unknown};
 
+
 type BranchableChild<A> = A extends unknown[] ? A[0]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     : A extends Map<any, infer V> ? V
     : A extends Set<infer V> ? V
     : A extends {[key: string]: infer V} ? V
@@ -885,9 +888,7 @@ export class Dendriform<V> {
     branchAll(pathOrKey: any): any {
         const got = this.branch(pathOrKey);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return entriesOrDie(got.value, 2).map(([key]) => {
-            return got.branch(key as any);
-        });
+        return entriesOrDie(got.value, 2).map(([key]) => got.branch(key as any));
     }
 
     render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4]>>, deps?: unknown[]): React.ReactElement;
