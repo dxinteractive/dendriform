@@ -7,4 +7,5 @@ export * from './useInput';
 export * from './useCheckbox';
 export * from './useProps';
 export * from './sync';
+export * from './diff';
 export {immerable} from 'immer';

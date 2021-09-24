@@ -68,6 +68,7 @@ export type ChangeCallbackDetails<V> = {
     patches: HistoryPatch;
     prev: StateDiff<V|undefined,Nodes|undefined>;
     next: StateDiff<V,Nodes>;
+    id: string;
 };
 export type ChangeCallback<V> = (newValue: V, details: ChangeCallbackDetails<V>) => void;
 export type ChangeTypeValue = 'value';
@@ -84,6 +85,7 @@ export type DeriveCallbackDetails<V> = {
     patches: HistoryPatch
     prev: StateDiff<V|undefined,Nodes|undefined>;
     next: StateDiff<V,Nodes>;
+    id: string;
 };
 export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails<V>) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -473,7 +475,8 @@ export class Core<C> {
             next: {
                 value: this.state.value,
                 nodes: this.state.nodes
-            }
+            },
+            id: '0'
         };
 
         deriveCallback(this.state.value, details);
@@ -518,7 +521,8 @@ export class Core<C> {
                     next: {
                         value: nextValue,
                         nodes: this.state.nodes
-                    }
+                    },
+                    id
                 };
 
                 changeCallback(nextValue, details);
