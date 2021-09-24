@@ -779,7 +779,7 @@ export class Dendriform<V> {
         try {
             this.core.derive(deriveCallback, 0, true, false);
         } catch(e) {
-            die(6, '?');
+            die(6, e.message);
         }
         this.core.callAllChangeCallbacks();
 
