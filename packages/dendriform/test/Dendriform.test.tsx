@@ -1463,6 +1463,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver.mock.calls[0][1]).toEqual({
                 go: 0,
+                id: '0',
                 patches: {nodes: [], value: []},
                 replace: true,
                 force: false,
@@ -1585,6 +1586,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver1.mock.calls[0][1]).toEqual({
                 go: 0,
+                id: '0',
                 patches: {nodes: [], value: []},
                 replace: true,
                 force: false,
@@ -1628,6 +1630,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver2.mock.calls[0][1]).toEqual({
                 go: 0,
+                id: '0',
                 patches: {nodes: [], value: []},
                 replace: true,
                 force: false,

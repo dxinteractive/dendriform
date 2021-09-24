@@ -299,12 +299,12 @@ describe(`diff`, () => {
         ]);
     });
 
-    test(`array to array 2 without calculating replaced`, () => {
+    test(`array to array 2 without calculating updated`, () => {
         const diffs = diff<string[]|{[key: string]: number}>({
             prev: ARRAY_DATA,
             next: ARRAY_DATA_2,
             id: '0'
-        }, {calculateReplaced: false});
+        }, {calculateUpdated: false});
 
         expect(diffs).toEqual([
             [
