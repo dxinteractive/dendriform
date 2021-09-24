@@ -108,6 +108,13 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe('.key', () => {
+        test(`should provide key`, () => {
+            const form = new Dendriform({foo: 'bar'});
+            expect(form.branch('foo').key).toBe('foo');
+        });
+    });
+
     describe('.index and .useIndex()', () => {
         test(`should provide index and produce an update`, () => {
 

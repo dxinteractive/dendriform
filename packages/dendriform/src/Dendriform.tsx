@@ -238,10 +238,14 @@ export class Core<C> {
         return getIn(this.state.value, path);
     };
 
+    getKey = (id: string): unknown => {
+        const path = this.getPath(id);
+        return path ? path.slice(-1)[0] : undefined;
+    };
+
     getIndex = (id: string): number => {
         const path = this.getPath(id);
-        if(!path) return -1;
-        const [key] = path.slice(-1);
+        const key =  path ? path.slice(-1)[0] : -1;
         if(typeof key !== 'number') die(4, path);
         return key;
     };
@@ -740,6 +744,13 @@ export class Dendriform<V> {
 
     get value(): V {
         return this.core.getValue(this.id) as V;
+    }
+
+    get key(): unknown {
+        // this is typed as unknown for now
+        // in future we could use generics to work out what the key is
+        // but the order of generics in the Dendriform type is not yet decided
+        return this.core.getKey(this.id);
     }
 
     get index(): number {
