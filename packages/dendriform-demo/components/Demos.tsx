@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState, useRef, memo} from 'react';
-import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable} from 'dendriform';
+import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable, cancel, diff} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2, Link, Text} from '../components/Text';
 import styled from 'styled-components';
@@ -1480,6 +1480,361 @@ function DragAndDropList(props) {
 `;
 
 //
+// cancel
+//
+
+function Cancel(): React.ReactElement {
+
+    const ageForm = useDendriform(() => 10);
+
+    ageForm.useDerive(age => {
+        if(age < 0) {
+            throw cancel('Age cannot be negative');
+        }
+    });
+
+    ageForm.useCancel(reason => console.warn(reason));
+
+    const setTo5 = useCallback(() => ageForm.set(5), []);
+    const setTo10 = useCallback(() => ageForm.set(10), []);
+    const setToMinus5 = useCallback(() => ageForm.set(-5), []);
+
+    return <Region>
+
+        {ageForm.render(form => (
+            <Region of="label">age: <code>{form.useValue()}</code></Region>
+        ))}
+
+        <button type="button" onClick={setTo5}>set to 5</button>
+        <button type="button" onClick={setTo10}>set to 10</button>
+        <button type="button" onClick={setToMinus5}>set to -5</button>
+
+    </Region>;
+}
+
+const CancelCode = `
+function MyComponent(props) {
+
+    const ageForm = useDendriform(() => 10);
+
+    ageForm.useDerive(age => {
+        if(age < 0) {
+            throw cancel('Age cannot be negative');
+        }
+    });
+
+    ageForm.useCancel(reason => console.warn(reason));
+
+    const setTo5 = useCallback(() => ageForm.set(5), []);
+    const setTo10 = useCallback(() => ageForm.set(10), []);
+    const setToMinus5 = useCallback(() => ageForm.set(-5), []);
+
+    return <div>
+
+        {ageForm.render(form => (
+            <label>age: <code>{form.useValue()}</code></label>
+        ))}
+
+        <button type="button" onClick={setTo5}>set to 5</button>
+        <button type="button" onClick={setTo10}>set to 10</button>
+        <button type="button" onClick={setToMinus5}>set to -5</button>
+
+    </div>;
+}
+`;
+
+function ForeignKey(): React.ReactElement {
+
+    // colours
+
+    const coloursForm = useDendriform(() => new Map([
+        [0, 'Blue'],
+        [1, 'Yellow']
+    ]));
+
+    const nextColourId = useRef<number>(2);
+
+    const addColour = useCallback(() => {
+        coloursForm.set(draft => {
+            draft.set(nextColourId.current++, 'Green');
+        });
+    }, []);
+
+    // people
+
+    const peopleForm = useDendriform(() => new Map([
+        [0, {
+            name: 'George',
+            faveColours: new Set([0])
+        }],
+        [1, {
+            name: 'Pat',
+            faveColours: new Set([0, 1])
+        }]
+    ]));
+
+    const nextPersonId = useRef<number>(2);
+
+    const addPerson = useCallback(() => {
+        peopleForm.set(draft => {
+            draft.set(nextPersonId.current++, {
+                name: 'Floop',
+                faveColours: new Set()
+            });
+        });
+    }, []);
+
+    // cancellation state
+
+    const [cancelMessage, setCancelMessage] = useState('');
+
+    // constraints
+
+    coloursForm.useDerive((colourValue, details) => {
+
+        const [,removed] = diff(details);
+
+        const referencedPeople = [...peopleForm.value.entries()].filter(([,person]) => {
+            return removed.some(({key}) => person.faveColours.has(key));
+        });
+
+        if(referencedPeople.length > 0) {
+            if(!details.force) {
+                // if not forcing, throw an error to say why this change cant be made
+                const colourNames = removed.map(({value}) => value).join(', ');
+                const personNames = referencedPeople.map(([,person]) => person.name).join(', ');
+                throw cancel(`Colour(s) ${colourNames} cannot be deleted because they are referenced by ${personNames}`);
+
+            } else {
+                // if forcing, delete all people with references
+                peopleForm.set(draft => {
+                    referencedPeople.forEach(([key]) => {
+                        draft.delete(key);
+                    });
+                })
+            }
+        }
+    });
+
+    coloursForm.useCancel(message => setCancelMessage(message));
+
+    coloursForm.useChange(() => setCancelMessage(''));
+
+    // rendering
+
+    return <Region>
+        <fieldset>
+            <legend>colours</legend>
+            {cancelMessage && <code>{cancelMessage}</code>}
+            <ul>
+                {coloursForm.renderAll(form => (
+                    <Region of="li">
+                        <label>colour <input {...useInput(form, 150)} /></label>
+                        <button type="button" onClick={() => form.set(array.remove())}>remove</button>
+                        <button type="button" onClick={() => form.set(array.remove(), {force: true})}>remove with force</button>
+                    </Region>
+                ))}
+            </ul>
+            <button type="button" onClick={addColour}>Add colour</button>
+        </fieldset>
+        <fieldset>
+            <legend>people</legend>
+            <ul>
+                {peopleForm.renderAll(personForm => (
+                    <Region of="li">
+                        {personForm.render('name', form => (
+                            <Region of="label">name <input {...useInput(form, 150)} /></Region>
+                        ))}
+
+                        <fieldset>
+                            <legend>fave colours</legend>
+                            <FaveColours coloursForm={coloursForm} personForm={personForm} />
+                        </fieldset>
+                        <button type="button" onClick={() => personForm.set(array.remove())}>remove</button>
+                    </Region>
+                ))}
+            </ul>
+            <button type="button" onClick={addPerson}>Add person</button>
+        </fieldset>
+
+    </Region>;
+}
+
+function FaveColours(props): React.ReactElement {
+    const {coloursForm, personForm} = props;
+    return <Region>
+        <code>
+            {personForm.render('faveColours', form => JSON.stringify(Array.from(form.useValue().values())))}
+        </code>
+        <ul>
+            {coloursForm.renderAll(colourForm => {
+                const id = colourForm.key;
+                const colour = colourForm.useValue();
+                const hasFave = personForm.branch('faveColours').useValue().has(id);
+
+                const toggle = () => personForm.set(draft => {
+                    if(hasFave) {
+                        draft.faveColours.delete(id);
+                    } else {
+                        draft.faveColours.add(id);
+                    }
+                });
+
+                const button = <button type="button" onClick={toggle}>{hasFave ? 'yes' : 'no'}</button>;
+                return <Region of="li">{colour} {button}</Region>;
+            })}
+        </ul>
+    </Region>;
+}
+
+const ForeignKeyCode = `
+import {useDendriform, diff} from 'dendriform';
+import {useState, useRef} from 'react';
+
+function MyComponent(props) {
+    // colours
+
+    const coloursForm = useDendriform(() => new Map([
+        [0, 'Blue'],
+        [1, 'Yellow']
+    ]));
+
+    const nextColourId = useRef(2);
+
+    const addColour = useCallback(() => {
+        coloursForm.set(draft => {
+            draft.set(nextColourId.current++, 'Green');
+        });
+    }, []);
+
+    // people
+
+    const peopleForm = useDendriform(() => new Map([
+        [0, {
+            name: 'George',
+            faveColours: new Set([0])
+        }],
+        [1, {
+            name: 'Pat',
+            faveColours: new Set([0, 1])
+        }]
+    ]));
+
+    const nextPersonId = useRef(2);
+
+    const addPerson = useCallback(() => {
+        peopleForm.set(draft => {
+            draft.set(nextPersonId.current++, {
+                name: 'Floop',
+                faveColours: new Set()
+            });
+        });
+    }, []);
+
+    // cancellation state
+
+    const [cancelMessage, setCancelMessage] = useState('');
+
+    // constraints
+
+    coloursForm.useDerive((colourValue, details) => {
+
+        const [,removed] = diff(details);
+
+        const referencedPeople = [...peopleForm.value.entries()].filter(([,person]) => {
+            return removed.some(({key}) => person.faveColours.has(key));
+        });
+
+        if(referencedPeople.length > 0) {
+            if(!details.force) {
+                // if not forcing, throw an error to say why this change cant be made
+                const colourNames = removed.map(({value}) => value).join(', ');
+                const personNames = referencedPeople.map(([,person]) => person.name).join(', ');
+                throw cancel('Colour(s) ' + colourNames + ' cannot be deleted because they are referenced by ' + personNames);
+
+            } else {
+                // if forcing, delete all people with references
+                peopleForm.set(draft => {
+                    referencedPeople.forEach(([key]) => {
+                        draft.delete(key);
+                    });
+                })
+            }
+        }
+    });
+
+    coloursForm.useCancel(message => setCancelMessage(message));
+
+    coloursForm.useChange(() => setCancelMessage(''));
+
+    // rendering
+
+    return <div>
+        <fieldset>
+            <legend>colours</legend>
+            {cancelMessage && <code>{cancelMessage}</code>}
+            <ul>
+                {coloursForm.renderAll(form => (
+                    <li>
+                        <label>colour <input {...useInput(form, 150)} /></label>
+                        <button type="button" onClick={() => form.set(array.remove())}>remove</button>
+                        <button type="button" onClick={() => form.set(array.remove(), {force: true})}>remove with force</button>
+                    </li>
+                ))}
+            </ul>
+            <button type="button" onClick={addColour}>Add colour</button>
+        </fieldset>
+        <fieldset>
+            <legend>people</legend>
+            <ul>
+                {peopleForm.renderAll(personForm => (
+                    <li>
+                        {personForm.render('name', form => (
+                            <label>name <input {...useInput(form, 150)} /></label>
+                        ))}
+
+                        <fieldset>
+                            <legend>fave colours</legend>
+                            <FaveColours coloursForm={coloursForm} personForm={personForm} />
+                        </fieldset>
+                        <button type="button" onClick={() => personForm.set(array.remove())}>remove</button>
+                    </li>
+                ))}
+            </ul>
+            <button type="button" onClick={addPerson}>Add person</button>
+        </fieldset>
+    </div>;
+}
+
+function FaveColours(props) {
+    const {coloursForm, personForm} = props;
+    return <div>
+        <code>
+            {personForm.render('faveColours', form => JSON.stringify(Array.from(form.useValue().values())))}
+        </code>
+        <ul>
+            {coloursForm.renderAll(colourForm => {
+                const id = colourForm.key;
+                const colour = colourForm.useValue();
+                const hasFave = personForm.branch('faveColours').useValue().has(id);
+
+                const toggle = () => personForm.set(draft => {
+                    if(hasFave) {
+                        draft.faveColours.delete(id);
+                    } else {
+                        draft.faveColours.add(id);
+                    }
+                });
+
+                const button = <button type="button" onClick={toggle}>{hasFave ? 'yes' : 'no'}</button>;
+                return <li>{colour} {button}</li>;
+            })}
+        </ul>
+    </div>;
+}
+`;
+
+//
 // input refs
 //
 
@@ -2139,6 +2494,22 @@ const ADVANCED_DEMOS: DemoObject[] = [
         description: `The useSync() hook can also accept a deriver to derive data in one direction.  This has the effect of caching each derived form state in history, and calling undo and redo will just restore the relevant derived data at that point in history.`,
         anchor: 'syncderive',
         more: 'synchronising-forms'
+    },
+    {
+        title: 'Cancel changes based on constraints',
+        Demo: Cancel,
+        code: CancelCode,
+        description: `The callbacks provided to onDerive() can cancel and revert the change that is being currently applied. The .useCancel() callback is called whenever a change is cancelled. This example does not permit negative numbers in the form.`,
+        anchor: 'cancel',
+        more: 'cancel-changes-based-on-constraints'
+    },
+    {
+        title: 'Foreign key constraints',
+        Demo: ForeignKey,
+        code: ForeignKeyCode,
+        description: `In this demo the cancel feature is used to set up data integrity constraints between forms. Try removing a colour that is being referenced by a person. Calls to remove a colour that is referenced will be cancelled, and calls to forcefully remove a colour will cascade the deletion, removing all people currently referencing the removed colour and maintaining relational integrity.`,
+        anchor: 'foreign-key',
+        more: 'cancel-changes-based-on-constraints'
     }
 //    {
 //        title: 'Keeping track of input refs',
