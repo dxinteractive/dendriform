@@ -1,4 +1,4 @@
-import type {StateDiff} from './index';
+import type {StateDiff, BranchableChild} from './index';
 import type {Key, DataType} from 'dendriform-immer-patch-optimiser';
 import type {Nodes} from './Nodes';
 
@@ -30,10 +30,10 @@ const idsToKeys = (ids: Key[], arrayNodeChild?: Key[]): Key[] => {
     return ids.map(id => arrayNodeChild.indexOf(id));
 };
 
-const keysToDiffs = <V,>(keys: Key[], value: V): Diff<V>[] => {
+const keysToDiffs = <V,>(keys: Key[], value: V): Diff<BranchableChild<V>>[] => {
     return keys.map(key => ({
         key,
-        value: get(value, key) as V
+        value: get(value, key) as BranchableChild<V>
     }));
 };
 
@@ -52,7 +52,7 @@ export type DiffOptions = {
     calculateUpdated?: boolean;
 };
 
-export const diff = <V,>(details: DiffDetails<V>, options: DiffOptions = {}): [Diff<V>[], Diff<V>[], Diff<V>[]] => {
+export const diff = <V,>(details: DiffDetails<V>, options: DiffOptions = {}): [Diff<BranchableChild<V>>[], Diff<BranchableChild<V>>[], Diff<BranchableChild<V>>[]] => {
 
     const {calculateUpdated = true} = options;
 
@@ -100,10 +100,10 @@ export const diff = <V,>(details: DiffDetails<V>, options: DiffOptions = {}): [D
     const continuedNextDiffs = keysToDiffs<V>(continuedNextKeys, nextValue);
 
     const updatedDiffs = continuedNextDiffs
-        .map((diff, index): Diff<V>|undefined => {
+        .map((diff, index): Diff<BranchableChild<V>>|undefined => {
             return Object.is(continuedPrevDiffs[index].value, diff.value) ? undefined : diff;
         })
-        .filter((diff): diff is Diff<V> => !!diff);
+        .filter((diff): diff is Diff<BranchableChild<V>> => !!diff);
 
     return [
         addedDiffs,
