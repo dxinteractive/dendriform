@@ -1161,10 +1161,14 @@ describe(`Dendriform`, () => {
             test(`should renderAll es6 map return React element`, () => {
                 const form = new Dendriform(new Map([['foo',1],['bar',2]]));
 
-                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+                const renderer = jest.fn();
 
                 const MyComponent = (props: MyComponentProps<Map<string,number>>) => {
-                    return props.form.renderAll(renderer);
+                    return props.form.renderAll(form => {
+                        renderer(form);
+                        const num: number = form.value;
+                        return <div className="branch">{num}</div>;
+                    });
                 };
 
                 const wrapper = mount(<MyComponent form={form} foo={1} />);
@@ -1178,10 +1182,14 @@ describe(`Dendriform`, () => {
             test(`should renderAll object return React element`, () => {
                 const form = new Dendriform<{[key: string]: number}>({foo: 1, bar: 2});
 
-                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+                const renderer = jest.fn();
 
                 const MyComponent = (props: MyComponentProps<{[key: string]: number}>) => {
-                    return props.form.renderAll(renderer);
+                    return props.form.renderAll(form => {
+                        renderer(form);
+                        const num: number = form.value;
+                        return <div className="branch">{num}</div>;
+                    });
                 };
 
                 const wrapper = mount(<MyComponent form={form} foo={1} />);
@@ -1195,10 +1203,14 @@ describe(`Dendriform`, () => {
             test(`should renderAll es6 set return React element`, () => {
                 const form = new Dendriform<Set<string>>(new Set(['foo','bar']));
 
-                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+                const renderer = jest.fn();
 
                 const MyComponent = (props: MyComponentProps<Set<string>>) => {
-                    return props.form.renderAll(renderer);
+                    return props.form.renderAll(form => {
+                        renderer(form);
+                        const num: string = form.value;
+                        return <div className="branch">{num}</div>;
+                    });
                 };
 
                 const wrapper = mount(<MyComponent form={form} foo={1} />);

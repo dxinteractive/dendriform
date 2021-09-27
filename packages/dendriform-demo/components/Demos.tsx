@@ -1543,11 +1543,16 @@ function MyComponent(props) {
 }
 `;
 
+type ForeignKeyPerson = {
+    name: string;
+    faveColours: Set<number>;
+};
+
 function ForeignKey(): React.ReactElement {
 
     // colours
 
-    const coloursForm = useDendriform(() => new Map([
+    const coloursForm = useDendriform<Map<number,string>>(() => new Map([
         [0, 'Blue'],
         [1, 'Yellow']
     ]));
@@ -1562,7 +1567,7 @@ function ForeignKey(): React.ReactElement {
 
     // people
 
-    const peopleForm = useDendriform(() => new Map([
+    const peopleForm = useDendriform<Map<number,ForeignKeyPerson>>(() => new Map([
         [0, {
             name: 'George',
             faveColours: new Set([0])
@@ -1595,7 +1600,7 @@ function ForeignKey(): React.ReactElement {
         const [,removed] = diff(details);
 
         const referencedPeople = [...peopleForm.value.entries()].filter(([,person]) => {
-            return removed.some(({key}) => person.faveColours.has(key));
+            return removed.some(({key}) => person.faveColours.has(key as number));
         });
 
         if(referencedPeople.length > 0) {
@@ -1660,17 +1665,24 @@ function ForeignKey(): React.ReactElement {
     </Region>;
 }
 
-function FaveColours(props): React.ReactElement {
+type FaveColoursProps = {
+    coloursForm: Dendriform<Map<number,string>>;
+    personForm: Dendriform<ForeignKeyPerson>;
+};
+
+function FaveColours(props: FaveColoursProps): React.ReactElement {
     const {coloursForm, personForm} = props;
     return <Region>
         <code>
-            {personForm.render('faveColours', form => JSON.stringify(Array.from(form.useValue().values())))}
+            {personForm.render('faveColours', form => (
+                <span>{JSON.stringify(Array.from(form.useValue().values()))}</span>
+            ))}
         </code>
         <ul>
             {coloursForm.renderAll(colourForm => {
-                const id = colourForm.key;
+                const id = colourForm.key as number;
                 const colour = colourForm.useValue();
-                const hasFave = personForm.branch('faveColours').useValue().has(id);
+                const hasFave = personForm.branch('faveColours').useValue().has(id as number);
 
                 const toggle = () => personForm.set(draft => {
                     if(hasFave) {
@@ -1810,7 +1822,9 @@ function FaveColours(props) {
     const {coloursForm, personForm} = props;
     return <div>
         <code>
-            {personForm.render('faveColours', form => JSON.stringify(Array.from(form.useValue().values())))}
+            {personForm.render('faveColours', form => (
+                <span>{JSON.stringify(Array.from(form.useValue().values()))}</span>
+            ))}
         </code>
         <ul>
             {coloursForm.renderAll(colourForm => {
