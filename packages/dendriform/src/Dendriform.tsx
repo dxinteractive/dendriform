@@ -146,6 +146,7 @@ export class Core<C> {
     // revert
     stateRevert: State<C>|undefined;
     internalStateRevert: InternalState|undefined;
+    prevNodes: Nodes;
 
     //
     // config
@@ -215,6 +216,8 @@ export class Core<C> {
 
         // create a root node for the value
         addNode(this.state.nodes, this.newNodeCreator(this.state.value));
+
+        this.prevNodes = this.state.nodes;
 
         this.historyLimit = config.options.history || 0;
         this.replaceByDefault = !!config.options.replace;
@@ -311,12 +314,12 @@ export class Core<C> {
 
             // call all change callbacks involved in this form and clear revert points
             if(originator) {
-                Core.changingForms.forEach(form => form.callAllChangeCallbacks());
-            }
-
-            // all forms are done changing, clear the set and revert points
-            if(originator) {
+                // clear the changing forms set before calling callbacks
+                // so any calls to .set in callbacks start a new change
+                const forms = Array.from(Core.changingForms.values());
                 this.finaliseChange();
+
+                forms.forEach(form => form.callAllChangeCallbacks());
             }
 
         } catch(e) {
@@ -343,6 +346,10 @@ export class Core<C> {
     };
 
     finaliseChange = (): void => {
+        const prevNodes = this.stateRevert?.nodes;
+        if(prevNodes) {
+            this.prevNodes = prevNodes;
+        }
         Core.changingForms.forEach(form => form.clearRevertPoint());
         Core.changingForms.clear();
     };
@@ -516,7 +523,7 @@ export class Core<C> {
                     patches,
                     prev: {
                         value: prevValue,
-                        nodes: this.stateRevert?.nodes
+                        nodes: this.prevNodes
                     },
                     next: {
                         value: nextValue,
