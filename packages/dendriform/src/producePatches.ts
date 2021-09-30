@@ -18,6 +18,10 @@ export class Patch {
         next.nodes = (itemA?.nodes ?? []).concat(itemB.nodes);
         return next;
     }
+
+    static flatten(patches: Patch[]): Patch {
+        return patches.reduce(Patch.concat, new Patch());
+    }
 }
 
 export type PatchCreator<V> = (base: V) => DendriformPatch[];

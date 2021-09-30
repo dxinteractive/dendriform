@@ -582,11 +582,7 @@ export class Core<C,P extends Plugins> {
                     .reverse()
                     .map(item => item.undo);
 
-            const buffer: Patch = new Patch();
-            historyPatches.forEach((thisPatch) => {
-                buffer.value.push(...thisPatch.value);
-                buffer.nodes.push(...thisPatch.nodes);
-            });
+            const buffer: Patch = Patch.flatten(historyPatches);
 
             this.state.historyIndex = newIndex;
 
