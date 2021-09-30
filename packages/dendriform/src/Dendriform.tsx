@@ -78,7 +78,13 @@ export type StateDiff<V,N> = {
     nodes: N;
 };
 
-export type ChangeCallbackDetails<V> = {
+export type InternalMetaDetails = {
+    go: number;
+    replace: boolean;
+    force: boolean;
+};
+
+export type ChangeCallbackDetails<V> = InternalMetaDetails & {
     patches: HistoryItem;
     prev: StateDiff<V|undefined,Nodes|undefined>;
     next: StateDiff<V,Nodes>;
@@ -92,10 +98,7 @@ export type ChangeType = ChangeTypeValue|ChangeTypeIndex|ChangeTypeHistory;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ChangeCallbackRef = [ChangeType, string, ChangeCallback<any>, any];
 
-export type DeriveCallbackDetails<V> = {
-    go: number;
-    replace: boolean;
-    force: boolean;
+export type DeriveCallbackDetails<V> = InternalMetaDetails & {
     patches: HistoryItem;
     prev: StateDiff<V|undefined,Nodes|undefined>;
     next: StateDiff<V,Nodes>;
@@ -318,7 +321,7 @@ export class Core<C,P extends Plugins> {
         setTimeout(() => countAtCall === this.debounceMap.get(id) && this.set(id, toProduce, options), debounce);
     };
 
-    executeChange = (executor: () => void): void => {
+    executeChange = (executor: () => void, internalMeta: InternalMetaDetails): void => {
         const originator = Core.changingForms.size === 0;
         try {
             // add form to the set of forms that are currently undergoing a change
@@ -337,7 +340,7 @@ export class Core<C,P extends Plugins> {
                 const forms = Array.from(Core.changingForms.values());
                 this.finaliseChange();
 
-                forms.forEach(form => form.callAllChangeCallbacks());
+                forms.forEach(form => form.callAllChangeCallbacks(internalMeta));
             }
 
         } catch(e) {
@@ -373,6 +376,12 @@ export class Core<C,P extends Plugins> {
     };
 
     set = (id: string, toProduce: unknown, options: SetOptions): void => {
+        const internalMeta = {
+            go: 0,
+            replace: !!this.internalState.setBuffer,
+            force: options.force ?? false
+        };
+
         const path = this.getPath(id);
         // do nothing if this set is not valid due to the node not being part of the node tree anymore
         if(!path) return;
@@ -414,8 +423,7 @@ export class Core<C,P extends Plugins> {
             if(this.internalState.going || this.internalState.deriving) return;
 
             // push new history item, or replace last history item
-            const replace = !!this.internalState.setBuffer;
-            if(replace) {
+            if(internalMeta.replace) {
                 this.historyReplace(historyItem);
             } else {
                 this.historyPush(historyItem);
@@ -427,9 +435,9 @@ export class Core<C,P extends Plugins> {
             // but only if there are changes, or else this may be a deliberate noChange
             // e.g. when sync() deliberately adds empty history items
             if(historyItem.do.value.length > 0) {
-                this.callAllDeriveCallbacks(0, replace, options.force ?? false);
+                this.callAllDeriveCallbacks(internalMeta);
             }
-        });
+        }, internalMeta);
     };
 
     applyChanges = (historyItem: HistoryItem): void => {
@@ -459,18 +467,13 @@ export class Core<C,P extends Plugins> {
     // derive
     //
 
-    callAllDeriveCallbacks = (go: number, replace: boolean, force: boolean): void => {
+    callAllDeriveCallbacks = (internalMeta: InternalMetaDetails): void => {
         this.deriveCallbackRefs.forEach((deriveCallbackRef) => {
-            this.derive(deriveCallbackRef, go, replace, force);
+            this.derive(deriveCallbackRef, internalMeta);
         });
     };
 
-    derive = (
-        deriveCallbackRef: DeriveCallbackRef,
-        go: number,
-        replace: boolean,
-        force: boolean
-    ): void => {
+    derive = (deriveCallbackRef: DeriveCallbackRef, internalMeta: InternalMetaDetails): void => {
         if(this.internalState.deriving) return;
         this.internalState.deriving = true;
 
@@ -478,9 +481,7 @@ export class Core<C,P extends Plugins> {
         const patches = this.internalState.changeBuffer ?? new HistoryItem();
 
         const details = {
-            go,
-            replace,
-            force,
+            ...internalMeta,
             patches,
             prev: {
                 value: this.stateRevert?.value,
@@ -508,10 +509,15 @@ export class Core<C,P extends Plugins> {
 
     done = (): void => {
         this.internalState.bufferingChanges = false;
-        this.callAllChangeCallbacks();
+        const internalMeta = {
+            go: 0,
+            replace: false,
+            force: false
+        };
+        this.callAllChangeCallbacks(internalMeta);
     };
 
-    callAllChangeCallbacks = (): void => {
+    callAllChangeCallbacks = (internalMeta: InternalMetaDetails): void => {
         // if buffering changes, dont do requested change
         if(this.internalState.bufferingChanges) return;
 
@@ -527,6 +533,7 @@ export class Core<C,P extends Plugins> {
                 const patches = this.internalState.changeBuffer as HistoryItem;
 
                 const details = {
+                    ...internalMeta,
                     patches,
                     prev: {
                         value: prevValue,
@@ -539,8 +546,8 @@ export class Core<C,P extends Plugins> {
                     id
                 };
 
-                changeCallback(nextValue, details);
                 changeCallbackRef[3] = nextValue;
+                changeCallback(nextValue, details);
             }
         });
         this.internalState.changeBuffer = undefined;
@@ -575,6 +582,12 @@ export class Core<C,P extends Plugins> {
     };
 
     go = (offset: number): void => {
+        const internalMeta = {
+            go: offset,
+            replace: false,
+            force: false
+        };
+
         if(offset === 0 || this.internalState.going) return;
 
         this.internalState.going = true;
@@ -601,8 +614,8 @@ export class Core<C,P extends Plugins> {
             this.applyChanges(historyItem);
 
             // call derive callbacks
-            this.callAllDeriveCallbacks(offset, false, false);
-        });
+            this.callAllDeriveCallbacks(internalMeta);
+        }, internalMeta);
 
         this.internalState.going = false;
     };
@@ -800,12 +813,18 @@ export class Dendriform<V,P extends Plugins = undefined> {
         this.core.deriveCallbackRefs.add(deriveCallback);
 
         // call immediately, and dont add to history
+        const internalMeta = {
+            go: 0,
+            replace: true,
+            force: false
+        };
+
         try {
-            this.core.derive(deriveCallback, 0, true, false);
+            this.core.derive(deriveCallback, internalMeta);
         } catch(e) {
             die(6, e.message);
         }
-        this.core.callAllChangeCallbacks();
+        this.core.callAllChangeCallbacks(internalMeta);
 
         // return unsubscriber
         return () => void this.core.deriveCallbackRefs.delete(deriveCallback);
