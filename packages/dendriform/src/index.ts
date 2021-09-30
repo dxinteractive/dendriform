@@ -8,4 +8,6 @@ export * from './useCheckbox';
 export * from './useProps';
 export * from './sync';
 export * from './diff';
+export * from './Plugin';
+export * from './plugins/PluginSubmit';
 export {immerable} from 'immer';
