@@ -49,10 +49,21 @@ export class HistoryItem {
     do: Patch = new Patch();
     undo: Patch = new Patch();
 
-    static concat(itemA: HistoryItem, itemB: HistoryItem): HistoryItem {
+    static concat(itemA: HistoryItem|undefined, itemB: HistoryItem|undefined): HistoryItem {
         const next = new HistoryItem();
-        next.do = Patch.concat(itemA.do, itemB.do);
-        next.undo = Patch.concat(itemB.undo, itemA.undo);
+        next.do = Patch.concat(itemA?.do, itemB?.do);
+        next.undo = Patch.concat(itemB?.undo, itemA?.undo);
+        return next;
+    }
+
+    static flatten(historyItems: HistoryItem[]): HistoryItem {
+        return historyItems.reduce(HistoryItem.concat, new HistoryItem());
+    }
+
+    reverse(): HistoryItem {
+        const next = new HistoryItem();
+        next.do = this.undo;
+        next.undo = this.do;
         return next;
     }
 }
@@ -68,7 +79,7 @@ export type StateDiff<V,N> = {
 };
 
 export type ChangeCallbackDetails<V> = {
-    patches: Patch;
+    patches: HistoryItem;
     prev: StateDiff<V|undefined,Nodes|undefined>;
     next: StateDiff<V,Nodes>;
     id: string;
@@ -85,7 +96,7 @@ export type DeriveCallbackDetails<V> = {
     go: number;
     replace: boolean;
     force: boolean;
-    patches: Patch;
+    patches: HistoryItem;
     prev: StateDiff<V|undefined,Nodes|undefined>;
     next: StateDiff<V,Nodes>;
     id: string;
@@ -132,7 +143,7 @@ export type InternalState = {
     // if not, a new change will push a new history item
     setBuffer?: Patch;
     // state during changes
-    changeBuffer?: Patch;
+    changeBuffer?: HistoryItem;
     deriving: boolean;
     going: boolean;
 };
@@ -396,7 +407,7 @@ export class Core<C,P extends Plugins> {
             historyItem.undo.nodes = nodesPatchesInv;
 
             // apply changes to .value and .nodes
-            this.applyChanges(historyItem.do);
+            this.applyChanges(historyItem);
 
             // if we're in the middle of calling go() or deriving, dont bother with buffers or deriving
             // derived data shouldn't end up in the history stack, it should always be re-derived
@@ -421,13 +432,13 @@ export class Core<C,P extends Plugins> {
         });
     };
 
-    applyChanges = (historyPatch: Patch): void => {
+    applyChanges = (historyItem: HistoryItem): void => {
         // apply changes to .value and .nodes
-        this.state.value = applyPatches(this.state.value, historyPatch.value);
-        this.state.nodes = applyPatches(this.state.nodes, historyPatch.nodes);
+        this.state.value = applyPatches(this.state.value, historyItem.do.value);
+        this.state.nodes = applyPatches(this.state.nodes, historyItem.do.nodes);
 
         // add changes to change buffer
-        this.internalState.changeBuffer = Patch.concat(this.internalState.changeBuffer, historyPatch);
+        this.internalState.changeBuffer = HistoryItem.concat(this.internalState.changeBuffer, historyItem);
     };
 
     replace = (replace: boolean): void => {
@@ -464,7 +475,7 @@ export class Core<C,P extends Plugins> {
         this.internalState.deriving = true;
 
         const [deriveCallback] = deriveCallbackRef;
-        const patches = this.internalState.changeBuffer ?? new Patch();
+        const patches = this.internalState.changeBuffer ?? new HistoryItem();
 
         const details = {
             go,
@@ -513,7 +524,7 @@ export class Core<C,P extends Plugins> {
 
             // only update a callback if it is not equal to the previous value
             if(!Object.is(nextValue, prevValue)) {
-                const patches = this.internalState.changeBuffer as Patch;
+                const patches = this.internalState.changeBuffer as HistoryItem;
 
                 const details = {
                     patches,
@@ -574,22 +585,20 @@ export class Core<C,P extends Plugins> {
                 this.state.historyStack.length
             );
 
-            const historyPatches: Patch[] = offset > 0
+            const historyItems: HistoryItem[] = offset > 0
                 ? this.state.historyStack
                     .slice(this.state.historyIndex, newIndex)
-                    .map(item => item.do)
                 : this.state.historyStack.slice(newIndex, this.state.historyIndex)
                     .reverse()
-                    .map(item => item.undo);
+                    .map(item => item.reverse());
 
-            const buffer: Patch = Patch.flatten(historyPatches);
+            const historyItem = HistoryItem.flatten(historyItems);
 
             this.state.historyIndex = newIndex;
-
             this.updateHistoryState();
 
             // apply changes to .value and .nodes
-            this.applyChanges(buffer);
+            this.applyChanges(historyItem);
 
             // call derive callbacks
             this.callAllDeriveCallbacks(offset, false, false);

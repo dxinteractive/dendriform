@@ -1349,7 +1349,7 @@ describe(`Dendriform`, () => {
 
             expect(callback).toHaveBeenCalledTimes(1);
             expect(callback.mock.calls[0][0]).toBe(456);
-            expect(callback.mock.calls[0][1].patches.value).toEqual([
+            expect(callback.mock.calls[0][1].patches.do.value).toEqual([
                 {op: 'replace', path: [], value: 456}
             ]);
             expect(callback.mock.calls[0][1].prev).toEqual({
@@ -1426,7 +1426,7 @@ describe(`Dendriform`, () => {
 
             expect(callback).toHaveBeenCalledTimes(2);
             expect(callback.mock.calls[1][0]).toBe(123);
-            expect(callback.mock.calls[1][1].patches.value).toEqual([
+            expect(callback.mock.calls[1][1].patches.do.value).toEqual([
                 {op: 'replace', path: [], value: 123}
             ]);
         });
@@ -1446,7 +1446,7 @@ describe(`Dendriform`, () => {
 
             expect(callback).toHaveBeenCalledTimes(1);
             expect(callback.mock.calls[0][0]).toBe(456);
-            expect(callback.mock.calls[0][1].patches.value).toEqual([
+            expect(callback.mock.calls[0][1].patches.do.value).toEqual([
                 {op: 'replace', path: [], value: 456},
                 {op: 'replace', path: [], value: 789},
                 {op: 'replace', path: [], value: 456}
@@ -1481,7 +1481,10 @@ describe(`Dendriform`, () => {
             expect(deriver.mock.calls[0][1]).toEqual({
                 go: 0,
                 id: '0',
-                patches: {nodes: [], value: []},
+                patches: {
+                    do: {nodes: [], value: []},
+                    undo: {nodes: [], value: []}
+                },
                 replace: true,
                 force: false,
                 prev: {
@@ -1509,7 +1512,7 @@ describe(`Dendriform`, () => {
                 name: 'boo',
                 letters: 3
             });
-            expect(changer.mock.calls[0][1].patches.value).toEqual([
+            expect(changer.mock.calls[0][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['letters'],
@@ -1530,7 +1533,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver.mock.calls[1][1].go).toBe(0);
             expect(deriver.mock.calls[1][1].replace).toBe(false);
-            expect(deriver.mock.calls[1][1].patches.value).toEqual([
+            expect(deriver.mock.calls[1][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1543,7 +1546,7 @@ describe(`Dendriform`, () => {
                 name: 'boooo',
                 letters: 5
             });
-            expect(changer.mock.calls[1][1].patches.value).toEqual([
+            expect(changer.mock.calls[1][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1604,7 +1607,10 @@ describe(`Dendriform`, () => {
             expect(deriver1.mock.calls[0][1]).toEqual({
                 go: 0,
                 id: '0',
-                patches: {nodes: [], value: []},
+                patches: {
+                    do: {nodes: [], value: []},
+                    undo: {nodes: [], value: []}
+                },
                 replace: true,
                 force: false,
                 prev: {
@@ -1648,7 +1654,10 @@ describe(`Dendriform`, () => {
             expect(deriver2.mock.calls[0][1]).toEqual({
                 go: 0,
                 id: '0',
-                patches: {nodes: [], value: []},
+                patches: {
+                    do: {nodes: [], value: []},
+                    undo: {nodes: [], value: []}
+                },
                 replace: true,
                 force: false,
                 prev: {
@@ -1702,7 +1711,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver1.mock.calls[1][1].go).toBe(0);
             expect(deriver1.mock.calls[1][1].replace).toBe(false);
-            expect(deriver1.mock.calls[1][1].patches.value).toEqual([
+            expect(deriver1.mock.calls[1][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1718,7 +1727,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver2.mock.calls[1][1].go).toBe(0);
             expect(deriver2.mock.calls[1][1].replace).toBe(false);
-            expect(deriver2.mock.calls[1][1].patches.value).toEqual([
+            expect(deriver2.mock.calls[1][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1737,7 +1746,7 @@ describe(`Dendriform`, () => {
                 letters: 5,
                 lettersDoubled: 10
             });
-            expect(changer.mock.calls[0][1].patches.value).toEqual([
+            expect(changer.mock.calls[0][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1789,7 +1798,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver.mock.calls[1][1].go).toBe(0);
             expect(deriver.mock.calls[1][1].replace).toBe(false);
-            expect(deriver.mock.calls[1][1].patches.value).toEqual([
+            expect(deriver.mock.calls[1][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1822,7 +1831,7 @@ describe(`Dendriform`, () => {
 
             expect(deriver.mock.calls[2][1].go).toBe(-1);
             expect(deriver.mock.calls[2][1].replace).toBe(false);
-            expect(deriver.mock.calls[2][1].patches.value).toEqual([
+            expect(deriver.mock.calls[2][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1855,7 +1864,7 @@ describe(`Dendriform`, () => {
 
             expect(deriver.mock.calls[3][1].go).toBe(1);
             expect(deriver.mock.calls[3][1].replace).toBe(false);
-            expect(deriver.mock.calls[3][1].patches.value).toEqual([
+            expect(deriver.mock.calls[3][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1901,7 +1910,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver.mock.calls[1][1].go).toBe(0);
             expect(deriver.mock.calls[1][1].replace).toBe(false);
-            expect(deriver.mock.calls[1][1].patches.value).toEqual([
+            expect(deriver.mock.calls[1][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1932,7 +1941,7 @@ describe(`Dendriform`, () => {
             });
             expect(deriver.mock.calls[2][1].go).toBe(0);
             expect(deriver.mock.calls[2][1].replace).toBe(true);
-            expect(deriver.mock.calls[2][1].patches.value).toEqual([
+            expect(deriver.mock.calls[2][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -1965,7 +1974,7 @@ describe(`Dendriform`, () => {
 
             expect(deriver.mock.calls[3][1].go).toBe(-1);
             expect(deriver.mock.calls[3][1].replace).toBe(false);
-            expect(deriver.mock.calls[3][1].patches.value).toEqual([
+            expect(deriver.mock.calls[3][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],
@@ -2003,7 +2012,7 @@ describe(`Dendriform`, () => {
 
             expect(deriver.mock.calls[4][1].go).toBe(1);
             expect(deriver.mock.calls[4][1].replace).toBe(false);
-            expect(deriver.mock.calls[4][1].patches.value).toEqual([
+            expect(deriver.mock.calls[4][1].patches.do.value).toEqual([
                 {
                     op: 'replace',
                     path: ['name'],

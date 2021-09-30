@@ -12,10 +12,10 @@ export class Patch {
     value: DendriformPatch[] = [];
     nodes: DendriformPatch[] = [];
 
-    static concat(itemA: Patch|undefined, itemB: Patch): Patch {
+    static concat(itemA: Patch|undefined, itemB: Patch|undefined): Patch {
         const next = new Patch();
-        next.value = (itemA?.value ?? []).concat(itemB.value);
-        next.nodes = (itemA?.nodes ?? []).concat(itemB.nodes);
+        next.value = (itemA?.value ?? []).concat(itemB?.value ?? []);
+        next.nodes = (itemA?.nodes ?? []).concat(itemB?.nodes ?? []);
         return next;
     }
 
