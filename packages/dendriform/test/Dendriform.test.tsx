@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable, cancel} from '../src/index';
+import {useDendriform, Dendriform, noChange, sync, useSync, immerable, cancel, Plugin} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 import {BASIC, OBJECT, ARRAY} from 'dendriform-immer-patch-optimiser';
 
@@ -24,6 +24,11 @@ type MyComponentProps<V> = {
 type NotSetTestValue = {
     foo?: string;
     bar?: string;
+};
+
+type PluginValue = {
+    foo: boolean;
+    bar: boolean;
 };
 
 describe(`Dendriform`, () => {
@@ -3075,5 +3080,55 @@ describe(`Dendriform`, () => {
             });
         });
 
+    });
+
+    describe(`plugins`, () => {
+
+        test(`should contain value`, () => {
+            
+            const value: PluginValue = {
+                foo: true,
+                bar: true
+            };
+
+            const initMock = jest.fn();
+    
+            class MyPlugin extends Plugin {
+
+                public readonly state = {
+                    calledTimes: 0
+                };
+
+                clone(): MyPlugin {
+                    return new MyPlugin();
+                }
+
+                init(form: Dendriform<PluginValue>) {
+                    initMock(form);
+                }
+
+                mypluginFunction(): string {
+                    this.state.calledTimes++;
+                    return this.id;
+                }
+            }
+    
+            const plugins = {
+                myplugin: new MyPlugin()
+            };
+    
+            const form = new Dendriform(value, {plugins});
+    
+            expect(initMock).toHaveBeenCalledTimes(1);
+            expect(initMock.mock.calls[0][0]).toBe(form);
+
+            const pluginResult = form.plugins.myplugin.mypluginFunction();
+            const pluginResult2 = form.branch('foo').plugins.myplugin.mypluginFunction();
+
+            expect(pluginResult).toBe('0');
+            expect(pluginResult2).toBe('1');
+            expect(form.plugins.myplugin.state.calledTimes).toBe(2);
+    
+        });
     });
 });

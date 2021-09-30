@@ -29,6 +29,7 @@ import {die} from './errors';
 import type {ErrorKey} from './errors';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches, getNode} from './Nodes';
 import type {Nodes, NodeAny, NewNodeCreator} from './Nodes';
+import type {Plugin} from './Plugin';
 
 //
 // cancel
@@ -97,17 +98,20 @@ export type CancelCallback = (message: string) => void;
 // core
 //
 
-export type Options = {
+export type Plugins = {[key: string]: Plugin}|undefined;
+
+export type Options<P extends Plugins> = {
     history?: number;
     replace?: boolean;
+    plugins?: P;
 };
 
-type CoreConfig<C> = {
+export type CoreConfig<C,P extends Plugins> = {
     initialValue: C;
-    options: Options;
+    options: Options<P>;
 };
 
-type State<C> = {
+export type State<C> = {
     // value
     value: C;
     // nodes
@@ -119,7 +123,7 @@ type State<C> = {
     historyState: HistoryState;
 };
 
-type InternalState = {
+export type InternalState = {
     // user controlled internal state
     bufferingChanges: boolean;
     // if setBuffer exists, then new changes will be merged onto it
@@ -133,7 +137,7 @@ type InternalState = {
 
 const emptyHistoryPatch = (): HistoryPatch => ({value: [], nodes: []});
 
-export class Core<C> {
+export class Core<C,P extends Plugins> {
 
     //
     // state
@@ -154,13 +158,14 @@ export class Core<C> {
 
     historyLimit: number;
     replaceByDefault: boolean;
+    plugins: P|undefined;
 
     //
     // internal collections
     //
 
     // cached Dendriform instances
-    dendriforms = new Map<string,Dendriform<unknown>>();
+    dendriforms = new Map<string,Dendriform<unknown,P>>();
     // derive callback refs, will be called while values are changing and require data to be derived
     deriveCallbackRefs = new Set<DeriveCallbackRef>();
     // change callback refs, will be called when values are to be pushed out to subscribers
@@ -168,7 +173,8 @@ export class Core<C> {
     // cancel callback refs, will be called when a change is cancelled
     cancelCallbacks = new Set<CancelCallback>();
     // set of forms currently hvaing their set() functions called
-    static changingForms = new Set<Core<unknown>>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static changingForms = new Set<Core<unknown,any>>();
     // debounce ids and count numbers to identify when each id has debounced
     debounceMap = new Map<string,number>();
 
@@ -182,7 +188,7 @@ export class Core<C> {
     // constructor
     //
 
-    constructor(config: CoreConfig<C>) {
+    constructor(config: CoreConfig<C,P>) {
 
         this.state = {
             // value - the .value stored in the form
@@ -221,6 +227,7 @@ export class Core<C> {
 
         this.historyLimit = config.options.history || 0;
         this.replaceByDefault = !!config.options.replace;
+        this.plugins = config.options.plugins;
     }
 
     //
@@ -262,15 +269,15 @@ export class Core<C> {
         history: (_id) => this.state.historyState
     };
 
-    createForm = (id: string): Dendriform<unknown> => {
+    createForm = (id: string): Dendriform<unknown,P> => {
         const __branch = {core: this, id};
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const form = new Dendriform<any>({__branch});
+        const form = new Dendriform<any,P>({__branch});
         this.dendriforms.set(id, form);
         return form;
     };
 
-    getFormAt = (path: Path|undefined): Dendriform<unknown> => {
+    getFormAt = (path: Path|undefined): Dendriform<unknown,P> => {
         let node: NodeAny|undefined;
 
         if(path) {
@@ -646,6 +653,19 @@ export class Core<C> {
             this.internalState = this.internalStateRevert;
         }
     };
+
+    //
+    // plugins
+    //
+
+    applyIdToPlugins(id: string): P {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const applied: any = {};
+        for(const key in this.plugins) {
+            applied[key] = this.plugins[key].cloneWithId(id);
+        }
+        return applied as P;
+    }
 }
 
 //
@@ -684,9 +704,9 @@ const entriesOrDie = (thing: any, error: ErrorKey) => {
 // (wrapper around core)
 //
 
-export type DendriformBranch = {
+export type DendriformBranch<P extends Plugins> = {
     __branch: {
-        core: Core<unknown>;
+        core: Core<unknown,P>;
         id: string;
     };
 };
@@ -717,7 +737,7 @@ export type SetOptions = {
     force?: boolean;
 };
 
-export class Dendriform<V> {
+export class Dendriform<V,P extends Plugins = undefined> {
 
     // dev notes:
     // the dendriform class is merely a fancy way to get and set data
@@ -725,14 +745,14 @@ export class Dendriform<V> {
     // only Core should be stateful
     // hooks provided by Dendriform can obviously be stateful
 
-    core: Core<unknown>;
+    core: Core<unknown,P>;
     id: string;
 
-    constructor(initialValue: V|DendriformBranch, options: Options = {}) {
+    constructor(initialValue: V|DendriformBranch<P>, options: Options<P> = {}) {
 
         // if branching off an existing form, pass id and core along
-        if(initialValue instanceof Object && (initialValue as DendriformBranch).__branch) {
-            const {__branch} = initialValue as DendriformBranch;
+        if(initialValue instanceof Object && (initialValue as DendriformBranch<P>).__branch) {
+            const {__branch} = initialValue as DendriformBranch<P>;
             this.core = __branch.core;
             this.id = __branch.id;
             return;
@@ -744,6 +764,14 @@ export class Dendriform<V> {
             initialValue,
             options
         });
+
+        // intialise plugins
+        const {plugins} = options;
+        if(plugins) {
+            for(const key in plugins) {
+                plugins[key].init(this);
+            }
+        }
     }
 
     //
@@ -767,6 +795,10 @@ export class Dendriform<V> {
 
     get history(): HistoryState {
         return this.core.state.historyState;
+    }
+
+    get plugins(): P {
+        return this.core.applyIdToPlugins(this.id) as P;
     }
 
     set = (toProduce: ToProduce<V>, options: SetOptions = {}): void => {
@@ -866,12 +898,12 @@ export class Dendriform<V> {
     // branching
     //
 
-    branch<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4]): Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4]>;
-    branch<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>>(path: [K1, K2, K3]): Dendriform<Val<Val<Val<V,K1>,K2>,K3>>;
-    branch<K1 extends Key<V>, K2 extends keyof Val<V,K1>>(path: [K1, K2]): Dendriform<Val<Val<V,K1>,K2>>;
-    branch<K1 extends Key<V>>(path: [K1]): Dendriform<Val<V,K1>>;
-    branch(path?: []): Dendriform<V>;
-    branch<K1 extends Key<V>>(key: K1): Dendriform<Val<V,K1>>;
+    branch<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4]): Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4],P>;
+    branch<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>>(path: [K1, K2, K3]): Dendriform<Val<Val<Val<V,K1>,K2>,K3>,P>;
+    branch<K1 extends Key<V>, K2 extends keyof Val<V,K1>>(path: [K1, K2]): Dendriform<Val<Val<V,K1>,K2>,P>;
+    branch<K1 extends Key<V>>(path: [K1]): Dendriform<Val<V,K1>,P>;
+    branch(path?: []): Dendriform<V,P>;
+    branch<K1 extends Key<V>>(key: K1): Dendriform<Val<V,K1>,P>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     branch(pathOrKey: any): any {
         const appendPath = ([] as Path).concat(pathOrKey ?? []);
@@ -879,12 +911,12 @@ export class Dendriform<V> {
         return this.core.getFormAt(basePath?.concat(appendPath));
     }
 
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4]>(path: [K1, K2, K3, K4]): Dendriform<BranchableChild<W>>[];
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3]): Dendriform<BranchableChild<W>>[];
-    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2>>(path: [K1, K2]): Dendriform<BranchableChild<W>>[];
-    branchAll<K1 extends Key<V>, W extends Val<V,K1>>(path: [K1]): Dendriform<BranchableChild<W>>[];
-    branchAll<K1 extends Key<V>, W extends Val<V,K1>>(key: K1): Dendriform<BranchableChild<W>>[];
-    branchAll<W extends V>(path?: []): Dendriform<BranchableChild<W>>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4]>(path: [K1, K2, K3, K4]): Dendriform<BranchableChild<W>,P>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3]): Dendriform<BranchableChild<W>,P>[];
+    branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2>>(path: [K1, K2]): Dendriform<BranchableChild<W>,P>[];
+    branchAll<K1 extends Key<V>, W extends Val<V,K1>>(path: [K1]): Dendriform<BranchableChild<W>,P>[];
+    branchAll<K1 extends Key<V>, W extends Val<V,K1>>(key: K1): Dendriform<BranchableChild<W>,P>[];
+    branchAll<W extends V>(path?: []): Dendriform<BranchableChild<W>,P>[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     branchAll(pathOrKey: any): any {
         const got = this.branch(pathOrKey);
@@ -892,13 +924,13 @@ export class Dendriform<V> {
         return entriesOrDie(got.value, 2).map(([key]) => got.branch(key as any));
     }
 
-    render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4]>>, deps?: unknown[]): React.ReactElement;
-    render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>>(path: [K1, K2, K3], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>>>, deps?: unknown[]): React.ReactElement;
-    render<K1 extends Key<V>, K2 extends keyof Val<V,K1>>(path: [K1, K2], renderer: Renderer<Dendriform<Val<Val<V,K1>,K2>>>, deps?: unknown[]): React.ReactElement;
-    render<K1 extends Key<V>>(path: [K1], renderer: Renderer<Dendriform<Val<V,K1>>>, deps?: unknown[]): React.ReactElement;
-    render(path: [], renderer: Renderer<Dendriform<V>>, deps?: unknown[]): React.ReactElement;
-    render<K1 extends Key<V>>(key: K1, renderer: Renderer<Dendriform<Val<V,K1>>>, deps?: unknown[]): React.ReactElement;
-    render(renderer: Renderer<Dendriform<V>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
+    render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4],P>>, deps?: unknown[]): React.ReactElement;
+    render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>>(path: [K1, K2, K3], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>,P>>, deps?: unknown[]): React.ReactElement;
+    render<K1 extends Key<V>, K2 extends keyof Val<V,K1>>(path: [K1, K2], renderer: Renderer<Dendriform<Val<Val<V,K1>,K2>,P>>, deps?: unknown[]): React.ReactElement;
+    render<K1 extends Key<V>>(path: [K1], renderer: Renderer<Dendriform<Val<V,K1>,P>>, deps?: unknown[]): React.ReactElement;
+    render(path: [], renderer: Renderer<Dendriform<V,P>>, deps?: unknown[]): React.ReactElement;
+    render<K1 extends Key<V>>(key: K1, renderer: Renderer<Dendriform<Val<V,K1>,P>>, deps?: unknown[]): React.ReactElement;
+    render(renderer: Renderer<Dendriform<V,P>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any,  @typescript-eslint/explicit-module-boundary-types
     render(a: any, b: any, c: any): React.ReactElement {
         const aIsRenderer = typeof a === 'function';
@@ -908,13 +940,13 @@ export class Dendriform<V> {
         return <Branch renderer={() => renderer(form)} deps={deps} />;
     }
 
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4]>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2>>(path: [K1, K2], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, W extends Val<V,K1>>(path: [K1], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
-    renderAll<W extends V>(path: [], renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
-    renderAll<K1 extends Key<V>, W extends Val<V,K1>>(key: K1, renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[]): React.ReactElement;
-    renderAll<W extends V>(renderer: Renderer<Dendriform<BranchableChild<W>>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4]>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, W extends Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3], renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, W extends Val<Val<V,K1>,K2>>(path: [K1, K2], renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, W extends Val<V,K1>>(path: [K1], renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
+    renderAll<W extends V>(path: [], renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
+    renderAll<K1 extends Key<V>, W extends Val<V,K1>>(key: K1, renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
+    renderAll<W extends V>(renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[], notNeeded?: unknown): React.ReactElement;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     renderAll(a: any, b: any, c: any): React.ReactElement {
         const aIsRenderer = typeof a === 'function';
@@ -941,13 +973,13 @@ export class Dendriform<V> {
 
 type UseDendriformValue<V> = (() => V)|V;
 
-export const useDendriform = <V,>(initialValue: UseDendriformValue<V>, options: Options = {}): Dendriform<V> => {
+export const useDendriform = <V,P extends Plugins = undefined>(initialValue: UseDendriformValue<V>, options: Options<P> = {}): Dendriform<V,P> => {
     const [form] = useState(() => {
         const value = typeof initialValue === 'function'
             ? (initialValue as (() => V))()
             : initialValue;
 
-        return new Dendriform<V>(value as V, options);
+        return new Dendriform<V,P>(value as V, options);
     });
     return form;
 };
