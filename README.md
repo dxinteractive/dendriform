@@ -97,6 +97,8 @@ Dendriform is kind of like a very advanced `useState()` hook that:
   - see [ES6 classes](#es6-classes), [ES6 maps](#es6-maps) and [ES6 sets](#es6-sets)
 - Can exist outside of React
   - see [creation](#creation) again
+- Has a plugin system to add functionality, such as adding submit actions
+  - see [plugins](#plugins)
 - Can be subscribed to
   - see [subscribing to changes](#subscribing-to-changes)
 - Can produce diffs of changes
@@ -134,6 +136,11 @@ npm install --save dendriform
 - [Array operations](#array-operations)
 - [History](#history)
 - [Drag and drop](#drag-and-drop)
+
+Plugins
+
+- [Plugins](#plugins)
+- [PluginSubmit](#pluginsubmit)
 
 Advanced usage
 
@@ -847,14 +854,14 @@ Callbacks passed into `.onChange()` are passed a second parameter, an object con
 
 The detail object contains:
 
-- `patches.value` - Immer patches describing the change to the value.
-- `patches.nodes` - Immer patches describing the change to the nodes.
+- `patches: HistoryItem` - The dendriform patches and inverse patches describing this change.
   - Nodes are an internal object that keeps track of the existence of parts of the data shape.
 - `prev.value` - The previous value.
-- `prev.nodes` - The previous nodes.
 - `next.value` - The new value.
-- `next.nodes` - The new nodes.
-- `id` - The id of the form that this change is occuring at.
+- `go: number` - if `undo()`, `redo()` or `go()` triggered this change, this will be the change to the history index. Otherwise (for example when a call to `.set()` triggered the change) it will be 0.
+- `replace: boolean` - a boolean stating whether this change was called with `replace`.
+- `force: boolean` - a boolean stating whether this change was called with `force`.
+- `id: string` - The id of the form that this change is occuring at.
 
 ### Array operations
 
@@ -1129,6 +1136,79 @@ function DragAndDropList(props) {
 
 [Demo](http://dendriform.xyz#draganddrop)
 
+## Plugins
+
+Dendriform has a plugin system that allows modular resuable functionality to be applied to forms, such as adding a submit action to a form.
+
+Plugin instances become available on all branched forms under `form.plugins`. Some plugin methods can return data relevant to the branched form that the plugin is called from.
+
+```js
+const plugins = {
+    foo: new MyPlugin()
+};
+
+const form = new Dendriform({bar: 123}, {plugins});
+// form.plugins.foo is the MyPlugin instance
+// form.branch('foo').plugins.foo is also the MyPlugin instance
+```
+
+If you are passing plugins to the `useDendriform` hook, `plugins` must be a function that returns a plugins object.
+
+```js
+function MyComponent() {
+    const plugins = () => ({
+        foo: new MyPlugin()
+    });
+
+    const form = useDendriform({bar: 123}, {plugins});
+    // ...
+}
+```
+
+### PluginSubmit
+
+Adds a submit action to a form.
+
+```js
+import {PluginSubmit} from 'dendriform';
+
+const plugins = {
+    submit: new PluginSubmit({
+        onSubmit: async (newValue, details) => {
+            // trigger save action here
+            // any errors will be eligible for resubmission
+            // diff(details) can be used in here to diff changes since last submit
+        },
+        onError: (error) => {
+            // optional function, will be called
+            // if an error occurs in onSubmit
+        }
+    })
+};
+
+const form = new Dendriform(value, {plugins});
+
+// form plugin can be found form.plugins.submit
+// form can be submitted by calling:
+form.plugins.submit.submit();
+
+// get whether the form has changed value
+form.plugins.submit.changed;
+
+// get whether the form has changed value at a path
+form.branch('foo').plugins.submit.changed;
+```
+
+PluginSubmit has the following properties and methods.
+
+- `submit(): void` - submits the form if there are changes, calling `onSubmit`.
+- `previous: V` - the inital value / the value of the previous submit at the current branch.
+- `usePrevous(): V` - a React hook returning the inital value / the value of the previous submit at the current branch.
+- `dirty: boolean` - a boolean indicating if the value at the current branch is dirty i.e. has changed.
+- `useDirty(): boolean` - a React hook returning a boolean indicating if the value at the current branch is dirty i.e. has changed.
+- `submitting: boolean` - a boolean stating if the plugin is currently waiting for an async `onSubmit` call to complete.
+- `useSubmitting(): boolean` - a React hook returning a boolean stating if the plugin is currently waiting for an async `onSubmit` call to complete.
+
 ## Advanced usage
 
 ### Diffing changes
@@ -1238,17 +1318,14 @@ Callbacks passed into `.onDerive()` are passed a second parameter, an object con
 
 The detail object contains:
 
-- `patches.value` - Immer patches describing the change to the value.
-- `patches.nodes` - Immer patches describing the change to the nodes.
+- `patches: HistoryItem` - The dendriform patches and inverse patches describing this change.
   - Nodes are an internal object that keeps track of the existence of parts of the data shape.
 - `prev.value` - The previous value.
-- `prev.nodes` - The previous nodes.
 - `next.value` - The new value.
-- `next.nodes` - The new nodes.
 - `go: number` - if `undo()`, `redo()` or `go()` triggered this change, this will be the change to the history index. Otherwise (for example when a call to `.set()` triggered the change) it will be 0.
 - `replace: boolean` - a boolean stating whether this change was called with `replace`.
 - `force: boolean` - a boolean stating whether this change was called with `force`.
-- `id` - The id of the form that this derive is occuring at.
+- `id: string` - The id of the form that this derive is occuring at.
 
 ### Synchronising forms
 
