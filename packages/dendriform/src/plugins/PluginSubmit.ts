@@ -86,13 +86,30 @@ export class PluginSubmit<V> extends Plugin {
         state.previous.set(state.form.value);
     }
 
-    get previous(): V {
-        return this.getState().previous.value;
+    private getForm(): Dendriform<unknown> {
+        return this.getState().form.core.getFormAt(this.path);
+    }
+
+    private getPreviousForm(): Dendriform<unknown> {
+        return this.getState().previous.core.getFormAt(this.path);
+    }
+
+    get previous(): unknown {
+        return this.getPreviousForm().value;
     }
 
     /* istanbul ignore next */
-    usePrevious(): V {
-        return this.getState().previous.useValue();
+    usePrevious(): unknown {
+        return this.getPreviousForm().useValue();
+    }
+
+    get dirty(): boolean {
+        return this.getForm().value !== this.getPreviousForm().value;
+    }
+
+    /* istanbul ignore next */
+    useDirty(): unknown {
+        return this.getForm().useValue() !== this.getPreviousForm().useValue();
     }
 
     get submitting(): boolean {
@@ -103,4 +120,5 @@ export class PluginSubmit<V> extends Plugin {
     useSubmitting(): boolean {
         return this.getState().submitting.useValue();
     }
+    
 }

@@ -122,6 +122,12 @@ export type Options<P extends Plugins> = {
     plugins?: P;
 };
 
+export type UseDendriformOptions<P extends Plugins> = {
+    history?: number;
+    replace?: boolean;
+    plugins?: () => P;
+};
+
 export type CoreConfig<C,P extends Plugins> = {
     initialValue: C;
     options: Options<P>;
@@ -302,6 +308,10 @@ export class Core<C,P extends Plugins> {
         }
 
         const id = node ? node.id : 'notfound';
+        return this.getFormById(id);
+    };
+
+    getFormById = (id: string): Dendriform<unknown,P> => {
         return this.dendriforms.get(id) || this.createForm(id);
     };
 
@@ -655,11 +665,11 @@ export class Core<C,P extends Plugins> {
     // plugins
     //
 
-    applyIdToPlugins(id: string): P {
+    applyIdToPlugins(id: string, path: Path): P {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const applied: any = {};
         for(const key in this.plugins) {
-            applied[key] = this.plugins[key].cloneWithId(id);
+            applied[key] = this.plugins[key].cloneAndSpecify(id, path);
         }
         return applied as P;
     }
@@ -786,6 +796,10 @@ export class Dendriform<V,P extends Plugins = undefined> {
         return this.core.getKey(this.id);
     }
 
+    get path(): Path {
+        return this.core.getPathOrError(this.id);
+    }
+
     get index(): number {
         return this.core.getIndex(this.id);
     }
@@ -795,7 +809,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     }
 
     get plugins(): P {
-        return this.core.applyIdToPlugins(this.id) as P;
+        return this.core.applyIdToPlugins(this.id, this.path) as P;
     }
 
     set = (toProduce: ToProduce<V>, options: SetOptions = {}): void => {
@@ -976,13 +990,16 @@ export class Dendriform<V,P extends Plugins = undefined> {
 
 type UseDendriformValue<V> = (() => V)|V;
 
-export const useDendriform = <V,P extends Plugins = undefined>(initialValue: UseDendriformValue<V>, options: Options<P> = {}): Dendriform<V,P> => {
+export const useDendriform = <V,P extends Plugins = undefined>(initialValue: UseDendriformValue<V>, {plugins, ...options}: UseDendriformOptions<P> = {}): Dendriform<V,P> => {
     const [form] = useState(() => {
         const value = typeof initialValue === 'function'
             ? (initialValue as (() => V))()
             : initialValue;
 
-        return new Dendriform<V,P>(value as V, options);
+        return new Dendriform<V,P>(value as V, {
+            plugins: plugins?.(),
+            ...options
+        });
     });
     return form;
 };

@@ -2,6 +2,7 @@ import {Dendriform, PluginSubmit, diff} from '../../src/index';
 
 type Val = {
     foo: number;
+    bar?: number;
 };
 
 type Diffable = {
@@ -10,7 +11,7 @@ type Diffable = {
 
 describe(`plugin submit`, () => {
 
-    test(`should throw eror if not initialised and submit() is called`, () => {
+    test(`should throw error if not initialised and submit() is called`, () => {
 
         const onSubmit = jest.fn();
         
@@ -41,6 +42,34 @@ describe(`plugin submit`, () => {
         expect(onSubmit.mock.calls[0][0]).toEqual({
             foo: 456
         });
+    });
+    
+    test(`should change value and show previous and dirty at paths`, () => {
+
+        const value: Val = {
+            foo: 123,
+            bar: 456
+        };
+
+        const onSubmit = jest.fn();
+        
+        const plugins = {
+            submit: new PluginSubmit({onSubmit})
+        };
+
+        const form = new Dendriform(value, {plugins});
+
+        expect(form.plugins.submit.dirty).toBe(false);
+        expect(form.branch('foo').plugins.submit.dirty).toBe(false);
+        expect(form.branch('bar').plugins.submit.dirty).toBe(false);
+
+        form.branch('foo').set(456);
+
+        expect(form.plugins.submit.previous).toEqual({foo: 123, bar: 456});
+        expect(form.branch('foo').plugins.submit.previous).toBe(123);
+        expect(form.plugins.submit.dirty).toBe(true);
+        expect(form.branch('foo').plugins.submit.dirty).toBe(true);
+        expect(form.branch('bar').plugins.submit.dirty).toBe(false);
     });
 
     test(`should not submit value if not changed - this behaviour may change in future`, () => {

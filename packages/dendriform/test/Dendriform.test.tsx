@@ -3093,34 +3093,34 @@ describe(`Dendriform`, () => {
 
     describe(`plugins`, () => {
 
+        const initMock = jest.fn();
+
+        class MyPlugin extends Plugin {
+
+            public readonly state = {
+                calledTimes: 0
+            };
+
+            clone(): MyPlugin {
+                return new MyPlugin();
+            }
+
+            init(form: Dendriform<PluginValue>) {
+                initMock(form);
+            }
+
+            mypluginFunction(): string {
+                this.state.calledTimes++;
+                return this.id;
+            }
+        }
+
         test(`should contain value`, () => {
             
             const value: PluginValue = {
                 foo: true,
                 bar: true
             };
-
-            const initMock = jest.fn();
-    
-            class MyPlugin extends Plugin {
-
-                public readonly state = {
-                    calledTimes: 0
-                };
-
-                clone(): MyPlugin {
-                    return new MyPlugin();
-                }
-
-                init(form: Dendriform<PluginValue>) {
-                    initMock(form);
-                }
-
-                mypluginFunction(): string {
-                    this.state.calledTimes++;
-                    return this.id;
-                }
-            }
     
             const plugins = {
                 myplugin: new MyPlugin()
@@ -3138,6 +3138,20 @@ describe(`Dendriform`, () => {
             expect(pluginResult2).toBe('1');
             expect(form.plugins.myplugin.state.calledTimes).toBe(2);
     
+        });
+
+        describe('useDendriform() with plugins', () => {
+            test(`should accept plugins with a function that returns a plugin object`, () => {
+
+                const plugins = () => ({
+                    myplugin: new MyPlugin()
+                });
+    
+                const firstHook = renderHook(() => useDendriform(123, {plugins}));
+    
+                const form = firstHook.result.current;
+                expect(form.plugins.myplugin instanceof MyPlugin).toBe(true);
+            });
         });
     });
 });
