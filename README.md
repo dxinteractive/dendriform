@@ -1167,7 +1167,9 @@ function MyComponent() {
 
 ### PluginSubmit
 
-Adds a submit action to a form.
+Adds a submit action to a form. The `onSubmit` callback will be called when a form is submitted. If any errors occur as a result of calling `onSubmit`, the form will roll back and allow it to be submitted again.
+
+The `onSubmit` function passes the same `details` object as `onChange` does, so it's possible to use `diff()` with this to find what has changed between submissions. Please note that as of `v2.2.0` using `diff` in `onSubmit` works with all data types *except for diffing arrays*.
 
 ```js
 import {PluginSubmit} from 'dendriform';
@@ -1201,7 +1203,7 @@ form.branch('foo').plugins.submit.changed;
 
 PluginSubmit has the following properties and methods.
 
-- `submit(): void` - submits the form if there are changes, calling `onSubmit`.
+- `submit(): void` - submits the form if there are changes, calling `onSubmit`. If the value of the form has not changed then this has no effect.
 - `previous: V` - the inital value / the value of the previous submit at the current branch.
 - `usePrevous(): V` - a React hook returning the inital value / the value of the previous submit at the current branch.
 - `dirty: boolean` - a boolean indicating if the value at the current branch is dirty i.e. has changed.
