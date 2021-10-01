@@ -2586,7 +2586,7 @@ const DEMOS: DemoObject[] = [
         title: 'Submit Plugin (PluginSubmit)',
         Demo: PluginSubmitExample,
         code: PluginSubmitExampleCode,
-        description: `The submit plugin gives a form the ability to have a submit action, and to track what has changed between the current form state and the last time it was submitted. The asterisks deonte that a field has changed.`,
+        description: `The submit plugin gives a form the ability to have a submit action, and to track what has changed between the current form state and the last time it was submitted. The asterisks denote that a field has changed.`,
         anchor: 'pluginsubmit',
         more: 'pluginsubmit'
     }
