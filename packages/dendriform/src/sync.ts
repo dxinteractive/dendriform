@@ -1,11 +1,11 @@
-import type {Dendriform, DeriveCallback, DeriveCallbackDetails} from './index';
+import type {Dendriform, Plugins, DeriveCallback, DeriveCallbackDetails} from './index';
 import {noChange} from './producePatches';
 import {die} from './errors';
 import {useEffect} from 'react';
 
-export const sync = <V,S>(
-    masterForm: Dendriform<V>,
-    slaveForm: Dendriform<S>,
+export const sync = <V,S,VP extends Plugins,SP extends Plugins>(
+    masterForm: Dendriform<V,VP>,
+    slaveForm: Dendriform<S,SP>,
     derive?: DeriveCallback<V>
 ): (() => void) => {
 
@@ -37,9 +37,9 @@ export const sync = <V,S>(
     };
 };
 
-export const useSync = <V,S>(
-    masterForm: Dendriform<V>,
-    slaveForm: Dendriform<S>,
+export const useSync = <V,S,VP extends Plugins,SP extends Plugins>(
+    masterForm: Dendriform<V,VP>,
+    slaveForm: Dendriform<S,SP>,
     derive?: DeriveCallback<V>
 ): void => {
     useEffect(() => sync(masterForm, slaveForm, derive), []);

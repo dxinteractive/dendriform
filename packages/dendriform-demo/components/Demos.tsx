@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState, useRef, memo} from 'react';
-import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable, cancel, diff} from 'dendriform';
+import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable, cancel, diff, PluginSubmit} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2, Link, Text} from '../components/Text';
 import styled from 'styled-components';
@@ -1480,6 +1480,121 @@ function DragAndDropList(props) {
 `;
 
 //
+// pluginsubmit
+//
+
+type SubmitValue = {
+    firstName: string;
+    lastName: string;
+};
+
+type SubmitPlugins = {
+    submit: PluginSubmit<SubmitValue>;
+};
+
+async function fakeSave(value: SubmitValue): Promise<void> {
+    console.log('saving', value);
+    await new Promise(r => setTimeout(r, 1000));
+    console.log('saved');
+}
+
+function PluginSubmitExample(): React.ReactElement {
+
+    const initialValue = {
+        firstName: 'Ben',
+        lastName: 'Blen'
+    };
+
+    const plugins = (): SubmitPlugins => ({
+        submit: new PluginSubmit({
+            onSubmit: async (newValue: SubmitValue) => {
+                await fakeSave(newValue);
+            }
+        })
+    });    
+
+    const form = useDendriform<SubmitValue,SubmitPlugins>(() => initialValue, {plugins});
+
+    const onSubmit = useCallback((e) => {
+        e.preventDefault();
+        form.plugins.submit.submit();
+    }, []);
+
+    return <Region>
+        <form onSubmit={onSubmit}>
+            {form.render('firstName', form => {
+                const hasChanged = form.plugins.submit.useDirty();
+                return <Region of="label">first name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</Region>;
+            })}
+
+            {form.render('lastName', form => {
+                const hasChanged = form.plugins.submit.useDirty();
+                return <Region of="label">last name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</Region>;
+            })}
+
+            {form.render(form => {
+                const submitting = form.plugins.submit.useSubmitting();
+                return <Region>
+                    <button type="submit" disabled={!form.plugins.submit.useDirty()}>Submit</button>
+                    {submitting && <span>Saving...</span>}
+                </Region>;
+            })}
+        </form>
+    </Region>;
+}
+
+const PluginSubmitExampleCode = `
+async function fakeSave(value) {
+    console.log('saving', value);
+    await new Promise(r => setTimeout(r, 1000));
+    console.log('saved');
+}
+
+function PluginSubmitExample() {
+
+    const initialValue = {
+        firstName: 'Ben',
+        lastName: 'Blen'
+    };
+
+    const plugins = () => ({
+        submit: new PluginSubmit({
+            onSubmit: async (newValue) => {
+                await fakeSave(newValue);
+            }
+        })
+    });    
+
+    const form = useDendriform(() => initialValue, {plugins});
+
+    const onSubmit = useCallback((e) => {
+        e.preventDefault();
+        form.plugins.submit.submit();
+    }, []);
+
+    return <form onSubmit={onSubmit}>
+        {form.render('firstName', form => {
+            const hasChanged = form.plugins.submit.useDirty();
+            return <label>first name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
+        })}
+
+        {form.render('lastName', form => {
+            const hasChanged = form.plugins.submit.useDirty();
+            return <label>last name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
+        })}
+
+        {form.render(form => {
+            const submitting = form.plugins.submit.useSubmitting();
+            return <>
+                <button type="submit" disabled={!form.plugins.submit.useDirty()}>Submit</button>
+                {submitting && <span>Saving...</span>}
+            </>;
+        })}
+    </form>;
+}
+`;
+
+//
 // cancel
 //
 
@@ -2466,6 +2581,14 @@ const DEMOS: DemoObject[] = [
         description: `An example of how one might implement drag and drop with react-beautiful-dnd. Dendriform's .renderAll() function, and its automatic id management on array elements simplifies this greatly.`,
         anchor: 'draganddrop',
         more: 'drag-and-drop'
+    },
+    {
+        title: 'Submit Plugin (PluginSubmit)',
+        Demo: PluginSubmitExample,
+        code: PluginSubmitExampleCode,
+        description: `The submit plugin gives a form the ability to have a submit action, and to track what has changed between the current form state and the last time it was submitted. The asterisks denote that a field has changed.`,
+        anchor: 'pluginsubmit',
+        more: 'pluginsubmit'
     }
 ];
 

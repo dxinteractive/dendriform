@@ -1,8 +1,24 @@
 import {produceWithPatches} from 'immer';
 import {optimise} from 'dendriform-immer-patch-optimiser';
 
-import type {Draft, Patch} from 'immer';
+import type {Draft, Patch as ImmerPatch} from 'immer';
 import type {DendriformPatch} from 'dendriform-immer-patch-optimiser';
+
+//
+// patches
+//
+
+export class Patch {
+    value: DendriformPatch[] = [];
+    nodes: DendriformPatch[] = [];
+
+    static concat(itemA: Patch|undefined, itemB: Patch|undefined): Patch {
+        const next = new Patch();
+        next.value = (itemA?.value ?? []).concat(itemB?.value ?? []);
+        next.nodes = (itemA?.nodes ?? []).concat(itemB?.nodes ?? []);
+        return next;
+    }
+}
 
 export type PatchCreator<V> = (base: V) => DendriformPatch[];
 
@@ -38,7 +54,11 @@ export const patches = <V,>(patches: DendriformPatch[]|PatchCreator<V>, patchesI
 
 export const noChange = patches([], []);
 
-const optimisePatches = <V,>(base: V, newValue: V, track: boolean, patches?: Patch[], patchesInverse?: Patch[]): [DendriformPatch[], DendriformPatch[]] => {
+//
+// produce and optimise
+//
+
+const optimisePatches = <V,>(base: V, newValue: V, track: boolean, patches?: ImmerPatch[], patchesInverse?: ImmerPatch[]): [DendriformPatch[], DendriformPatch[]] => {
     if(!patches) {
         patches = [{op: 'replace', path: [], value: newValue}];
     }
