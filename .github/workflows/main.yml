@@ -27,6 +27,11 @@ jobs:
         run: yarn build
         env:
           CI: true
+      
+      - name: Build demo
+        run: yarn build-demo
+        env:
+          CI: true
 
       - name: Test
         run: yarn test
