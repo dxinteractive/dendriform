@@ -32,6 +32,11 @@ jobs:
         run: yarn build-demo
         env:
           CI: true
+      
+      - name: Lint demo
+        run: yarn lint-demo
+        env:
+          CI: true
 
       - name: Test
         run: yarn test

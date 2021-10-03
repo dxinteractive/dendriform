@@ -1493,8 +1493,10 @@ type SubmitPlugins = {
 };
 
 async function fakeSave(value: SubmitValue): Promise<void> {
+    // eslint-disable-next-line no-console
     console.log('saving', value);
     await new Promise(r => setTimeout(r, 1000));
+    // eslint-disable-next-line no-console
     console.log('saved');
 }
 
@@ -1608,6 +1610,8 @@ function Cancel(): React.ReactElement {
         }
     });
 
+    
+    // eslint-disable-next-line no-console
     ageForm.useCancel(reason => console.warn(reason));
 
     const setTo5 = useCallback(() => ageForm.set(5), []);
@@ -1731,7 +1735,7 @@ function ForeignKey(): React.ReactElement {
                     referencedPeople.forEach(([key]) => {
                         draft.delete(key);
                     });
-                })
+                });
             }
         }
     });
