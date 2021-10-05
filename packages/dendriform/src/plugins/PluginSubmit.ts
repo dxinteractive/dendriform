@@ -86,30 +86,34 @@ export class PluginSubmit<V> extends Plugin {
         state.previous.set(state.form.value);
     }
 
-    private getForm(): Dendriform<unknown> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private getForm(): Dendriform<any> {
         return this.getState().form.core.getFormAt(this.path);
     }
 
-    private getPreviousForm(): Dendriform<unknown> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get previousForm(): Dendriform<any> {
         return this.getState().previous.core.getFormAt(this.path);
     }
 
-    get previous(): unknown {
-        return this.getPreviousForm().value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get previous(): any {
+        return this.previousForm.value;
     }
 
     /* istanbul ignore next */
-    usePrevious(): unknown {
-        return this.getPreviousForm().useValue();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    usePrevious(): any {
+        return this.previousForm.useValue();
     }
 
     get dirty(): boolean {
-        return this.getForm().value !== this.getPreviousForm().value;
+        return this.getForm().value !== this.previousForm.value;
     }
 
     /* istanbul ignore next */
-    useDirty(): unknown {
-        return this.getForm().useValue() !== this.getPreviousForm().useValue();
+    useDirty(): boolean {
+        return this.getForm().useValue() !== this.previousForm.useValue();
     }
 
     get submitting(): boolean {
