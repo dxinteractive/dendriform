@@ -2,7 +2,7 @@
 import styled from 'styled-components';
 import {Box, Flex, Wrapper, FloatZone} from '../components/Layout';
 import {Text, H1, Link} from '../components/Text';
-import {Demos, AdvancedDemos} from '../components/Demos';
+import {Demos, PluginDemos, AdvancedDemos} from '../components/Demos';
 import type {ThemeProps} from '../pages/_app';
 
 export default function Main(): React.ReactElement {
@@ -34,6 +34,13 @@ export default function Main(): React.ReactElement {
         </Box>
         <Box mb={5}>
             <Demos />
+        </Box>
+        <Hr />
+        <Box mb={3}>
+            <H1>Plugin Demos</H1>
+        </Box>
+        <Box mb={3}>
+            <PluginDemos />
         </Box>
         <Hr />
         <Box mb={3}>

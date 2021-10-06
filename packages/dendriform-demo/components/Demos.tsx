@@ -1489,13 +1489,18 @@ type SubmitValue = {
 };
 
 type SubmitPlugins = {
-    submit: PluginSubmit<SubmitValue>;
+    submit: PluginSubmit<SubmitValue,string>;
 };
+
+const causeAnErrorForm = new Dendriform(false);
 
 async function fakeSave(value: SubmitValue): Promise<void> {
     // eslint-disable-next-line no-console
     console.log('saving', value);
     await new Promise(r => setTimeout(r, 1000));
+    if(causeAnErrorForm.value) {
+        throw new Error('Error!');
+    }
     // eslint-disable-next-line no-console
     console.log('saved');
 }
@@ -1511,7 +1516,8 @@ function PluginSubmitExample(): React.ReactElement {
         submit: new PluginSubmit({
             onSubmit: async (newValue: SubmitValue) => {
                 await fakeSave(newValue);
-            }
+            },
+            onError: e => e.message
         })
     });    
 
@@ -1525,30 +1531,49 @@ function PluginSubmitExample(): React.ReactElement {
     return <Region>
         <form onSubmit={onSubmit}>
             {form.render('firstName', form => {
-                const hasChanged = form.plugins.submit.useDirty();
+                const hasChanged = form.plugins.submit.dirty.useValue();
                 return <Region of="label">first name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</Region>;
             })}
 
             {form.render('lastName', form => {
-                const hasChanged = form.plugins.submit.useDirty();
+                const hasChanged = form.plugins.submit.dirty.useValue();
                 return <Region of="label">last name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</Region>;
             })}
 
             {form.render(form => {
-                const submitting = form.plugins.submit.useSubmitting();
+                const submitting = form.plugins.submit.submitting.useValue();
                 return <Region>
-                    <button type="submit" disabled={!form.plugins.submit.useDirty()}>Submit</button>
+                    <button type="submit" disabled={!form.plugins.submit.dirty.useValue()}>Submit</button>
                     {submitting && <span>Saving...</span>}
                 </Region>;
             })}
+
+            {form.plugins.submit.error.render(form => {
+                const error = form.useValue();
+                return <Region>
+                    {error && <code>{error}</code>}
+                </Region>;
+            })}
         </form>
+
+        {causeAnErrorForm.render(form => (
+            <Region of="label">
+                cause an error on submit
+                <input type="checkbox" {...useCheckbox(form)} />
+            </Region>
+        ))}
     </Region>;
 }
 
 const PluginSubmitExampleCode = `
+const causeAnErrorForm = new Dendriform(false);
+
 async function fakeSave(value) {
     console.log('saving', value);
     await new Promise(r => setTimeout(r, 1000));
+    if(causeAnErrorForm.value) {
+        throw new Error('Error!');
+    }
     console.log('saved');
 }
 
@@ -1574,25 +1599,39 @@ function PluginSubmitExample() {
         form.plugins.submit.submit();
     }, []);
 
-    return <form onSubmit={onSubmit}>
-        {form.render('firstName', form => {
-            const hasChanged = form.plugins.submit.useDirty();
-            return <label>first name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
-        })}
+    return <>
+        <form onSubmit={onSubmit}>
+            {form.render('firstName', form => {
+                const hasChanged = form.plugins.submit.dirty.useValue();
+                return <label>first name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
+            })}
 
-        {form.render('lastName', form => {
-            const hasChanged = form.plugins.submit.useDirty();
-            return <label>last name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
-        })}
+            {form.render('lastName', form => {
+                const hasChanged = form.plugins.submit.dirty.useValue();
+                return <label>last name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
+            })}
 
-        {form.render(form => {
-            const submitting = form.plugins.submit.useSubmitting();
-            return <>
-                <button type="submit" disabled={!form.plugins.submit.useDirty()}>Submit</button>
-                {submitting && <span>Saving...</span>}
-            </>;
-        })}
-    </form>;
+            {form.render(form => {
+                const submitting = form.plugins.submit.useSubmitting();
+                return <>
+                    <button type="submit" disabled={!form.plugins.submit.dirty.useValue()}>Submit</button>
+                    {submitting && <span>Saving...</span>}
+                </>;
+            })}
+
+            {form.plugins.submit.error.render(form => {
+                const error = form.useValue();
+                return <>{error && <code>{error}</code>}</>;
+            })}
+        </form>
+
+        {causeAnErrorForm.render(form => (
+            <label>
+                cause an error on submit
+                <input type="checkbox" {...useCheckbox(form)} />
+            </label>
+        ))}
+    </>;
 }
 `;
 
@@ -2585,7 +2624,10 @@ const DEMOS: DemoObject[] = [
         description: `An example of how one might implement drag and drop with react-beautiful-dnd. Dendriform's .renderAll() function, and its automatic id management on array elements simplifies this greatly.`,
         anchor: 'draganddrop',
         more: 'drag-and-drop'
-    },
+    }
+];
+
+const PLUGIN_DEMOS: DemoObject[] = [
     {
         title: 'Submit Plugin (PluginSubmit)',
         Demo: PluginSubmitExample,
@@ -2664,6 +2706,12 @@ const ADVANCED_DEMOS: DemoObject[] = [
 export function Demos(): React.ReactElement {
     return <Flex flexWrap="wrap">
         {DEMOS.map(demo => <Demo demo={demo} key={demo.anchor} />)}
+    </Flex>;
+}
+
+export function PluginDemos(): React.ReactElement {
+    return <Flex flexWrap="wrap">
+        {PLUGIN_DEMOS.map(demo => <Demo demo={demo} key={demo.anchor} />)}
     </Flex>;
 }
 

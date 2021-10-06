@@ -59,17 +59,17 @@ describe(`plugin submit`, () => {
 
         const form = new Dendriform(value, {plugins});
 
-        expect(form.plugins.submit.dirty).toBe(false);
-        expect(form.branch('foo').plugins.submit.dirty).toBe(false);
-        expect(form.branch('bar').plugins.submit.dirty).toBe(false);
+        expect(form.plugins.submit.dirty.value).toBe(false);
+        expect(form.branch('foo').plugins.submit.dirty.value).toBe(false);
+        expect(form.branch('bar').plugins.submit.dirty.value).toBe(false);
 
         form.branch('foo').set(456);
 
-        expect(form.plugins.submit.previous).toEqual({foo: 123, bar: 456});
-        expect(form.branch('foo').plugins.submit.previous).toBe(123);
-        expect(form.plugins.submit.dirty).toBe(true);
-        expect(form.branch('foo').plugins.submit.dirty).toBe(true);
-        expect(form.branch('bar').plugins.submit.dirty).toBe(false);
+        expect(form.plugins.submit.previous.value).toEqual({foo: 123, bar: 456});
+        expect(form.branch('foo').plugins.submit.previous.value).toBe(123);
+        expect(form.plugins.submit.dirty.value).toBe(true);
+        expect(form.branch('foo').plugins.submit.dirty.value).toBe(true);
+        expect(form.branch('bar').plugins.submit.dirty.value).toBe(false);
     });
 
     test(`should not submit value if not changed - this behaviour may change in future`, () => {
@@ -153,7 +153,7 @@ describe(`plugin submit`, () => {
             draft.bar = 200;
         });
 
-        expect(form.plugins.submit.previous).toEqual({
+        expect(form.plugins.submit.previous.value).toEqual({
             foo: 100
         });
 
@@ -168,7 +168,7 @@ describe(`plugin submit`, () => {
             foo: 100
         });
 
-        expect(form.plugins.submit.previous).toEqual({
+        expect(form.plugins.submit.previous.value).toEqual({
             foo: 100,
             bar: 200
         });
@@ -188,7 +188,7 @@ describe(`plugin submit`, () => {
             bar: 200
         });
 
-        expect(form.plugins.submit.previous).toEqual({
+        expect(form.plugins.submit.previous.value).toEqual({
             bar: 200
         });
     });
@@ -200,7 +200,7 @@ describe(`plugin submit`, () => {
         };
 
         const mockSubmit = jest.fn();
-        const onError = jest.fn();
+        const onError = jest.fn(e => e.message);
         let called = 0;
         
         const plugins = {
@@ -229,9 +229,12 @@ describe(`plugin submit`, () => {
             bar: 200
         });
         expect(onError).toHaveBeenCalledTimes(1);
+
+        // error should contain error
+        expect(form.plugins.submit.error.value).toBe('!');
         
         // previous should not be updated
-        expect(form.plugins.submit.previous).toEqual({
+        expect(form.plugins.submit.previous.value).toEqual({
             foo: 100
         });
 
@@ -243,10 +246,11 @@ describe(`plugin submit`, () => {
             bar: 200
         });
         expect(onError).toHaveBeenCalledTimes(1);
-        expect(form.plugins.submit.previous).toEqual({
+        expect(form.plugins.submit.previous.value).toEqual({
             foo: 100,
             bar: 200
         });
+        expect(form.plugins.submit.error.value).toBe(undefined);
     });
 
     test(`should use async onSubmit`, async () => {
@@ -275,13 +279,13 @@ describe(`plugin submit`, () => {
             });
         });
 
-        expect(form.plugins.submit.submitting).toBe(false);
+        expect(form.plugins.submit.submitting.value).toBe(false);
 
         form.plugins.submit.submit();
 
         // async, so not called yet
         expect(mockDiffed).toHaveBeenCalledTimes(0);
-        expect(form.plugins.submit.submitting).toBe(true);
+        expect(form.plugins.submit.submitting.value).toBe(true);
 
         // resolve promises
         await Promise.resolve();
@@ -289,7 +293,7 @@ describe(`plugin submit`, () => {
 
         expect(mockDiffed).toHaveBeenCalledTimes(1);
         expect(mockDiffed.mock.calls[0][0][0].length).toBe(1);
-        expect(form.plugins.submit.submitting).toBe(false);
+        expect(form.plugins.submit.submitting.value).toBe(false);
     });
 
     test(`should use async onSubmit and reject`, async () => {
@@ -300,7 +304,7 @@ describe(`plugin submit`, () => {
             }
         ];
 
-        const onError = jest.fn();
+        const onError = jest.fn(() => '!!!');
         
         const plugins = {
             submit: new PluginSubmit({
@@ -324,6 +328,7 @@ describe(`plugin submit`, () => {
         await Promise.resolve();
 
         expect(onError).toHaveBeenCalledTimes(1);
-        expect(form.plugins.submit.submitting).toBe(false);
+        expect(form.plugins.submit.error.value).toBe('!!!');
+        expect(form.plugins.submit.submitting.value).toBe(false);
     });
 });
