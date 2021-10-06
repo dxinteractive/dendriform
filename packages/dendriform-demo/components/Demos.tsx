@@ -1489,7 +1489,7 @@ type SubmitValue = {
 };
 
 type SubmitPlugins = {
-    submit: PluginSubmit<SubmitValue>;
+    submit: PluginSubmit<SubmitValue,string>;
 };
 
 const causeAnErrorForm = new Dendriform(false);

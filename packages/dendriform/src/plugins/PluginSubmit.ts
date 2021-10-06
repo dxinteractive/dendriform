@@ -9,7 +9,8 @@ const isPromise = (thing: any): thing is Promise<unknown> => {
 };
 
 export type PluginSubmitOnSubmit<V> = (newValue: V, details: ChangeCallbackDetails<V>) => void|Promise<void>;
-export type PluginSubmitOnError<E> = (error: unknown) => E|undefined;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type PluginSubmitOnError<E> = (error: any) => E|undefined;
 
 export type PluginSubmitConfig<V,E> = {
     onSubmit: PluginSubmitOnSubmit<V>;
