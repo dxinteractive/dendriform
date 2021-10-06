@@ -1175,15 +1175,16 @@ The `onSubmit` function passes the same `details` object as `onChange` does, so 
 import {PluginSubmit} from 'dendriform';
 
 const plugins = {
-    submit: new PluginSubmit({
-        onSubmit: async (newValue, details) => {
+    submit: new PluginSubmit<V,E>({
+        onSubmit: async (newValue, details): void => {
             // trigger save action here
             // any errors will be eligible for resubmission
             // diff(details) can be used in here to diff changes since last submit
         },
-        onError: (error) => {
-            // optional function, will be called
-            // if an error occurs in onSubmit
+        onError: (error: any): E|undefined => {
+            // optional function, will be called if an error occurs in onSubmit
+            // anything returned will be stored in state in form.plugins.submit.error
+            // the error state is cleared on next submit
         }
     })
 };
@@ -1204,12 +1205,12 @@ form.branch('foo').plugins.submit.changed;
 PluginSubmit has the following properties and methods.
 
 - `submit(): void` - submits the form if there are changes, calling `onSubmit`. If the value of the form has not changed then this has no effect.
-- `previous: V` - the inital value / the value of the previous submit at the current branch.
-- `usePrevous(): V` - a React hook returning the inital value / the value of the previous submit at the current branch.
-- `dirty: boolean` - a boolean indicating if the value at the current branch is dirty i.e. has changed.
-- `useDirty(): boolean` - a React hook returning a boolean indicating if the value at the current branch is dirty i.e. has changed.
-- `submitting: boolean` - a boolean stating if the plugin is currently waiting for an async `onSubmit` call to complete.
-- `useSubmitting(): boolean` - a React hook returning a boolean stating if the plugin is currently waiting for an async `onSubmit` call to complete.
+- `previous: Dendriform<V>` - a dendriform containing the inital value / the value of the previous submit at the current branch.
+- `submitting: Dendriform<boolean>` - a dendriform containing a boolean stating if the plugin is currently waiting for an async `onSubmit` call to complete.
+- `submitting: Dendriform<E|undefined>` - a dendriform containing the most recent result of `onError`. This is changed to `undefined` on submit.
+- `dirty.value: boolean` - a boolean indicating if the value at the current branch is dirty i.e. has changed.
+- `dirty.useValue(): boolean` - a React hook returning a boolean indicating if the value at the current branch is dirty i.e. has changed.
+
 
 ## Advanced usage
 

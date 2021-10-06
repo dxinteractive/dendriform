@@ -9,34 +9,35 @@ const isPromise = (thing: any): thing is Promise<unknown> => {
 };
 
 export type PluginSubmitOnSubmit<V> = (newValue: V, details: ChangeCallbackDetails<V>) => void|Promise<void>;
-export type PluginSubmitOnError = (error: unknown) => void;
+export type PluginSubmitOnError<E> = (error: unknown) => E|undefined;
 
-export type PluginSubmitConfig<V> = {
+export type PluginSubmitConfig<V,E> = {
     onSubmit: PluginSubmitOnSubmit<V>;
-    onError?: PluginSubmitOnError;
+    onError?: PluginSubmitOnError<E>;
 };
 
-type State<V> = {
+type State<V,E> = {
     form: Dendriform<V>;
     previous: Dendriform<V>;
     submitting: Dendriform<boolean>;
+    error: Dendriform<E|undefined>;
 };
 
-export class PluginSubmit<V> extends Plugin {
+export class PluginSubmit<V,E=undefined> extends Plugin {
 
-    protected config: PluginSubmitConfig<V>;
-    state: State<V>|undefined;
+    protected config: PluginSubmitConfig<V,E>;
+    state: State<V,E>|undefined;
 
-    constructor(config: PluginSubmitConfig<V>) {
+    constructor(config: PluginSubmitConfig<V,E>) {
         super();
         this.config = config;
     }
 
-    protected clone(): PluginSubmit<V> {
-        return new PluginSubmit<V>(this.config);
+    protected clone(): PluginSubmit<V,E> {
+        return new PluginSubmit<V,E>(this.config);
     }
 
-    private getState(): State<V> {
+    private getState(): State<V,E> {
         const {state} = this;
         if(!state) die(8);
         return state;
@@ -44,6 +45,7 @@ export class PluginSubmit<V> extends Plugin {
 
     init(form: Dendriform<V>): void {
         const submitting = new Dendriform(false);
+        const error = new Dendriform<E|undefined>(undefined);
 
         const previous = new Dendriform(form.value, {history: 2}); 
         previous.onChange((newValue, details) => {
@@ -56,10 +58,12 @@ export class PluginSubmit<V> extends Plugin {
             const error = (e: unknown) => {
                 submitting.set(false);
                 previous.undo();
-                this.config.onError?.(e);
+                const errorResult = this.config.onError?.(e);
+                this.getState().error.set(errorResult);
             };
 
             try {
+                this.getState().error.set(undefined);
                 const result = this.config.onSubmit(newValue, details);
                 if(!isPromise(result)) {
                     return done();
@@ -75,7 +79,8 @@ export class PluginSubmit<V> extends Plugin {
         this.state = {
             form,
             previous,
-            submitting
+            submitting,
+            error
         };        
     }
 
@@ -92,37 +97,22 @@ export class PluginSubmit<V> extends Plugin {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get previousForm(): Dendriform<any> {
+    get previous(): Dendriform<any> {
         return this.getState().previous.core.getFormAt(this.path);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get previous(): any {
-        return this.previousForm.value;
+    get submitting(): Dendriform<boolean> {
+        return this.getState().submitting;
     }
 
-    /* istanbul ignore next */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    usePrevious(): any {
-        return this.previousForm.useValue();
+    get error(): Dendriform<E|undefined> {
+        return this.getState().error;
     }
 
-    get dirty(): boolean {
-        return this.getForm().value !== this.previousForm.value;
+    get dirty(): {value: boolean, useValue: () => boolean} {
+        const value = !Object.is(this.getForm().value, this.previous.value);
+        /* istanbul ignore next */
+        const useValue = () => !Object.is(this.getForm().useValue(), this.previous.useValue());
+        return {value, useValue};
     }
-
-    /* istanbul ignore next */
-    useDirty(): boolean {
-        return this.getForm().useValue() !== this.previousForm.useValue();
-    }
-
-    get submitting(): boolean {
-        return this.getState().submitting.value;
-    }
-
-    /* istanbul ignore next */
-    useSubmitting(): boolean {
-        return this.getState().submitting.useValue();
-    }
-    
 }
