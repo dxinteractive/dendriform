@@ -1,4 +1,4 @@
-import {Dendriform, LazyDerive} from '../src/index';
+import {Dendriform, LazyDerive, useLazyDerive} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 
 describe(`LazyDerive`, () => {
@@ -198,5 +198,23 @@ describe(`LazyDerive`, () => {
         expect(hook.result.current).toBe(20);
         expect(lazyDerive.currentValue).toBe(20);
         expect(lazyDerive.lastValue).toBe(20);
+    });
+
+    test(`useLazyDerive should provide a LazyDerive`, async () => {
+
+        const form = new Dendriform(1);
+
+        const hook = renderHook(() => useLazyDerive(async () => form.value * 10, [form]));
+        const instance = hook.result.current;
+        expect(instance instanceof LazyDerive).toBe(true);
+        expect(await instance.value).toBe(10);
+
+        hook.rerender();
+
+        expect(hook.result.current).toBe(instance);
+
+        hook.unmount();
+
+
     });
 });

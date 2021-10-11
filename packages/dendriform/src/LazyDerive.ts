@@ -115,3 +115,10 @@ export class LazyDerive<V> {
         this.callChangeCallbacks();
     }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const useLazyDerive = <V,>(deriver: LazyDeriver<V>, dependencies: (Dendriform<any>|LazyDerive<V>)[]): LazyDerive<V> => {
+    const [lazyDerive] = useState(() => new LazyDerive(deriver, dependencies));
+    useEffect(() => lazyDerive.unsubscribe, []);
+    return lazyDerive;
+};

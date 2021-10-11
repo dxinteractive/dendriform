@@ -1466,7 +1466,7 @@ The cancel feature can be used to set up data integrity constraints between form
 
 The LazyDerive class can be used when derivations are heavy or asynchronous, and it makes more sense to only perform these derivations lazily, i.e. when something asks for the derived data. The derivation is cached until any of its dependencies change, at which point the cache is cleared. If it has any current subscribers using `lazyDeriver.onChange()` or `lazyDeriver.useValue()` then a new derivation will start immediately.
 
-The deriver function is passed as the first argument to the constructor, and an array of dependencies are passed as the second argument. Dependencies must be `Dendriform` instances or `LazyDerive` instances. This allows `LazyDerive`s to derive from each other.
+A LazyDerive can be created using `new LazyDerive`, or by using the `useLazyDerive()` hook if you're inside a React component's render method. The deriver function is passed as the first argument to the constructor or hook, and an array of dependencies are passed as the second argument. Dependencies must be `Dendriform` instances or `LazyDerive` instances. This allows `LazyDerive`s to derive from each other.
 
 To access the value, use `lazyDerive.value`, This returns a promise that will resolve when the derivation is complete, or resolve immediately if the derivation is already cached.
 
@@ -1481,6 +1481,8 @@ const age = new Dendriform(12);
 const lazyImage = new LazyDerive(async () => {
     return await renderLargeImage(`I am ${name.value} and I am ${age.value}`);
 }, [name, age]);
+
+// or useLazyDerive(async () => ..., [name, age]) in a React component
 
 // later something may call the image
 await lazyImage.value;
