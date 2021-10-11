@@ -110,7 +110,9 @@ Dendriform is kind of like a very advanced `useState()` hook that:
 - Comes with demos and recipes for building forms and data-editing user interfaces
   - see [the demos](http://dendriform.xyz) 
 
-It's not a traditional "web form" library that has fields, validation and a submit mechanism all ready to go, although you can certainly build that with dendriform (hint: see [plugins](#plugins)). If you want a traditional web form then [formik](https://formik.org/) will likely suit your needs better. Dendriform is less specific and far more adaptable, to be used to make entire UIs where allowing the user to edit data is the goal. You get full control over the behaviour of the interface you create, with many of the common problems already solved, and none of the boilerplate.
+It's not a traditional "web form" library that has fields, validation and a submit mechanism all ready to go, although you can certainly build that with dendriform (hint: see [plugins](#plugins)). If you want a traditional web form for React then [formik](https://formik.org/) will likely suit your needs better. Dendriform is less specific and far more adaptable, to be used to make entire UIs where allowing the user to edit data is the goal. You get full control over the behaviour of the interface you create, with many of the common problems already solved, and none of the boilerplate.
+
+In many ways it is similar to something like [mobx-keystone](https://mobx-keystone.js.org/), which provides a state tree whose parts are reactive and observable.
 
 ## Installation
 
@@ -148,6 +150,7 @@ Advanced usage
 - [Deriving data](#deriving-data)
 - [Synchronising forms](#synchronising-forms)
 - [Cancel changes based on constraints](#cancel-changes-based-on-constraints)
+- [Lazy derive](#lazy-derive)
 
 ### Creation
 
@@ -1459,6 +1462,48 @@ The cancel feature can be used to set up data integrity constraints between form
 
 [Demo](http://dendriform.xyz#foreign-key)
 
+### Lazy derive
+
+The LazyDerive class can be used when derivations are heavy or asynchronous, and it makes more sense to only perform these derivations lazily, i.e. when something asks for the derived data. The derivation is cached until any of its dependencies change, at which point the cache is cleared. If it has any current subscribers using `lazyDeriver.onChange()` or `lazyDeriver.useValue()` then a new derivation will start immediately.
+
+A LazyDerive can be created using `new LazyDerive`, or by using the `useLazyDerive()` hook if you're inside a React component's render method. The deriver function is passed as the first argument to the constructor or hook, and an array of dependencies are passed as the second argument. Dependencies must be `Dendriform` instances or `LazyDerive` instances. This allows `LazyDerive`s to derive from each other.
+
+To access the value, use `lazyDerive.value`, This returns a promise that will resolve when the derivation is complete, or resolve immediately if the derivation is already cached.
+
+Unlike `Dendriform` there is no restrictions to the data type that `LazyDerive` can contain.
+
+```js
+import {LazyDerive} from 'dendriform';
+
+const name = new Dendriform('Bob');
+const age = new Dendriform(12);
+
+const lazyImage = new LazyDerive(async () => {
+    return await renderLargeImage(`I am ${name.value} and I am ${age.value}`);
+}, [name, age]);
+
+// or useLazyDerive(async () => ..., [name, age]) in a React component
+
+// later something may call the image
+await lazyImage.value;
+
+// or in React a component may always want to render the result
+function MyComponent(props) {
+    const src = lazyImage.useValue();
+    return src && <img src={src} />;
+}
+```
+
+The `useValue()` hook may optionally be passed a boolean indicating whether the previous value should be rendered if a new derivation is taking place. This defaults to `false`, meaning that the result of `lazyDerive.useValue()` will change to `undefined` as soon as a new derivation begins.
+
+The status of the derivation can be accessed from `lazyDerive.status`. This is a Dendriform that contains an object with the following keys:
+
+- `deriving: boolean` - true if the derivation is in progress.
+- `derived: boolean` - true if a derivation has completed.
+
+As this is a Dendriform, all the normal Dendriform usage patterns can be used (i.e. `lazyDerive.status.branch('deriving').useValue()`).
+
+The `lazyDerive.unsubscribe()` function should be called when a `LazyDerive` is no longer needed to prevent memory leaks.
 
 ## Etymology
 
