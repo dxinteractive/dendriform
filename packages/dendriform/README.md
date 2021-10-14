@@ -307,7 +307,7 @@ function MyComponent(props) {
             // the 'form' passed into this component is the same
             // as the 'form' belonging to the parent component
 
-            const [user, setUser] = form.useValue();
+            const user = form.useValue();
             return <div>My name is {user.name}</div>;
         })}
     </div>;
@@ -373,7 +373,7 @@ function MyComponent(props) {
 
     return <div>
         {form.render('name', form => {
-            const [name, setName] = form.useValue();
+            const name = form.useValue();
             return <div className={className}>My name is {name}</div>;
         }, [className])}
     </div>;
