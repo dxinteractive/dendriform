@@ -18,7 +18,7 @@
 //   - provides React hooks
 
 import React from 'react';
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import {shallowEqualArrays} from 'shallow-equal';
 import {getIn, entries, applyPatches, zoomOutPatches, SET} from 'dendriform-immer-patch-optimiser';
 import type {Path} from 'dendriform-immer-patch-optimiser';
@@ -126,6 +126,7 @@ export type UseDendriformOptions<P extends Plugins> = {
     history?: number;
     replace?: boolean;
     plugins?: () => P;
+    dependencies?: unknown[];
 };
 
 export type CoreConfig<C,P extends Plugins> = {
@@ -990,7 +991,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
 
 type UseDendriformValue<V> = (() => V)|V;
 
-export const useDendriform = <V,P extends Plugins = undefined>(initialValue: UseDendriformValue<V>, {plugins, ...options}: UseDendriformOptions<P> = {}): Dendriform<V,P> => {
+export const useDendriform = <V,P extends Plugins = undefined>(initialValue: UseDendriformValue<V>, {plugins, dependencies = [], ...options}: UseDendriformOptions<P> = {}): Dendriform<V,P> => {
     const [form] = useState(() => {
         const value = typeof initialValue === 'function'
             ? (initialValue as (() => V))()
@@ -1001,5 +1002,13 @@ export const useDendriform = <V,P extends Plugins = undefined>(initialValue: Use
             ...options
         });
     });
+
+    const lastDependencies = useRef<unknown[]>(dependencies);
+    if(!shallowEqualArrays(lastDependencies.current, dependencies) && typeof initialValue === 'function') {
+        form.replace();
+        form.set((initialValue as (() => V))());
+    }
+    lastDependencies.current = dependencies;
+
     return form;
 };

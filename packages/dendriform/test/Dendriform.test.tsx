@@ -523,6 +523,45 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe('useDendriform() and prop changes', () => {
+        test(`should update in response to prop changes`, () => {
+
+            let foo = 0;
+            let bar = 0;
+
+            const hook = renderHook(() => useDendriform(() => `${foo}-${bar}`, {dependencies: [foo, bar], history: 5}));
+
+            expect(hook.result.current.value).toBe('0-0');
+            expect(hook.result.current.history.canUndo).toBe(false);
+
+            foo++;
+            hook.rerender();
+
+            expect(hook.result.current.value).toBe('1-0');
+            expect(hook.result.current.history.canUndo).toBe(false);
+
+            bar++;
+            hook.rerender();
+
+            expect(hook.result.current.value).toBe('1-1');
+            expect(hook.result.current.history.canUndo).toBe(false);
+
+            act(() => {
+                hook.result.current.set('???');
+            });
+
+            expect(hook.result.current.value).toBe('???');
+            expect(hook.result.current.history.canUndo).toBe(true);
+
+            bar++;
+            hook.rerender();
+
+            expect(hook.result.current.value).toBe('1-2');
+            expect(hook.result.current.history.canUndo).toBe(true);
+
+        });
+    });
+
     describe(`.branch()`, () => {
 
         test(`should get child value`, () => {
