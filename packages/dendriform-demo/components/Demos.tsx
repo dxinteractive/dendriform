@@ -503,6 +503,62 @@ function MyComponent(props) {
 `;
 
 //
+// dependencies
+//
+
+function UpdatingFromProps(): React.ReactElement {
+    const queryString = useDendriform('?hello=1');
+    return <>
+        <fieldset>
+            <legend>query string</legend>
+            <input {...useInput(queryString, 150)} />
+        </fieldset>
+        <fieldset>
+            <legend>component</legend>
+            <UpdatingFromPropsInner queryString={queryString.useValue()} setQueryString={queryString.set} />
+        </fieldset>
+    </>;
+}
+
+type UpdatingFromPropsInnerProps = {
+    queryString: string;
+    setQueryString: (str: string) => void;
+};
+
+function UpdatingFromPropsInner(props: UpdatingFromPropsInnerProps): React.ReactElement {
+    const {queryString, setQueryString} = props;
+
+    const form = useDendriform(() => ({queryString}), {dependencies: [queryString]});
+
+    form.useChange(newValue => setQueryString(newValue.queryString));
+
+    return <Region>
+        {form.render('queryString', form => (
+            <Region of="label">string in form: <input {...useInput(form, 150)} /></Region>
+        ))}
+    </Region>;
+}
+
+const UpdatingFromPropsCode = `
+function MyComponent(props) {
+    const {queryString, setQueryString} = props;
+
+    const form = useDendriform(
+        () => ({queryString}),
+        {dependencies: [queryString]
+    });
+
+    form.useChange(newValue => setQueryString(newValue.queryString));
+
+    return <>
+        {form.render('queryString', form => (
+            <label>string in form: <input {...useInput(form, 150)} /></label>
+        ))}
+    </>;
+}
+`;
+
+//
 // es6 classes
 //
 
@@ -2545,6 +2601,14 @@ const DEMOS: DemoObject[] = [
         description: `This demonstrates how set() calls can be debounced. Click the buttons below rapidly and watch how the value updates more slowly.`,
         anchor: 'debounce',
         more: 'debounce'
+    },
+    {
+        title: 'Updating from props',
+        Demo: UpdatingFromProps,
+        code: UpdatingFromPropsCode,
+        description: `Sometimes a useDendriform() hooks value needs to update based on changes in props. Notice how both the changes in props (query string) and changes in form value (string in form) sync their values.`,
+        anchor: 'dependencies',
+        more: 'dependencies'
     },
     {
         title: 'ES6 classes',
