@@ -19,6 +19,7 @@ import {useDendriform, useInput} from 'dendriform';
 
 function MyComponent(props) {
 
+    // create a dendriform with initial state
     const form = useDendriform(() => ({
         name: 'Wappy',
         address: {
@@ -30,16 +31,26 @@ function MyComponent(props) {
         ]
     });
 
+    // subscribe to form value changes
     form.useChange((value) => {
         console.log('form changed:', value);
     });
 
+    // make callback to add a pet using .set() and immer drafts
     const addPet = useCallback(() => {
         form.branch('pets').set(draft => {
             draft.push({name: 'new pet'});
         });
     }, []);
 
+    // render the form elements
+    // - form.render() and form.renderAll() create optimised child components
+    //   that only update when their form value changes.
+    // - form.renderAll() automatically adds React keys to each element
+    // - useInput() is a React hook that binds a form value to an input
+    //   they are safe to use like this because they are always rendered
+    //   these each add a 150ms debounce
+    
     return <div>
         {form.render('name', form => (
             <label>name <input {...useInput(form, 150)} /></label>
