@@ -141,6 +141,7 @@ npm install --save dendriform
 - [Rendering](#rendering)
 - [Rendering arrays](#rendering-arrays)
 - [Setting data](#setting-data)
+- [Updating from props](#updating-from-props)
 - [ES6 classes](#es6-classes)
 - [ES6 maps](#es6-maps)
 - [ES6 sets](#es6-sets)
@@ -567,6 +568,59 @@ form.set(draft => draft + 1);
 form.set(draft => draft + 1);
 form.done();
 // form.value will update to become 3
+```
+
+### Updating from props
+
+The `useDendriform` hook can automatically update when props change. If a `dependencies` array is passed as an option, the dependencies are checked using `Object.is()` equality to determine if the form should update. If an update is required, the `value` function is called again and the form is set to the result.
+
+```js
+function MyComponent(props) {
+    const {nameFromProps} = props;
+
+    const form = useDendriform(
+        () => ({
+            name: nameFromProps
+        }),
+        {
+            dependencies: [nameFromProps]
+        }
+    );
+
+    return <div>
+        {form.render('name', form => {
+            const name = form.useValue();
+            return <div>Name: {name}</div>;
+        })}
+    </div>;
+}
+```
+
+[Demo](http://dendriform.xyz#dependencies)
+
+If [history](#history) is also used at the same time, changes in props will _replace_ the current history item rather than create a new one, however is it unlikely that both history and changes in props are required in the same form because history indicates that the form is intended to be the master of its own state, and dependencies indicate that the form is intended to be a slave to props.
+
+For more fine grained control, you may write your own code to handle changes based on props.
+
+```js
+function MyComponent(props) {
+    const {nameFromProps} = props;
+
+    const form = useDendriform({name: nameFromProps});
+
+    const lastNameFromProps = useRef(nameFromProps);
+    if(!Object.is(lastNameFromProps, nameFromProps)) {
+        form.set({name: nameFromProps});
+    }
+    lastNameFromProps.current = nameFromProps;
+
+    return <div>
+        {form.render('name', form => {
+            const name = form.useValue();
+            return <div>Name: {name}</div>;
+        })}
+    </div>;
+}
 ```
 
 ### ES6 classes
