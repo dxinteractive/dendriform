@@ -43,6 +43,24 @@ describe(`plugin submit`, () => {
             foo: 456
         });
     });
+
+    test(`should submit basic value if changed`, () => {
+
+        const value: number = 2;
+
+        const onSubmit = jest.fn();
+        
+        const plugins = {
+            submit: new PluginSubmit({onSubmit})
+        };
+
+        const form = new Dendriform(value, {plugins});
+        form.set(3);
+        form.plugins.submit.submit();
+
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+        expect(onSubmit.mock.calls[0][0]).toEqual(3);
+    });
     
     test(`should change value and show previous and dirty at paths`, () => {
 

@@ -87,8 +87,10 @@ export class PluginSubmit<V,E=undefined> extends Plugin {
 
     submit(): void {
         const state = this.getState();
-        // call this to create nodes so arrays can diff in onSubmit
-        state.previous.branchAll();
+        if(state.previous.branchable) {
+            // call this to create nodes so arrays can diff in onSubmit
+            state.previous.branchAll();
+        }
         state.previous.set(state.form.value);
     }
 
