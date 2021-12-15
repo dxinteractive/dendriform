@@ -562,6 +562,21 @@ describe(`Dendriform`, () => {
         });
     });
 
+    describe(`branchable`, () => {
+        test(`should determine if branchable`, () => {
+            expect(new Dendriform(123).branchable).toBe(false);
+            expect(new Dendriform('abc').branchable).toBe(false);
+            expect(new Dendriform(true).branchable).toBe(false);
+            expect(new Dendriform(undefined).branchable).toBe(false);
+            expect(new Dendriform(null).branchable).toBe(false);
+            expect(new Dendriform({foo: true}).branchable).toBe(true);
+            expect(new Dendriform([1,2,3]).branchable).toBe(true);
+            expect(new Dendriform(new Map()).branchable).toBe(true);
+            expect(new Dendriform(new Set()).branchable).toBe(true);
+            expect(new Dendriform(new Date()).branchable).toBe(true);
+        });
+    });
+
     describe(`.branch()`, () => {
 
         test(`should get child value`, () => {

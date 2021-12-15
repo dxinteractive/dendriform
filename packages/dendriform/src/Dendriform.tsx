@@ -20,7 +20,7 @@
 import React from 'react';
 import {useState, useEffect, useRef} from 'react';
 import {shallowEqualArrays} from 'shallow-equal';
-import {getIn, entries, applyPatches, zoomOutPatches, SET} from 'dendriform-immer-patch-optimiser';
+import {getIn, getType, entries, applyPatches, zoomOutPatches, SET, BASIC} from 'dendriform-immer-patch-optimiser';
 import type {Path} from 'dendriform-immer-patch-optimiser';
 import produce, {isDraft, original} from 'immer';
 import {producePatches, Patch} from './producePatches';
@@ -698,6 +698,9 @@ const Branch = React.memo(
 );
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const branchable = (thing: any) => getType(thing) !== BASIC;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const entriesOrDie = (thing: any, error: ErrorKey) => {
     try {
         return entries(thing);
@@ -811,6 +814,10 @@ export class Dendriform<V,P extends Plugins = undefined> {
 
     get plugins(): P {
         return this.core.applyIdToPlugins(this.id, this.path) as P;
+    }
+
+    get branchable(): boolean {
+        return branchable(this.value);
     }
 
     set = (toProduce: ToProduce<V>, options: SetOptions = {}): void => {
