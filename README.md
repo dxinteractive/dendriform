@@ -273,6 +273,15 @@ function MyComponent(props) {
 
 [Demo](http://dendriform.xyz#branch)
 
+A form containing a non-branchable value such as a string, number, undefined or null will throw an error if `.branch()` is called on it. You can check if a form is branchable using `.branchable`:
+
+```js
+new Dendriform(123).branchable; // returns false
+new Dendriform({name: 'Bill'}).branchable; // returns true
+```
+
+The `.branchAll()` methods can be used to branch all children at once, returning an array of branched forms.
+
 ### Rendering
 
 The `.render()` function allows you to branch off and render a deep value in a React component.
@@ -1263,11 +1272,12 @@ const form = new Dendriform(value, {plugins});
 // form can be submitted by calling:
 form.plugins.submit.submit();
 
-// get whether the form has changed value
-form.plugins.submit.changed;
+// get whether the form has changed value i.e. is dirty
+form.plugins.submit.dirty.value;
+form.plugins.submit.dirty.useValue();
 
 // get whether the form has changed value at a path
-form.branch('foo').plugins.submit.changed;
+form.branch('foo').plugins.submit.dirty;
 ```
 
 PluginSubmit has the following properties and methods.
