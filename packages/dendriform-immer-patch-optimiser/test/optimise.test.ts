@@ -37,6 +37,20 @@ function runTest<B>(
     });
 }
 
+describe(`strictly equal to input`, () => {
+    const base: number[] = [];
+    const arr = [1,2,3];
+
+    const [result, recordedPatches] = produceWithPatches(base, () => arr);
+    expect(result).toEqual(arr);
+    expect(result).toBe(arr);
+
+    const optimisedPatches = optimise(base, recordedPatches);
+    expect(applyPatches(base, optimisedPatches)).toEqual(arr);
+    expect(applyPatches(base, optimisedPatches)).toBe(arr);
+});
+
+
 describe(`pop`, () => {
     runTest(
         ['a','b','c'],

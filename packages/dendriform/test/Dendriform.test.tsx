@@ -51,6 +51,20 @@ describe(`Dendriform`, () => {
             expect(form.id).toBe('0');
         });
 
+        test(`should set object value and be strictly equal`, () => {
+            const form = new Dendriform({foo: false});
+            const obj = {foo: true};
+            form.set(obj);
+            expect(form.value).toBe(obj);
+        });
+
+        test(`should set array value and be strictly equal`, () => {
+            const form = new Dendriform([123,456]);
+            const arr = [456,789];
+            form.set(arr);
+            expect(form.value).toBe(arr);
+        });
+
         test(`should set value from immer producer`, () => {
             const form = new Dendriform(1);
 
