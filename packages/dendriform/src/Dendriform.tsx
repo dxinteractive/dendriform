@@ -962,7 +962,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
         const renderer = aIsRenderer ? a : b;
         const deps = aIsRenderer ? b : c;
         const form = aIsRenderer ? this : this.branch(a);
-        return <Branch renderer={() => renderer(form)} deps={deps} />;
+        return <Branch key={form.id} renderer={() => renderer(form)} deps={deps} />;
     }
 
     renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4]>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
@@ -988,7 +988,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
             });
         };
 
-        return <Branch renderer={containerRenderer} deps={deps} />;
+        return <Branch key={form.id} renderer={containerRenderer} deps={deps} />;
     }
 }
 
