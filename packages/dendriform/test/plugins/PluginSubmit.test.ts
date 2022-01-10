@@ -174,6 +174,7 @@ describe(`plugin submit`, () => {
         expect(form.plugins.submit.previous.value).toEqual({
             foo: 100
         });
+        expect(form.plugins.submit.dirty.value).toBe(true);
 
         form.plugins.submit.submit();
 
@@ -190,6 +191,7 @@ describe(`plugin submit`, () => {
             foo: 100,
             bar: 200
         });
+        expect(form.plugins.submit.dirty.value).toBe(false);
 
         form.set(draft => {
             delete draft.foo;
@@ -209,6 +211,36 @@ describe(`plugin submit`, () => {
         expect(form.plugins.submit.previous.value).toEqual({
             bar: 200
         });
+    });
+
+    test(`should update previous state after successful submit of array`, () => {
+
+        const value: string[] = ['a'];
+
+        const onSubmit = jest.fn();
+        
+        const plugins = {
+            submit: new PluginSubmit({
+                onSubmit
+            })
+        };
+
+        const form = new Dendriform(value, {plugins});
+        form.set(draft => {
+            draft.push('b');
+        });
+
+        expect(form.plugins.submit.previous.value).toEqual(['a']);
+        expect(form.plugins.submit.dirty.value).toBe(true);
+
+        form.plugins.submit.submit();
+
+        expect(onSubmit).toHaveBeenCalledTimes(1);
+        expect(onSubmit.mock.calls[0][0]).toEqual(['a', 'b']);
+        expect(onSubmit.mock.calls[0][1].prev.value).toEqual(['a']);
+
+        expect(form.plugins.submit.previous.value).toEqual(['a', 'b']);
+        expect(form.plugins.submit.dirty.value).toBe(false);
     });
 
     test(`should rollback and allow second attempt if onSubmit throws an error`, () => {

@@ -58,10 +58,17 @@ describe(`Dendriform`, () => {
             expect(form.value).toBe(obj);
         });
 
-        test(`should set array value and be strictly equal`, () => {
+        test(`should set array value and NOT be strictly equal when tracking is on`, () => {
             const form = new Dendriform([123,456]);
             const arr = [456,789];
             form.set(arr);
+            expect(form.value).not.toBe(arr);
+        });
+
+        test(`should set array value and be strictly equal when tracking is off`, () => {
+            const form = new Dendriform([123,456]);
+            const arr = [456,789];
+            form.set(arr, {track: false});
             expect(form.value).toBe(arr);
         });
 
