@@ -20,6 +20,7 @@ export type PluginSubmitConfig<V,E> = {
 type State<V,E> = {
     form: Dendriform<V>;
     previous: Dendriform<V>;
+    previousTracked: Dendriform<V>;
     submitting: Dendriform<boolean>;
     error: Dendriform<E|undefined>;
 };
@@ -48,8 +49,9 @@ export class PluginSubmit<V,E=undefined> extends Plugin {
         const submitting = new Dendriform(false);
         const error = new Dendriform<E|undefined>(undefined);
 
-        const previous = new Dendriform(form.value, {history: 2}); 
-        previous.onChange((newValue, details) => {
+        const previous = new Dendriform(form.value); 
+        const previousTracked = new Dendriform(form.value, {history: 2}); 
+        previousTracked.onChange((newValue, details) => {
             if(details.go === -1) return;
 
             const done = () => {
@@ -58,7 +60,8 @@ export class PluginSubmit<V,E=undefined> extends Plugin {
 
             const error = (e: unknown) => {
                 submitting.set(false);
-                previous.undo();
+                previousTracked.undo();
+                previous.set(previousTracked.value);
                 const errorResult = this.config.onError?.(e);
                 this.getState().error.set(errorResult);
             };
@@ -80,6 +83,7 @@ export class PluginSubmit<V,E=undefined> extends Plugin {
         this.state = {
             form,
             previous,
+            previousTracked,
             submitting,
             error
         };        
@@ -87,11 +91,12 @@ export class PluginSubmit<V,E=undefined> extends Plugin {
 
     submit(): void {
         const state = this.getState();
-        if(state.previous.branchable) {
+        if(state.previousTracked.branchable) {
             // call this to create nodes so arrays can diff in onSubmit
-            state.previous.branchAll();
+            state.previousTracked.branchAll();
         }
-        state.previous.set(state.form.value);
+        state.previous.set(state.form.value, {track: false});
+        state.previousTracked.set(state.form.value, {track: true});
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
