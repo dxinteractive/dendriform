@@ -21,6 +21,13 @@ type MyComponentProps<V> = {
     form: Dendriform<V>;
 };
 
+type MyComponentIndexProps<V> = {
+    foo: number;
+    bar?: number;
+    form: Dendriform<V>;
+    index: number;
+};
+
 type NotSetTestValue = {
     foo?: string;
     bar?: string;
@@ -1118,6 +1125,24 @@ describe(`Dendriform`, () => {
 
                 // should update if deps change
                 wrapper.setProps({foo: 2, bar: 2, form});
+                expect(renderer).toHaveBeenCalledTimes(2);
+            });
+
+            test(`should render one level with changing form`, () => {
+                const form = new Dendriform(['A','B','C']);
+
+                const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
+
+                const MyComponent = (props: MyComponentIndexProps<string[]>) => {
+                    return props.form.render(props.index, renderer, [props.foo]);
+                };
+
+                const wrapper = mount(<MyComponent form={form} foo={1} bar={1} index={0} />);
+
+                expect(renderer).toHaveBeenCalledTimes(1);
+
+                // should update if base form change
+                wrapper.setProps({foo: 1, bar: 1, form, index: 1});
                 expect(renderer).toHaveBeenCalledTimes(2);
             });
 
