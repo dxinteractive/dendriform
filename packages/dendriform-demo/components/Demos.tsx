@@ -9,6 +9,9 @@ import type {Draft} from 'immer';
 import {enableMapSet} from 'immer';
 import type {ThemeProps} from '../pages/_app';
 
+import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
+import {nord} from 'react-syntax-highlighter/dist/cjs/styles/prism';
+
 //
 // first example
 //
@@ -2812,8 +2815,8 @@ function Demo(props: DemoProps): React.ReactElement {
         </DemoStyle>
     </Box>;
 
-    return <DemoBox expanded={expanded}>
-        <DemoPad>
+    return <DemoBox expanded={expanded} onClick={() => setExpanded(false)}>
+        <DemoPad onClick={e => e.stopPropagation()}>
             {!expanded && content}
             {expanded &&
                 <Flex display={['block', 'flex']}>
@@ -2927,34 +2930,11 @@ const DemoPad =  styled.div`
 
 type CodeProps = {
     code: string;
-    className: string;
 };
 
 const Code = styled((props: CodeProps): React.ReactElement => {
-    const {className, code} = props;
-
-    /*useEffect(() => {
-        console.log('window.Prism', window.Prism);
-        if(typeof window !== 'undefined' && typeof window.Prism !== 'undefined') {
-            window.Prism.highlightAll();
-        }
-    }, [props.code]);*/
-
-    return <pre className={`${className} language-jsx`}>
-        <code>{code.substr(1)}</code>
-    </pre>;
-})`
-    font-family: ${(props: ThemeProps) => props.theme.fonts.mono};
-    color: ${(props: ThemeProps) => props.theme.colors.code};
-    font-size: 14px;
-    line-height: 1.4em;
-    background-color: ${(props: ThemeProps) => props.theme.colors.background};
-
-    display: block;
-        overflow: auto;
-        padding: 1rem;
-
-    code {
-
-    }
-`;
+    const {code} = props;
+    return <SyntaxHighlighter language="typescript" style={nord}>
+        {code.substr(1)}
+    </SyntaxHighlighter>;
+})``;
