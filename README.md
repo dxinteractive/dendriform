@@ -517,7 +517,7 @@ function MyComponent(props) {
 }
 ```
 
-The `.set()` function can also accept an [Immer producer](https://immerjs.github.io/immer/docs/introduction).
+The `.set()` function can also accept an [Immer producer](https://immerjs.github.io/immer).
 
 ```js
 function MyComponent(props) {
@@ -582,6 +582,8 @@ form.done();
 ### Updating from props
 
 The `useDendriform` hook can automatically update when props change. If a `dependencies` array is passed as an option, the dependencies are checked using `Object.is()` equality to determine if the form should update. If an update is required, the `value` function is called again and the form is set to the result.
+
+Do *not* add any values from other dendriform forms as a dependency in this manner. Instead use `onDerive` and derive one form's changes into the other.
 
 ```js
 function MyComponent(props) {
@@ -940,11 +942,23 @@ The detail object contains:
 - `force: boolean` - a boolean stating whether this change was called with `force`.
 - `id: string` - The id of the form that this change is occuring at.
 
+#### onChange vs onDerive
+
+The `onChange` and `onDerive` functions intially might appear to be quite similar, but they have a few key differences.
+
+- `onDerive` is called once at initial call and every change afterward; `onChange` is called only at every change afterward.
+- `onDerive` is called *during* a change, so the data that it is called with may not be the same as the data after the change is complete; `onChange` is called *after* a change and all deriving is complete, so it only ever receives the "final" data.
+- `onDerive` may call functions that cause more derivations - any further changes triggered as a result of calling `onDerive` are included in the same history item and can be undone with a single call to `undo()`; `onChange` may also call other functions, but any subsequent would become a *new* history item.
+
+If you always need one form to contain data corresponding to another form's data, use `onDerive`. If you want to fire side effects whenever a change has completed successfully, use `onChange`.
+
 ### Array operations
 
 Common array operations can be performed using `array`.
 
 ```js
+import {array} from 'dendriform';
+
 const offsetElement = (form, offset) => {
     return form.setParent(index => array.move(index, index + offset));
 };
@@ -1251,14 +1265,23 @@ The `onSubmit` function passes the same `details` object as `onChange` does, so 
 ```js
 import {PluginSubmit} from 'dendriform';
 
-const plugins = {
-    submit: new PluginSubmit<V,E>({
-        onSubmit: async (newValue, details): void => {
+type SubmitValue = {
+    firstName: string;
+    lastName: string;
+};
+
+type SubmitPlugins = {
+    submit: PluginSubmit<SubmitValue,string>;
+};
+
+const plugin: SubmitPlugins = {
+    submit: new PluginSubmit<SubmitValue,SubmitPlugins>({
+        onSubmit: async (newValue: SubmitValue, details): void => {
             // trigger save action here
             // any errors will be eligible for resubmission
             // diff(details) can be used in here to diff changes since last submit
         },
-        onError: (error: any): E|undefined => {
+        onError: (error: any): string|undefined => {
             // optional function, will be called if an error occurs in onSubmit
             // anything returned will be stored in state in form.plugins.submit.error
             // the error state is cleared on next submit
@@ -1407,6 +1430,16 @@ The detail object contains:
 - `replace: boolean` - a boolean stating whether this change was called with `replace`.
 - `force: boolean` - a boolean stating whether this change was called with `force`.
 - `id: string` - The id of the form that this derive is occuring at.
+
+#### onChange vs onDerive
+
+The `onChange` and `onDerive` functions intially might appear to be quite similar, but they have a few key differences.
+
+- `onDerive` is called once at initial call and every change afterward; `onChange` is called only at every change afterward.
+- `onDerive` is called *during* a change, so the data that it is called with may not be the same as the data after the change is complete; `onChange` is called *after* a change and all deriving is complete, so it only ever receives the "final" data.
+- `onDerive` may call functions that cause more derivations - any further changes triggered as a result of calling `onDerive` are included in the same history item and can be undone with a single call to `undo()`; `onChange` may also call other functions, but any subsequent would become a *new* history item.
+
+If you always need one form to contain data corresponding to another form's data, use `onDerive`. If you want to fire side effects whenever a change has completed successfully, use `onChange`.
 
 ### Synchronising forms
 
