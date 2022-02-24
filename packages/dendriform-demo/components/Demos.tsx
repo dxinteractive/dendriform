@@ -2816,7 +2816,7 @@ function Demo(props: DemoProps): React.ReactElement {
     </Box>;
 
     return <DemoBox expanded={expanded} onClick={() => setExpanded(false)}>
-        <DemoPad onClick={e => e.stopPropagation()}>
+        <DemoPad onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             {!expanded && content}
             {expanded &&
                 <Flex display={['block', 'flex']}>
