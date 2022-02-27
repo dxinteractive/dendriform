@@ -1676,6 +1676,35 @@ describe(`Dendriform`, () => {
 
         });
 
+        test(`should allow derivers on branched forms`, () => {
+
+            const form = new Dendriform({
+                name: 'boo',
+                letters: 0
+            });
+
+            const deriver = jest.fn();
+
+            form.branch('name').onDerive(deriver);
+            form.set(draft => {
+                draft.name = 'baa';
+            });
+
+            expect(deriver).toHaveBeenCalledTimes(2);
+            expect(deriver.mock.calls[1][0]).toBe('baa');
+            expect(deriver.mock.calls[1][1].id).toBe('1');
+            expect(deriver.mock.calls[1][1].prev.value).toBe('boo');
+            expect(deriver.mock.calls[1][1].next.value).toBe('baa');
+
+            // should always derive, for now, even if source field does not change
+
+            form.set(draft => {
+                draft.letters = 2;
+            });
+
+            expect(deriver).toHaveBeenCalledTimes(3);
+        });
+
         test(`should handle multiple derivers on same form, calling them sequentially`, () => {
 
             const form = new Dendriform({
