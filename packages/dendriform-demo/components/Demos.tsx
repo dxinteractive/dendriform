@@ -3025,6 +3025,7 @@ const DemoPad =  styled.div`
 
 type CodeProps = {
     code: string;
+    className: string;
 };
 
 const Code = styled((props: CodeProps): React.ReactElement => {
