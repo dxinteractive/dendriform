@@ -1239,6 +1239,93 @@ function MyComponent(props) {
 `;
 
 //
+// deriving two way
+//
+
+function DerivingTwoWay(): React.ReactElement {
+    const numberForm = useDendriform(10);
+    const stringForm = useDendriform('');
+    const isStringValidForm = useDendriform(true);
+
+    numberForm.useDerive(newValue => {
+        stringForm.set(`${newValue}`);
+    });
+
+    stringForm.useDerive(newValue => {
+        const number = Number(newValue);
+        const isValid = !isNaN(number);
+        isStringValidForm.set(isValid);
+
+        if(isValid) {
+            numberForm.set(number);
+        }
+    });
+
+    const addOne = () => numberForm.set(number => number + 1);
+
+    return <Region>
+        {numberForm.render(numberForm => (
+            <Region of="code">number in state: {numberForm.useValue()}</Region>
+        ))}
+
+        {stringForm.render(stringForm => (
+            <Region of="label">number: <input {...useInput(stringForm, 150)} /></Region>
+        ))}
+
+        {isStringValidForm.render(isStringValidForm => {
+            const isValid = isStringValidForm.useValue();
+            if(isValid) return null;
+            return <Region of="code">Invalid number</Region>;
+        })}
+
+        <button type="button" onClick={addOne}>Add one to number in state</button>
+    </Region>;
+}
+
+const DerivingTwoWayCode = `
+function DerivingTwoWay(props) {
+    const numberForm = useDendriform(10);
+    const stringForm = useDendriform('');
+    const isStringValidForm = useDendriform(true);
+
+    numberForm.useDerive(newValue => {
+        stringForm.set(\`$\{newValue}\`);
+    });
+
+    stringForm.useDerive(newValue => {
+        const number = Number(newValue);
+        const isValid = !isNaN(number);
+        isStringValidForm.set(isValid);
+
+        if(isValid) {
+            numberForm.set(number);
+        }
+    });
+
+    const addOne = () => numberForm.set(number => number + 1);
+
+    return <div>
+        {numberForm.render(numberForm => (
+            <code>number in state: {numberForm.useValue()}</code>
+        ))}
+
+        {stringForm.render(stringForm => (
+            <label>number: <input {...useInput(stringForm, 150)} /></label>
+        ))}
+
+        {isStringValidForm.render(isStringValidForm => {
+            const isValid = isStringValidForm.useValue();
+            if(isValid) return null;
+            return <code>Invalid number</code>;
+        })}
+
+        <button type="button" onClick={addOne}>Add one to number in state</button>
+    </div>;
+}
+`;
+
+
+//
 // sync
 //
 
@@ -2730,6 +2817,14 @@ const ADVANCED_DEMOS: DemoObject[] = [
         more: 'deriving-data'
     },
     {
+        title: 'Two-way deriving - converting numbers to strings and back',
+        Demo: DerivingTwoWay,
+        code: DerivingTwoWayCode,
+        description: `Deriving can be used to convert between data types. A piece of state is held as a number, and converted to and from a string for editing by the user. Notice that updating the number or the string will derive the other. Also notice that if a string entered by the user can't be translated into a number, the number in state is not updated.`,
+        anchor: 'derivetwoway',
+        more: 'deriving-two-way'
+    },
+    {
         title: 'Synchronising forms',
         Demo: Sync,
         code: SyncCode,
@@ -2930,11 +3025,15 @@ const DemoPad =  styled.div`
 
 type CodeProps = {
     code: string;
+    className: string;
 };
 
 const Code = styled((props: CodeProps): React.ReactElement => {
-    const {code} = props;
-    return <SyntaxHighlighter language="typescript" style={nord}>
+    const {code, className} = props;
+    return <SyntaxHighlighter language="typescript" style={nord} className={className}>
         {code.substr(1)}
     </SyntaxHighlighter>;
-})``;
+})`
+    font-size: 14px;
+    line-height: 1.1em;
+`;
