@@ -106,7 +106,7 @@ export type DeriveCallbackDetails<V> = InternalMetaDetails & {
 };
 export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails<V>) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DeriveCallbackRef = [DeriveCallback<any>];
+export type DeriveCallbackRef = [string, DeriveCallback<any>];
 
 export type CancelCallback = (message: string) => void;
 
@@ -265,10 +265,18 @@ export class Core<C,P extends Plugins> {
         return path;
     };
 
+
     getValue = (id: string): unknown => {
         const path = this.getPath(id);
         if(!path) return undefined;
         return getIn(this.state.value, path);
+    };
+
+    getRevertValue = (id: string): unknown => {
+        const {stateRevert} = this;
+        const path = this.getPath(id);
+        if(!path || !stateRevert) return undefined;
+        return getIn(stateRevert.value, path);
     };
 
     getKey = (id: string): unknown => {
@@ -490,24 +498,27 @@ export class Core<C,P extends Plugins> {
         if(this.internalState.deriving) return;
         this.internalState.deriving = true;
 
-        const [deriveCallback] = deriveCallbackRef;
+        const [id, deriveCallback] = deriveCallbackRef;
         const patches = this.internalState.changeBuffer ?? new HistoryItem();
+
+        const nextValue = this.getValue(id);
+        const prevValue = this.getRevertValue(id);
 
         const details = {
             ...internalMeta,
             patches,
             prev: {
-                value: this.stateRevert?.value,
+                value: prevValue,
                 nodes: this.stateRevert?.nodes
             },
             next: {
-                value: this.state.value,
+                value: nextValue,
                 nodes: this.state.nodes
             },
-            id: '0'
+            id
         };
 
-        deriveCallback(this.state.value, details);
+        deriveCallback(nextValue, details);
         this.internalState.deriving = false;
     };
 
@@ -836,7 +847,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     };
 
     onDerive(callback: DeriveCallback<V>): (() => void) {
-        const deriveCallback: DeriveCallbackRef = [callback];
+        const deriveCallback: DeriveCallbackRef = [this.id, callback];
         this.core.deriveCallbackRefs.add(deriveCallback);
 
         // call immediately, and dont add to history
