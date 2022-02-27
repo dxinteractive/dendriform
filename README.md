@@ -1459,7 +1459,40 @@ The `onChange` and `onDerive` functions intially might appear to be quite simila
 
 If you always need one form to contain data corresponding to another form's data, use `onDerive`. If you want to fire side effects whenever a change has completed successfully, use `onChange`.
 
+#### Two-way deriving
+
+You can also derive in both directions. Here a `numberForm` and a `stringForm` are created, and changes to one are derived into the other without causing an infinite loop.
+
+```js
+const numberForm = new Dendriform(10);
+const stringForm = new Dendriform('');
+
+// add first deriver
+numberForm.onDerive(value => {
+    stringForm.set(`${value}`);
+});
+
+// at this point stringForm.value is now '10'
+
+// add second deriver
+stringForm.onDerive(({val}) => {
+    numberForm.set(Number(val));
+});
+
+// now set number, string will derive
+numberForm.set(20);
+// numberForm.value === 20
+// stringForm.value === '20'
+
+// now set string, number will derive
+stringForm.set('30');
+// numberForm.value === 30
+// stringForm.value === '30'
+```
+
 ### Synchronising forms
+
+**Warning:** *the {sync} API is experimental and may be replaced or removed in future.*
 
 You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
 
@@ -1589,6 +1622,8 @@ The cancel feature can be used to set up data integrity constraints between form
 [Demo](http://dendriform.xyz#foreign-key)
 
 ### Lazy derive
+
+**Warning:** *the {LazyDerive} API is experimental and may be replaced or removed in future.*
 
 The LazyDerive class can be used when derivations are heavy or asynchronous, and it makes more sense to only perform these derivations lazily, i.e. when something asks for the derived data. The derivation is cached until any of its dependencies change, at which point the cache is cleared. If it has any current subscribers using `lazyDeriver.onChange()` or `lazyDeriver.useValue()` then a new derivation will start immediately.
 
