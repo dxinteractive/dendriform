@@ -1490,6 +1490,8 @@ stringForm.set('30');
 // stringForm.value === '30'
 ```
 
+[Demo](http://dendriform.xyz#derivetwoway)
+
 ### Synchronising forms
 
 **Warning:** *the {sync} API is experimental and may be replaced or removed in future.*
