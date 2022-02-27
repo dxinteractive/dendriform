@@ -962,7 +962,7 @@ The detail object contains:
 
 #### onChange vs onDerive
 
-The `onChange` and `onDerive` functions intially might appear to be quite similar, but they have a few key differences.
+The `onChange` and `onDerive` functions may initially appear to be very similar, but they have a few key differences.
 
 - `onDerive` is called once at initial call and every change afterward; `onChange` is called only at every change afterward.
 - `onDerive` is called *during* a change, so the data that it is called with may not be the same as the data after the change is complete; `onChange` is called *after* a change and all deriving is complete, so it only ever receives the "final" data.
@@ -1451,7 +1451,7 @@ The detail object contains:
 
 #### onChange vs onDerive
 
-The `onChange` and `onDerive` functions intially might appear to be quite similar, but they have a few key differences.
+The `onChange` and `onDerive` functions may initially appear to be very similar, but they have a few key differences.
 
 - `onDerive` is called once at initial call and every change afterward; `onChange` is called only at every change afterward.
 - `onDerive` is called *during* a change, so the data that it is called with may not be the same as the data after the change is complete; `onChange` is called *after* a change and all deriving is complete, so it only ever receives the "final" data.
