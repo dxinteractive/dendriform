@@ -101,12 +101,12 @@ export class PluginSubmit<V,E=undefined> extends Plugin {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private getForm(): Dendriform<any> {
-        return this.getState().form.core.getFormAt(this.path);
+        return this.getState().form.core.getFormAt(this.path, true);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get previous(): Dendriform<any> {
-        return this.getState().previous.core.getFormAt(this.path);
+        return this.getState().previous.core.getFormAt(this.path, true);
     }
 
     get submitting(): Dendriform<boolean> {

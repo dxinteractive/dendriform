@@ -3254,4 +3254,24 @@ describe(`Dendriform`, () => {
             });
         });
     });
+
+    describe(`readonly`, () => {
+
+        test(`should create readonly form`, () => {
+            const form = new Dendriform(123);
+
+            expect(() => form.readonly().set(456)).toThrow(`[Dendriform] Cannot call .set() or .go() on a readonly form`);
+            expect(() => form.readonly().undo()).toThrow(`[Dendriform] Cannot call .set() or .go() on a readonly form`);
+        });
+
+        test(`should create readonly forms branched from a readonly form`, () => {
+            const form = new Dendriform({foo: 123});
+
+            expect(() => form.readonly().branch('foo').set(456)).toThrow(`[Dendriform] Cannot call .set() or .go() on a readonly form`);
+            expect(() => form.branch('foo').set(456)).not.toThrow();
+            expect(() => form.readonly().branch('foo').set(456)).toThrow(`[Dendriform] Cannot call .set() or .go() on a readonly form`);
+            // @ts-ignore
+            expect(() => form.readonly().branch('foo').setParent({foo: 456})).toThrow(`[Dendriform] Cannot call .set() or .go() on a readonly form`);
+        });
+    });
 });

@@ -141,6 +141,7 @@ npm install --save dendriform
 - [Rendering](#rendering)
 - [Rendering arrays](#rendering-arrays)
 - [Setting data](#setting-data)
+- [Readonly forms](#readonly-forms)
 - [Updating from props](#updating-from-props)
 - [ES6 classes](#es6-classes)
 - [ES6 maps](#es6-maps)
@@ -577,6 +578,23 @@ form.set(draft => draft + 1);
 form.set(draft => draft + 1);
 form.done();
 // form.value will update to become 3
+```
+
+### Readonly forms
+
+You may want to allow subscribers to a form, while also preventing them from making any changes. For this use case, the `readonly()` method returns a version of the form that cannot be set and cannot navigate history. Any forms branched off a readonly form will also be unable to set or navigate history.
+
+```js
+const form = new Dendriform(0);
+const readonlyForm = form.readonly();
+
+// readonlyForm can have its .value and .useValue read
+// can subscribe to changes with .onChange() etc. and can render,
+// but calling .set(), .go() or any derivatives
+// will cause an error to be thrown
+
+readonlyForm.set(1); // throws error
+
 ```
 
 ### Updating from props
