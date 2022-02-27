@@ -290,15 +290,15 @@ export class Core<C,P extends Plugins> {
         history: (_id) => this.state.historyState
     };
 
-    createForm = (id: string): Dendriform<unknown,P> => {
+    createForm = (id: string, readonly: boolean): Dendriform<unknown,P> => {
         const __branch = {core: this, id};
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const form = new Dendriform<any,P>({__branch});
-        this.dendriforms.set(id, form);
+        this.dendriforms.set(`${readonly ? 'r' : 'w'}${id}`, form);
         return form;
     };
 
-    getFormAt = (path: Path|undefined): Dendriform<unknown,P> => {
+    getFormAt = (path: Path|undefined, readonly: boolean): Dendriform<unknown,P> => {
         let node: NodeAny|undefined;
 
         if(path) {
@@ -309,11 +309,13 @@ export class Core<C,P extends Plugins> {
         }
 
         const id = node ? node.id : 'notfound';
-        return this.getFormById(id);
+        return this.getFormById(id, readonly);
     };
 
-    getFormById = (id: string): Dendriform<unknown,P> => {
-        return this.dendriforms.get(id) || this.createForm(id);
+    getFormById = (id: string, readonly: boolean): Dendriform<unknown,P> => {
+        const form = this.dendriforms.get(`${readonly ? 'r' : 'w'}${id}`) || this.createForm(id, readonly);
+        form._readonly = readonly;
+        return form;
     };
 
     //
@@ -758,6 +760,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
 
     core: Core<unknown,P>;
     id: string;
+    _readonly = false;
 
     constructor(initialValue: V|DendriformBranch<P>, options: Options<P> = {}) {
 
@@ -821,12 +824,14 @@ export class Dendriform<V,P extends Plugins = undefined> {
     }
 
     set = (toProduce: ToProduce<V>, options: SetOptions = {}): void => {
+        if(this._readonly) die(9);
         this.core.setWithDebounce(this.id, toProduce, options);
     };
 
     setParent = (childToProduce: ChildToProduce<unknown>, options: SetOptions = {}): void => {
+        if(this._readonly) die(9);
         const basePath = this.core.getPathOrError(this.id);
-        const parent = this.core.getFormAt(basePath.slice(0,-1));
+        const parent = this.core.getFormAt(basePath.slice(0,-1), this._readonly);
         this.core.setWithDebounce(parent.id, childToProduce(basePath[basePath.length - 1]), options);
     };
 
@@ -869,11 +874,14 @@ export class Dendriform<V,P extends Plugins = undefined> {
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
     }
 
-    undo = (): void => this.core.go(-1);
+    undo = (): void => this.go(-1);
 
-    redo = (): void => this.core.go(1);
+    redo = (): void => this.go(1);
 
-    go = (offset: number): void => this.core.go(offset);
+    go = (offset: number): void => {
+        if(this._readonly) die(9);
+        this.core.go(offset);
+    };
 
     replace = (replace = true): void => this.core.replace(replace);
 
@@ -933,7 +941,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     branch(pathOrKey: any): any {
         const appendPath = ([] as Path).concat(pathOrKey ?? []);
         const basePath = this.core.getPath(this.id);
-        return this.core.getFormAt(basePath?.concat(appendPath));
+        return this.core.getFormAt(basePath?.concat(appendPath), this._readonly);
     }
 
     branchAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4]>(path: [K1, K2, K3, K4]): Dendriform<BranchableChild<W>,P>[];
@@ -989,6 +997,10 @@ export class Dendriform<V,P extends Plugins = undefined> {
         };
 
         return <Branch key={form.id} renderer={containerRenderer} deps={deps} />;
+    }
+
+    readonly(): Dendriform<V,P> {
+        return this.core.getFormById(this.id, true) as Dendriform<V,P>;
     }
 }
 
