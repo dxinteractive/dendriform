@@ -1555,6 +1555,28 @@ describe(`Dendriform`, () => {
 
     });
 
+    describe(`onChangeIndex`, () => {
+
+        test.only(`should be called when index changes`, () => {
+            const callback = jest.fn();
+            const form = new Dendriform(['a','b','c','d']);
+            form.branch(3).onChangeIndex(callback);
+
+            console.log('f', form.core.state.nodes);
+
+            // should be called on change of index
+            form.set(draft => {
+                draft.unshift('?');
+            });
+
+            console.log('form', form.value);
+
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback.mock.calls[0][0]).toBe(2);
+        });
+
+    });
+
     describe(`derive`, () => {
 
         test(`should allow derivers to be added and cancelled`, () => {

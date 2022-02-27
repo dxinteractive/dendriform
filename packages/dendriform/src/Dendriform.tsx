@@ -278,6 +278,8 @@ export class Core<C,P extends Plugins> {
 
     getIndex = (id: string): number => {
         const path = this.getPath(id);
+        console.log('this.state.nodes', this.state.nodes);
+        console.log('path', id, path);
         const key =  path ? path.slice(-1)[0] : -1;
         if(typeof key !== 'number') die(4, path);
         return key;
@@ -540,6 +542,7 @@ export class Core<C,P extends Plugins> {
         this.changeCallbackRefs.forEach((changeCallbackRef) => {
             const [changeType, id, changeCallback, prevValue] = changeCallbackRef;
             const nextValue = this.valueGettersByType[changeType](id);
+            console.log('nextValue', nextValue);
 
             // only update a callback if it is not equal to the previous value
             if(!Object.is(nextValue, prevValue)) {
@@ -789,6 +792,17 @@ export class Dendriform<V,P extends Plugins = undefined> {
     }
 
     //
+    // private methods
+    //
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private _addChangeCallback(callback: ChangeCallback<any>, type: ChangeType): (() => void) {
+        const changeCallback: ChangeCallbackRef = [type, this.id, callback, this.value];
+        this.core.changeCallbackRefs.add(changeCallback);
+        return () => void this.core.changeCallbackRefs.delete(changeCallback);
+    }
+
+    //
     // public api
     //
 
@@ -863,15 +877,16 @@ export class Dendriform<V,P extends Plugins = undefined> {
         return () => void this.core.cancelCallbacks.delete(callback);
     }
 
-    onChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): (() => void);
-    onChange(callback: ChangeCallback<HistoryState>, changeType: ChangeTypeHistory): (() => void);
-    onChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): (() => void);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-    onChange(callback:any, changeType: any): any {
-        const changeCallback: ChangeCallbackRef = [changeType || 'value', this.id, callback, this.value];
-        this.core.changeCallbackRefs.add(changeCallback);
-        // return unsubscriber
-        return () => void this.core.changeCallbackRefs.delete(changeCallback);
+    onChange(callback: ChangeCallback<V>): (() => void) {
+        return this._addChangeCallback(callback, 'value');
+    }
+
+    onChangeIndex(callback: ChangeCallback<number>): (() => void) {
+        return this._addChangeCallback(callback, 'index');
+    }
+
+    onChangeHistory(callback: ChangeCallback<HistoryState>): (() => void) {
+        return this._addChangeCallback(callback, 'history');
     }
 
     undo = (): void => this.go(-1);
@@ -893,26 +908,6 @@ export class Dendriform<V,P extends Plugins = undefined> {
     // hooks
     //
 
-    useValue(): V {
-        const [value, setValue] = useState<V>(() => this.value);
-        this.useChange(setValue);
-        return value;
-    }
-
-    useIndex(): number {
-        const [index, setIndex] = useState<number>(() => this.index);
-        this.useChange(setIndex, 'index');
-        return index;
-    }
-
-    useChange(callback: ChangeCallback<number>, changeType: ChangeTypeIndex): void;
-    useChange(callback: ChangeCallback<HistoryState>, changeType: ChangeTypeHistory): void;
-    useChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-    useChange(callback: any, changeType: any): any {
-        useEffect(() => this.onChange(callback, changeType || 'value'), []);
-    }
-
     useDerive(callback: DeriveCallback<V>): void {
         useEffect(() => this.onDerive(callback), []);
     }
@@ -921,9 +916,33 @@ export class Dendriform<V,P extends Plugins = undefined> {
         useEffect(() => this.onCancel(callback), []);
     }
 
+    useChange(callback: ChangeCallback<V>): void {
+        useEffect(() => this.onChange(callback), []);
+    }
+
+    useChangeIndex(callback: ChangeCallback<number>): void {
+        useEffect(() => this.onChangeIndex(callback), []);
+    }
+
+    useChangeHistory(callback: ChangeCallback<HistoryState>): void {
+        useEffect(() => this.onChangeHistory(callback), []);
+    }
+
+    useValue(): V {
+        const [value, setValue] = useState<V>(() => this.value);
+        this.useChange(setValue);
+        return value;
+    }
+
+    useIndex(): number {
+        const [index, setIndex] = useState<number>(() => this.index);
+        this.useChangeIndex(setIndex);
+        return index;
+    }
+
     useHistory(): HistoryState {
         const [historyState, setHistoryState] = useState<HistoryState>(this.core.state.historyState);
-        this.useChange(setHistoryState, 'history');
+        this.useChangeHistory(setHistoryState);
         return historyState;
     }
 
