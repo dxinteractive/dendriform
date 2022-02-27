@@ -52,20 +52,20 @@ function MyComponent(props) {
     //   these each add a 150ms debounce
     
     return <div>
-        {form.render('name', form => (
-            <label>name <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render(['address', 'street'], street => (
-            <label>street <input {...useInput(street, 150)} /></label>
+        {form.render(['address', 'street'], streetForm => (
+            <label>street <input {...useInput(streetForm, 150)} /></label>
         ))}
 
         <fieldset>
             <legend>pets</legend>
             <ul>
-                {form.renderAll('pets', form => <li>
-                    {form.render('name', form => (
-                        <label>name <input {...useInput(form, 150)} /></label>
+                {form.renderAll('pets', petForm => <li>
+                    {petForm.render('name', nameForm => (
+                        <label>name <input {...useInput(nameForm, 150)} /></label>
                     ))}
                 </li>)}
             </ul>
@@ -303,13 +303,13 @@ function MyComponent(props) {
     const form = useDendriform({name: 'Ben'});
 
     return <div>
-        {form.render('name', form => {
+        {form.render('name', nameForm => {
             // this component will update whenever 'name' changes,
             // and only because the useValue() hook is used.
             // the useValue() hook tells this component
             // to opt-in to 'name' changes
 
-            const name = form.useValue();
+            const name = nameForm.useValue();
             return <div>My name is {name}</div>;
         })}
     </div>;
@@ -339,8 +339,8 @@ function MyComponent(props) {
 The `form` passed into the `render()` callback is provided just for convenience of writing less code while branching and rendering. The following examples are equivalent. You can use whichever suits:
 
 ```js
-form.render('name', form => {
-    const name = form.useValue();
+form.render('name', nameForm => {
+    const name = nameForm.useValue();
     return <div>My name is {name}</div>;
 });
 
@@ -349,7 +349,7 @@ form.render(form => {
     return <div>My name is {name}</div>;
 });
 
-form.render('name', form => <div>My name is {form.useValue()}</div>);
+form.render('name', nameForm => <div>My name is {nameForm.useValue()}</div>);
 
 form.render(() => {
     const name = form.branch('name').useValue();
@@ -394,8 +394,8 @@ function MyComponent(props) {
     const [className] = useState('darkMode');
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             return <div className={className}>My name is {name}</div>;
         }, [className])}
     </div>;
@@ -417,8 +417,8 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.renderAll('colours', form => {
-            const colour = form.useValue();
+        {form.renderAll('colours', colourForm => {
+            const colour = colourForm.useValue();
             return <div>Colour: {colour}</div>;
         })}
     </div>;
@@ -438,9 +438,9 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.renderAll('colours', form => {
-            const colour = form.useValue();
-            const index = form.useIndex();
+        {form.renderAll('colours', colourForm => {
+            const colour = colourForm.useValue();
+            const index = colourForm.useIndex();
 
             return <div>Colour: {colour}, index: {index}</div>;
         })}
@@ -500,10 +500,10 @@ function MyComponent(props) {
     const form = useDendriform({name: 'Ben', age: 30});
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             const setToBill = useCallback(() => {
-                form.set('Bill');
+                nameForm.set('Bill');
             }, []);
 
             return <div>
@@ -531,8 +531,8 @@ function MyComponent(props) {
     }, []);
 
     return <div>
-        {form.render('count', form => {
-            const count = form.useValue();
+        {form.render('count', countForm => {
+            const count = countForm.useValue();
             return <div>Count: {count}</div>;
         })}
 
@@ -617,8 +617,8 @@ function MyComponent(props) {
     );
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             return <div>Name: {name}</div>;
         })}
     </div>;
@@ -644,8 +644,8 @@ function MyComponent(props) {
     lastNameFromProps.current = nameFromProps;
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             return <div>Name: {name}</div>;
         })}
     </div>;
@@ -788,14 +788,14 @@ function MyComponent(props) {
     }));
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render('fruit', form => (
+        {form.render('fruit', fruitForm => (
             <label>
                 select:
-                <select {...useInput(form)}>
+                <select {...useInput(fruitForm)}>
                     <option value="grapefruit">Grapefruit</option>
                     <option value="lime">Lime</option>
                     <option value="coconut">Coconut</option>
@@ -804,15 +804,15 @@ function MyComponent(props) {
             </label>
         ))}
 
-        {form.render('canSwim', form => (
+        {form.render('canSwim', canSwimForm => (
             <label>
                 can you swim?
-                <input type="checkbox" {...useCheckbox(form)} />
+                <input type="checkbox" {...useCheckbox(canSwimForm)} />
             </label>
         ))}
 
-        {form.render('comment', form => (
-            <label>comment: <textarea {...useInput(form)} /></label>
+        {form.render('comment', commentForm => (
+            <label>comment: <textarea {...useInput(commentForm)} /></label>
         ))}
     </div>;
 };
@@ -900,12 +900,12 @@ function MyComponent(props) {
     }, []);
 
     return <div>
-        {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+        {form.render('firstName', firstNameForm => (
+            <label>first name: <input {...useInput(firstNameForm, 150)} /></label>
         ))}
 
-        {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+        {form.render('lastName', lastNameForm => (
+            <label>last name: <input {...useInput(lastNameForm, 150)} /></label>
         ))}
     </div>;
 };
@@ -930,12 +930,12 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+        {form.render('firstName', firstNameForm => (
+            <label>first name: <input {...useInput(firstNameForm, 150)} /></label>
         ))}
 
-        {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+        {form.render('lastName', lastNameForm => (
+            <label>last name: <input {...useInput(lastNameForm, 150)} /></label>
         ))}
     </div>;
 }
@@ -995,14 +995,14 @@ function MyComponent(props) {
     const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <div>
-        {form.renderAll('colours', form => {
+        {form.renderAll('colours', colourForm => {
 
-            const remove = useCallback(() => form.set(array.remove()), []);
-            const moveDown = useCallback(() => offsetElement(form, 1), []);
-            const moveUp = useCallback(() => offsetElement(form, -1), []);
+            const remove = useCallback(() => colourForm.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
+            const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <div>
-                <label>colour: <input {...useInput(form, 150)} /></label>
+                <label>colour: <input {...useInput(colourForm, 150)} /></label>
 
                 <button onClick={remove}>remove</button>
                 <button onClick={moveDown}>down</button>
@@ -1045,8 +1045,8 @@ function MyComponent(props) {
     const form = useDendriform(() => ({name: 'Ben'}), {history: 100});
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
         {form.render(form => {
@@ -1080,8 +1080,8 @@ function MyComponent(props) {
     const form = useDendriform(() => ({name: 'Ben'}), {history: 100});
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
         {form.render(form => {
@@ -1223,11 +1223,11 @@ function DragAndDrop() {
 }
 
 function DragAndDropList(props) {
-    return props.form.renderAll(form => {
+    return props.form.renderAll(eachForm => {
 
-        const id = \`$\{form.id}\`;
-        const index = form.useIndex();
-        const remove = useCallback(() => form.set(array.remove()), []);
+        const id = \`$\{eachForm.id}\`;
+        const index = eachForm.useIndex();
+        const remove = useCallback(() => eachForm.set(array.remove()), []);
 
         return <Draggable key={id} draggableId={id} index={index}>
             {provided => <div
@@ -1235,7 +1235,7 @@ function DragAndDropList(props) {
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
             >
-                <label>colour: <input {...useInput(form, 150)} /></label>
+                <label>colour: <input {...useInput(eachForm, 150)} /></label>
                 <button onClick={remove}>remove</button>
             </div>}
         </Draggable>;
@@ -1523,25 +1523,25 @@ Inside of a React component you can use the `useSync()` hook to achieve the same
 import {useSync} from 'dendriform';
 
 function MyComponent(props) {
-    const nameForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
+    const personForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
     const addressForm = useDendriform(() => ({street: 'Cool St'}), {history: 100});
 
-    useSync(nameForm, addressForm);
+    useSync(personForm, addressForm);
 
     return <div>
-        {nameForm.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {personForm.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {addressForm.render('street', form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+        {addressForm.render('street', streetForm => (
+            <label>street: <input {...useInput(streetForm, 150)} /></label>
         ))}
 
-        {nameForm.render(form => {
-            const {canUndo, canRedo} = form.useHistory();
+        {personForm.render(personForm => {
+            const {canUndo, canRedo} = personForm.useHistory();
             return <div>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button onClick={personForm.undo} disabled={!canUndo}>Undo</button>
+                <button onClick={personForm.redo} disabled={!canRedo}>Redo</button>
             </div>;
         })}
     </div>;

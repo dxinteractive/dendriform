@@ -41,21 +41,21 @@ function FirstExample(): React.ReactElement {
     }, []);
 
     return <Region>
-        {form.render('name', form => (
-            <Region of="label">name <input {...useInput(form, 150)} /></Region>
+        {form.render('name', nameForm => (
+            <Region of="label">name <input {...useInput(nameForm, 150)} /></Region>
         ))}
 
-        {form.render(['address', 'street'], street => (
-            <Region of="label">street <input {...useInput(street, 150)} /></Region>
+        {form.render(['address', 'street'], streetForm => (
+            <Region of="label">street <input {...useInput(streetForm, 150)} /></Region>
         ))}
 
         <fieldset>
             <legend>pets</legend>
 
             <ul>
-                {form.renderAll('pets', form => <Region of="li">
-                    {form.render('name', form => (
-                        <Region of="label">name <input {...useInput(form, 150)} /></Region>
+                {form.renderAll('pets', petForm => <Region of="li">
+                    {petForm.render('name', nameForm => (
+                        <Region of="label">name <input {...useInput(nameForm, 150)} /></Region>
                     ))}
                 </Region>)}
             </ul>
@@ -93,20 +93,20 @@ function MyComponent(props) {
     }, []);
 
     return <div>
-        {form.render('name', form => (
-            <label>name <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render(['address', 'street'], street => (
-            <label>street <input {...useInput(street, 150)} /></label>
+        {form.render(['address', 'street'], streetForm => (
+            <label>street <input {...useInput(streetForm, 150)} /></label>
         ))}
 
         <fieldset>
             <legend>pets</legend>
             <ul>
-                {form.renderAll('pets', form => <li>
-                    {form.render('name', form => (
-                        <label>name <input {...useInput(form, 150)} /></label>
+                {form.renderAll('pets', petForm => <li>
+                    {petForm.render('name', nameForm => (
+                        <label>name <input {...useInput(nameForm, 150)} /></label>
                     ))}
                 </li>)}
             </ul>
@@ -254,12 +254,12 @@ function Rendering(): React.ReactElement {
             return <Region of="code">{value.name} from {value.address.street}</Region>;
         })}
 
-        {form.render('name', form => (
-            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
+        {form.render('name', nameForm => (
+            <Region of="label">name: <input {...useInput(nameForm, 150)} /></Region>
         ))}
 
-        {form.render(['address', 'street'], form => (
-            <Region of="label">street: <input {...useInput(form, 150)} /></Region>
+        {form.render(['address', 'street'], streetForm => (
+            <Region of="label">street: <input {...useInput(streetForm, 150)} /></Region>
         ))}
     </Region>;
 }
@@ -279,12 +279,12 @@ function MyComponent(props) {
             return <code>{value.name} from {value.address.street}</code>;
         })}
 
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render(['address', 'street'], form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+        {form.render(['address', 'street'], streetForm => (
+            <label>street: <input {...useInput(streetForm, 150)} /></label>
         ))}
     </div>;
 }
@@ -352,7 +352,7 @@ function SettingData(): React.ReactElement {
     }, []);
 
     return <Region>
-        {form.render('number', form => <Region of="code">{form.useValue()}</Region>)}
+        {form.render('number', numberForm => <Region of="code">{numberForm.useValue()}</Region>)}
 
         <button type="button" onClick={set100}>set value to 100</button>
         <button type="button" onClick={add3}>add 3 to value</button>
@@ -379,7 +379,7 @@ function MyComponent(props) {
     }, []);
 
     return <div>
-        {form.render('number', form => <code>{form.useValue()}</code>)}
+        {form.render('number', numberForm => <code>{numberForm.useValue()}</code>)}
 
         <button type="button" onClick={set100}>set value to 100</button>
         <button type="button" onClick={add3}>add 3 to value</button>
@@ -472,8 +472,8 @@ function SettingDataDebounce(): React.ReactElement {
     }, []);
 
     return <Region>
-        {form.render('a', form => <Region of="code">{form.useValue()}</Region>)}
-        {form.render('b', form => <Region of="code">{form.useValue()}</Region>)}
+        {form.render('a', aForm => <Region of="code">{aForm.useValue()}</Region>)}
+        {form.render('b', bForm => <Region of="code">{bForm.useValue()}</Region>)}
 
         <button type="button" onClick={changeA}>change a with 300ms debounce</button>
         <button type="button" onClick={changeB}>change b with 300ms debounce</button>
@@ -496,8 +496,8 @@ function MyComponent(props) {
     }, []);
 
     return <div>
-        {form.render('a', form => <code>a: {form.useValue()}</code>)}
-        {form.render('b', form => <code>b: {form.useValue()}</code>)}
+        {form.render('a', aForm => <code>a: {aForm.useValue()}</code>)}
+        {form.render('b', bForm => <code>b: {bForm.useValue()}</code>)}
 
         <button type="button" onClick={changeA}>change a with 300ms debounce</button>
         <button type="button" onClick={changeB}>change b with 300ms debounce</button>
@@ -536,8 +536,8 @@ function UpdatingFromPropsInner(props: UpdatingFromPropsInnerProps): React.React
     form.useChange(newValue => setQueryString(newValue.queryString));
 
     return <Region>
-        {form.render('queryString', form => (
-            <Region of="label">string in form: <input {...useInput(form, 150)} /></Region>
+        {form.render('queryString', queryStringForm => (
+            <Region of="label">string in form: <input {...useInput(queryStringForm, 150)} /></Region>
         ))}
     </Region>;
 }
@@ -554,8 +554,8 @@ function MyComponent(props) {
     form.useChange(newValue => setQueryString(newValue.queryString));
 
     return <>
-        {form.render('queryString', form => (
-            <label>string in form: <input {...useInput(form, 150)} /></label>
+        {form.render('queryString', queryStringForm => (
+            <label>string in form: <input {...useInput(queryStringForm, 150)} /></label>
         ))}
     </>;
 }
@@ -581,11 +581,11 @@ function ES6Classes(): React.ReactElement {
     });
 
     return <Region>
-        {form.render('firstName', form => (
-            <Region of="label">first name: <input {...useInput(form, 150)} /></Region>
+        {form.render('firstName', firstNameForm => (
+            <Region of="label">first name: <input {...useInput(firstNameForm, 150)} /></Region>
         ))}
-        {form.render('lastName', form => (
-            <Region of="label">last name: <input {...useInput(form, 150)} /></Region>
+        {form.render('lastName', lastNameForm => (
+            <Region of="label">last name: <input {...useInput(lastNameForm, 150)} /></Region>
         ))}
     </Region>;
 }
@@ -609,11 +609,11 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+        {form.render('firstName', firstNameForm => (
+            <label>first name: <input {...useInput(firstNameForm, 150)} /></label>
         ))}
-        {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+        {form.render('lastName', lastNameForm => (
+            <label>last name: <input {...useInput(lastNameForm, 150)} /></label>
         ))}
     </div>;
 }
@@ -635,11 +635,11 @@ function ES6Maps(): React.ReactElement {
     });
 
     return <Region>
-        {form.render(123, form => (
-            <label>123: <input {...useInput(form, 150)} /></label>
+        {form.render(123, fooForm => (
+            <label>123: <input {...useInput(fooForm, 150)} /></label>
         ))}
-        {form.render(456, form => (
-            <label>456: <input {...useInput(form, 150)} /></label>
+        {form.render(456, barForm => (
+            <label>456: <input {...useInput(barForm, 150)} /></label>
         ))}
     </Region>;
 }
@@ -658,11 +658,11 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render(123, form => (
-            <label>123: <input {...useInput(form, 150)} /></label>
+        {form.render(123, fooForm => (
+            <label>123: <input {...useInput(fooForm, 150)} /></label>
         ))}
-        {form.render(456, form => (
-            <label>456: <input {...useInput(form, 150)} /></label>
+        {form.render(456, barForm => (
+            <label>456: <input {...useInput(barForm, 150)} /></label>
         ))}
     </div>;
 }
@@ -681,14 +681,14 @@ function FormInputs(): React.ReactElement {
     }));
 
     return <Region>
-        {form.render('name', form => (
-            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
+        {form.render('name', nameForm => (
+            <Region of="label">name: <input {...useInput(nameForm, 150)} /></Region>
         ))}
 
-        {form.render('fruit', form => (
+        {form.render('fruit', fruitForm => (
             <Region of="label">
                 select:
-                <select {...useInput(form)}>
+                <select {...useInput(fruitForm)}>
                     <option value="grapefruit">Grapefruit</option>
                     <option value="lime">Lime</option>
                     <option value="coconut">Coconut</option>
@@ -697,15 +697,15 @@ function FormInputs(): React.ReactElement {
             </Region>
         ))}
 
-        {form.render('canSwim', form => (
+        {form.render('canSwim', canSwimForm => (
             <Region of="label">
                 can you swim?
-                <input type="checkbox" {...useCheckbox(form)} />
+                <input type="checkbox" {...useCheckbox(canSwimForm)} />
             </Region>
         ))}
 
-        {form.render('comment', form => (
-            <Region of="label">comment: <textarea {...useInput(form)} /></Region>
+        {form.render('comment', commentForm => (
+            <Region of="label">comment: <textarea {...useInput(commentForm)} /></Region>
         ))}
     </Region>;
 }
@@ -720,14 +720,14 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render('fruit', form => (
+        {form.render('fruit', fruitForm => (
             <label>
                 select:
-                <select {...useInput(form)}>
+                <select {...useInput(fruitForm)}>
                     <option value="grapefruit">Grapefruit</option>
                     <option value="lime">Lime</option>
                     <option value="coconut">Coconut</option>
@@ -736,15 +736,15 @@ function MyComponent(props) {
             </label>
         ))}
 
-        {form.render('canSwim', form => (
+        {form.render('canSwim', canSwimForm => (
             <label>
                 can you swim?
-                <input type="checkbox" {...useCheckbox(form)} />
+                <input type="checkbox" {...useCheckbox(canSwimForm)} />
             </label>
         ))}
 
-        {form.render('comment', form => (
-            <label>comment: <textarea {...useInput(form)} /></label>
+        {form.render('comment', commentForm => (
+            <label>comment: <textarea {...useInput(commentForm)} /></label>
         ))}
     </div>;
 }
@@ -772,12 +772,12 @@ function Subscribe(): React.ReactElement {
     });
 
     return <Region>
-        {form.render('firstName', form => (
-            <Region of="label">first name: <input {...useInput(form, 150)} /></Region>
+        {form.render('firstName', firstNameForm => (
+            <Region of="label">first name: <input {...useInput(firstNameForm, 150)} /></Region>
         ))}
 
-        {form.render('lastName', form => (
-            <Region of="label">last name: <input {...useInput(form, 150)} /></Region>
+        {form.render('lastName', lastNameForm => (
+            <Region of="label">last name: <input {...useInput(lastNameForm, 150)} /></Region>
         ))}
     </Region>;
 }
@@ -798,12 +798,12 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+        {form.render('firstName', firstNameForm => (
+            <label>first name: <input {...useInput(firstNameForm, 150)} /></label>
         ))}
 
-        {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+        {form.render('lastName', lastNameForm => (
+            <label>last name: <input {...useInput(lastNameForm, 150)} /></label>
         ))}
     </div>;
 }
@@ -831,14 +831,14 @@ function ArrayOperations(): React.ReactElement {
     const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <Region>
-        {form.renderAll('colours', form => {
+        {form.renderAll('colours', colourForm => {
 
-            const remove = useCallback(() => form.set(array.remove()), []);
-            const moveDown = useCallback(() => offsetElement(form, 1), []);
-            const moveUp = useCallback(() => offsetElement(form, -1), []);
+            const remove = useCallback(() => colourForm.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
+            const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <Region>
-                <label>colour: <input {...useInput(form, 150)} /></label>
+                <label>colour: <input {...useInput(colourForm, 150)} /></label>
 
                 <button type="button" onClick={remove}>remove</button>
                 <button type="button" onClick={moveDown}>down</button>
@@ -872,14 +872,14 @@ function MyComponent(props) {
     const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <div>
-        {form.renderAll('colours', form => {
+        {form.renderAll('colours', colourForm => {
 
-            const remove = useCallback(() => form.set(array.remove()), []);
-            const moveDown = useCallback(() => offsetElement(form, 1), []);
-            const moveUp = useCallback(() => offsetElement(form, -1), []);
+            const remove = useCallback(() => colourForm.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
+            const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <div>
-                <label>colour: <input {...useInput(form, 150)} /></label>
+                <label>colour: <input {...useInput(colourForm, 150)} /></label>
 
                 <button type="button" onClick={remove}>remove</button>
                 <button type="button" onClick={moveDown}>down</button>
@@ -907,11 +907,11 @@ function ArrayIndexes(): React.ReactElement {
     });
 
     return <Region>
-        {form.renderAll('colours', form => {
-            const colour = form.useValue();
-            const index = form.useIndex();
-            const moveDown = useCallback(() => offsetElement(form, 1), []);
-            const moveUp = useCallback(() => offsetElement(form, -1), []);
+        {form.renderAll('colours', colourForm => {
+            const colour = colourForm.useValue();
+            const index = colourForm.useIndex();
+            const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
+            const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <Region>
                 <code>Colour: {colour}, index: {index}</code>
@@ -934,11 +934,11 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.renderAll('colours', form => {
-            const colour = form.useValue();
-            const index = form.useIndex();
-            const moveDown = useCallback(() => offsetElement(form, 1), []);
-            const moveUp = useCallback(() => offsetElement(form, -1), []);
+        {form.renderAll('colours', colourForm => {
+            const colour = colourForm.useValue();
+            const index = colourForm.useIndex();
+            const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
+            const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <div>
                 <code>Colour: {colour}, index: {index}</code>
@@ -958,12 +958,12 @@ function History(): React.ReactElement {
     const form = useDendriform(() => ({name: 'Ben', age: '88'}), {history: 10});
 
     return <Region>
-        {form.render('name', form => (
-            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
+        {form.render('name', nameForm => (
+            <Region of="label">name: <input {...useInput(nameForm, 150)} /></Region>
         ))}
 
-        {form.render('age', form => (
-            <Region of="label">age: <input {...useInput(form, 150)} /></Region>
+        {form.render('age', ageForm => (
+            <Region of="label">age: <input {...useInput(ageForm, 150)} /></Region>
         ))}
 
         {form.render(form => {
@@ -983,12 +983,12 @@ function MyComponent(props) {
     const form = useDendriform(() => ({name: 'Ben'}), {history: 10});
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render('age', form => (
-            <label>age: <input {...useInput(form, 150)} /></label>
+        {form.render('age', ageForm => (
+            <label>age: <input {...useInput(ageForm, 150)} /></label>
         ))}
 
         {form.render(form => {
@@ -1116,16 +1116,16 @@ function Deriving(): React.ReactElement {
     });
 
     return <Region>
-        {form.render('firstName', form => (
-            <Region of="label">first name: <input {...useInput(form, 150)} /></Region>
+        {form.render('firstName', firstNameForm => (
+            <Region of="label">first name: <input {...useInput(firstNameForm, 150)} /></Region>
         ))}
 
-        {form.render('lastName', form => (
-            <Region of="label">last name: <input {...useInput(form, 150)} /></Region>
+        {form.render('lastName', lastNameForm => (
+            <Region of="label">last name: <input {...useInput(lastNameForm, 150)} /></Region>
         ))}
 
-        {form.render('fullName', form => (
-            <Region>full name: {form.useValue()}</Region>
+        {form.render('fullName', fullNameForm => (
+            <Region>full name: {fullNameForm.useValue()}</Region>
         ))}
 
         {form.render(form => {
@@ -1153,16 +1153,16 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+        {form.render('firstName', firstNameForm => (
+            <label>first name: <input {...useInput(firstNameForm, 150)} /></label>
         ))}
 
-        {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+        {form.render('lastName', lastNameForm => (
+            <label>last name: <input {...useInput(lastNameForm, 150)} /></label>
         ))}
 
-        {form.render('fullName', form => (
-            <code>full name: {form.useValue()}</code>
+        {form.render('fullName', fullNameForm => (
+            <code>full name: {fullNameForm.useValue()}</code>
         ))}
 
         {form.render(form => {
@@ -1196,8 +1196,8 @@ function DerivingOther(): React.ReactElement {
     });
 
     return <Region>
-        {form.render('name', form => (
-            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
+        {form.render('name', nameForm => (
+            <Region of="label">name: <input {...useInput(nameForm, 150)} /></Region>
         ))}
 
         {validState.render(form => {
@@ -1225,8 +1225,8 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
         {validState.render(form => {
@@ -1337,12 +1337,12 @@ function Sync(): React.ReactElement {
     useSync(nameForm, addressForm);
 
     return <Region>
-        {nameForm.render('name', form => (
-            <Region of="label">name: <input {...useInput(form, 150)} /></Region>
+        {nameForm.render('name', nameForm => (
+            <Region of="label">name: <input {...useInput(nameForm, 150)} /></Region>
         ))}
 
-        {addressForm.render('street', form => (
-            <Region of="label">street: <input {...useInput(form, 150)} /></Region>
+        {addressForm.render('street', streetForm => (
+            <Region of="label">street: <input {...useInput(streetForm, 150)} /></Region>
         ))}
 
         {nameForm.render(form => {
@@ -1363,12 +1363,12 @@ function MyComponent(props) {
     useSync(nameForm, addressForm);
 
     return <div>
-        {nameForm.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {nameForm.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {addressForm.render('street', form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+        {addressForm.render('street', streetForm => (
+            <label>street: <input {...useInput(streetForm, 150)} /></label>
         ))}
 
         {nameForm.render(form => {
@@ -1411,26 +1411,26 @@ function SyncDerive(): React.ReactElement {
         <fieldset>
             <legend>names</legend>
             <ul>
-                {namesForm.renderAll(form => <Region of="li">
-                    <label><input {...useInput(form, 150)} /></label>
+                {namesForm.renderAll(nameForm => <Region of="li">
+                    <label><input {...useInput(nameForm, 150)} /></label>
                 </Region>)}
             </ul>
             <button type="button" onClick={addName}>Add name</button>
         </fieldset>
 
-        {addressForm.render('street', form => (
-            <Region of="label">street: <input {...useInput(form, 150)} /></Region>
+        {addressForm.render('street', streetForm => (
+            <Region of="label">street: <input {...useInput(streetForm, 150)} /></Region>
         ))}
 
-        {addressForm.render('occupants', form => (
-            <Region of="code">occupants: {form.useValue()}</Region>
+        {addressForm.render('occupants', occupantsForm => (
+            <Region of="code">occupants: {occupantsForm.useValue()}</Region>
         ))}
 
-        {namesForm.render(form => {
-            const {canUndo, canRedo} = form.useHistory();
+        {namesForm.render(namesForm => {
+            const {canUndo, canRedo} = namesForm.useHistory();
             return <Region>
-                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={namesForm.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={namesForm.redo} disabled={!canRedo}>Redo</button>
             </Region>;
         })}
     </Region>;
@@ -1460,26 +1460,26 @@ function MyComponent(props) {
         <fieldset>
             <legend>names</legend>
             <ul>
-                {namesForm.renderAll(form => <Region of="li">
-                    <label><input {...useInput(form, 150)} /></label>
+                {namesForm.renderAll(nameForm => <Region of="li">
+                    <label><input {...useInput(nameForm, 150)} /></label>
                 </Region>)}
             </ul>
             <button type="button" onClick={addName}>Add name</button>
         </fieldset>
 
-        {addressForm.render('street', form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+        {addressForm.render('street', streetForm => (
+            <label>street: <input {...useInput(streetForm, 150)} /></label>
         ))}
 
-        {addressForm.render('occupants', form => (
-            <code>occupants: {form.useValue()}</code>
+        {addressForm.render('occupants', occupantsForm => (
+            <code>occupants: {occupantsForm.useValue()}</code>
         ))}
 
-        {namesForm.render(form => {
-            const {canUndo, canRedo} = form.useHistory();
+        {namesForm.render(namesForm => {
+            const {canUndo, canRedo} = namesForm.useHistory();
             return <>
-                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={namesForm.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={namesForm.redo} disabled={!canRedo}>Redo</button>
             </>;
         })}
     </div>;
@@ -1539,11 +1539,11 @@ type DragAndDropListProps = {
 };
 
 function DragAndDropList(props: DragAndDropListProps): React.ReactElement {
-    return props.form.renderAll(form => {
+    return props.form.renderAll(eachForm => {
 
-        const id = `${form.id}`;
-        const index = form.useIndex();
-        const remove = useCallback(() => form.set(array.remove()), []);
+        const id = `${eachForm.id}`;
+        const index = eachForm.useIndex();
+        const remove = useCallback(() => eachForm.set(array.remove()), []);
 
         return <Draggable key={id} draggableId={id} index={index}>
             {provided => <div
@@ -1552,7 +1552,7 @@ function DragAndDropList(props: DragAndDropListProps): React.ReactElement {
                 {...provided.dragHandleProps}
             >
                 <Region>
-                    <label>colour: <input {...useInput(form, 150)} /></label>
+                    <label>colour: <input {...useInput(eachForm, 150)} /></label>
                     <button type="button" onClick={remove}>remove</button>
                 </Region>
             </div>}
@@ -1605,11 +1605,11 @@ function DragAndDrop() {
 }
 
 function DragAndDropList(props) {
-    return props.form.renderAll(form => {
+    return props.form.renderAll(eachForm => {
 
-        const id = \`$\{form.id}\`;
-        const index = form.useIndex();
-        const remove = useCallback(() => form.set(array.remove()), []);
+        const id = \`$\{eachForm.id}\`;
+        const index = eachForm.useIndex();
+        const remove = useCallback(() => eachForm.set(array.remove()), []);
 
         return <Draggable key={id} draggableId={id} index={index}>
             {provided => <div
@@ -1617,7 +1617,7 @@ function DragAndDropList(props) {
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
             >
-                <label>colour: <input {...useInput(form, 150)} /></label>
+                <label>colour: <input {...useInput(eachForm, 150)} /></label>
                 <button type="button" onClick={remove}>remove</button>
             </div>}
         </Draggable>;
@@ -1676,14 +1676,14 @@ function PluginSubmitExample(): React.ReactElement {
 
     return <Region>
         <form onSubmit={onSubmit}>
-            {form.render('firstName', form => {
-                const hasChanged = form.plugins.submit.dirty.useValue();
-                return <Region of="label">first name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</Region>;
+            {form.render('firstName', firstNameForm => {
+                const hasChanged = firstNameForm.plugins.submit.dirty.useValue();
+                return <Region of="label">first name: <input {...useInput(firstNameForm, 150)} /> {hasChanged ? '*' : ''}</Region>;
             })}
 
-            {form.render('lastName', form => {
-                const hasChanged = form.plugins.submit.dirty.useValue();
-                return <Region of="label">last name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</Region>;
+            {form.render('lastName', lastNameForm => {
+                const hasChanged = lastNameForm.plugins.submit.dirty.useValue();
+                return <Region of="label">last name: <input {...useInput(lastNameForm, 150)} /> {hasChanged ? '*' : ''}</Region>;
             })}
 
             {form.render(form => {
@@ -1694,18 +1694,18 @@ function PluginSubmitExample(): React.ReactElement {
                 </Region>;
             })}
 
-            {form.plugins.submit.error.render(form => {
-                const error = form.useValue();
+            {form.plugins.submit.error.render(errorForm => {
+                const error = errorForm.useValue();
                 return <Region>
                     {error && <code>{error}</code>}
                 </Region>;
             })}
         </form>
 
-        {causeAnErrorForm.render(form => (
+        {causeAnErrorForm.render(causeAnErrorForm => (
             <Region of="label">
                 cause an error on submit
-                <input type="checkbox" {...useCheckbox(form)} />
+                <input type="checkbox" {...useCheckbox(causeAnErrorForm)} />
             </Region>
         ))}
     </Region>;
@@ -1747,14 +1747,14 @@ function PluginSubmitExample() {
 
     return <>
         <form onSubmit={onSubmit}>
-            {form.render('firstName', form => {
-                const hasChanged = form.plugins.submit.dirty.useValue();
-                return <label>first name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
+            {form.render('firstName', firstNameForm => {
+                const hasChanged = firstNameForm.plugins.submit.dirty.useValue();
+                return <label>first name: <input {...useInput(firstNameForm, 150)} /> {hasChanged ? '*' : ''}</label>;
             })}
 
-            {form.render('lastName', form => {
-                const hasChanged = form.plugins.submit.dirty.useValue();
-                return <label>last name: <input {...useInput(form, 150)} /> {hasChanged ? '*' : ''}</label>;
+            {form.render('lastName', lastNameForm => {
+                const hasChanged = lastNameForm.plugins.submit.dirty.useValue();
+                return <label>last name: <input {...useInput(lastNameForm, 150)} /> {hasChanged ? '*' : ''}</label>;
             })}
 
             {form.render(form => {
@@ -1765,16 +1765,16 @@ function PluginSubmitExample() {
                 </>;
             })}
 
-            {form.plugins.submit.error.render(form => {
-                const error = form.useValue();
+            {form.plugins.submit.error.render(errorForm => {
+                const error = errorForm.useValue();
                 return <>{error && <code>{error}</code>}</>;
             })}
         </form>
 
-        {causeAnErrorForm.render(form => (
+        {causeAnErrorForm.render(causeAnErrorForm => (
             <label>
                 cause an error on submit
-                <input type="checkbox" {...useCheckbox(form)} />
+                <input type="checkbox" {...useCheckbox(causeAnErrorForm)} />
             </label>
         ))}
     </>;
@@ -1805,8 +1805,8 @@ function Cancel(): React.ReactElement {
 
     return <Region>
 
-        {ageForm.render(form => (
-            <Region of="label">age: <code>{form.useValue()}</code></Region>
+        {ageForm.render(ageForm => (
+            <Region of="label">age: <code>{ageForm.useValue()}</code></Region>
         ))}
 
         <button type="button" onClick={setTo5}>set to 5</button>
@@ -1835,8 +1835,8 @@ function MyComponent(props) {
 
     return <div>
 
-        {ageForm.render(form => (
-            <label>age: <code>{form.useValue()}</code></label>
+        {ageForm.render(ageForm => (
+            <label>age: <code>{ageForm.useValue()}</code></label>
         ))}
 
         <button type="button" onClick={setTo5}>set to 5</button>
@@ -1936,11 +1936,11 @@ function ForeignKey(): React.ReactElement {
             <legend>colours</legend>
             {cancelMessage && <code>{cancelMessage}</code>}
             <ul>
-                {coloursForm.renderAll(form => (
+                {coloursForm.renderAll(colourForm => (
                     <Region of="li">
-                        <label>colour <input {...useInput(form, 150)} /></label>
-                        <button type="button" onClick={() => form.set(array.remove())}>remove</button>
-                        <button type="button" onClick={() => form.set(array.remove(), {force: true})}>remove with force</button>
+                        <label>colour <input {...useInput(colourForm, 150)} /></label>
+                        <button type="button" onClick={() => colourForm.set(array.remove())}>remove</button>
+                        <button type="button" onClick={() => colourForm.set(array.remove(), {force: true})}>remove with force</button>
                     </Region>
                 ))}
             </ul>
@@ -1951,8 +1951,8 @@ function ForeignKey(): React.ReactElement {
             <ul>
                 {peopleForm.renderAll(personForm => (
                     <Region of="li">
-                        {personForm.render('name', form => (
-                            <Region of="label">name <input {...useInput(form, 150)} /></Region>
+                        {personForm.render('name', nameForm => (
+                            <Region of="label">name <input {...useInput(nameForm, 150)} /></Region>
                         ))}
 
                         <fieldset>
@@ -1978,8 +1978,8 @@ function FaveColours(props: FaveColoursProps): React.ReactElement {
     const {coloursForm, personForm} = props;
     return <Region>
         <code>
-            {personForm.render('faveColours', form => (
-                <span>{JSON.stringify(Array.from(form.useValue().values()))}</span>
+            {personForm.render('faveColours', faveColoursForm => (
+                <span>{JSON.stringify(Array.from(faveColoursForm.useValue().values()))}</span>
             ))}
         </code>
         <ul>
@@ -2090,11 +2090,11 @@ function MyComponent(props) {
             <legend>colours</legend>
             {cancelMessage && <code>{cancelMessage}</code>}
             <ul>
-                {coloursForm.renderAll(form => (
+                {coloursForm.renderAll(colourForm => (
                     <li>
-                        <label>colour <input {...useInput(form, 150)} /></label>
-                        <button type="button" onClick={() => form.set(array.remove())}>remove</button>
-                        <button type="button" onClick={() => form.set(array.remove(), {force: true})}>remove with force</button>
+                        <label>colour <input {...useInput(colourForm, 150)} /></label>
+                        <button type="button" onClick={() => colourForm.set(array.remove())}>remove</button>
+                        <button type="button" onClick={() => colourForm.set(array.remove(), {force: true})}>remove with force</button>
                     </li>
                 ))}
             </ul>
@@ -2105,8 +2105,8 @@ function MyComponent(props) {
             <ul>
                 {peopleForm.renderAll(personForm => (
                     <li>
-                        {personForm.render('name', form => (
-                            <label>name <input {...useInput(form, 150)} /></label>
+                        {personForm.render('name', nameForm => (
+                            <label>name <input {...useInput(nameForm, 150)} /></label>
                         ))}
 
                         <fieldset>
@@ -2126,8 +2126,8 @@ function FaveColours(props) {
     const {coloursForm, personForm} = props;
     return <div>
         <code>
-            {personForm.render('faveColours', form => (
-                <span>{JSON.stringify(Array.from(form.useValue().values()))}</span>
+            {personForm.render('faveColours', faveColoursForm => (
+                <span>{JSON.stringify(Array.from(faveColoursForm.useValue().values()))}</span>
             ))}
         </code>
         <ul>
@@ -2519,11 +2519,11 @@ function SetTrack(): React.ReactElement {
             <legend>pets</legend>
 
             <ul>
-                {form.renderAll('pets', form => <Region of="li">
-                    {form.render('name', form => (
-                        <Region of="label">name <input {...useInput(form, 150)} /></Region>
+                {form.renderAll('pets', petForm => <Region of="li">
+                    {petForm.render('name', nameForm => (
+                        <Region of="label">name <input {...useInput(nameForm, 150)} /></Region>
                     ))}
-                    <code>(id: {form.id})</code>
+                    <code>(id: {petForm.id})</code>
                 </Region>)}
             </ul>
 
@@ -2565,11 +2565,11 @@ function MyComponent(props) {
         <fieldset>
             <legend>pets</legend>
             <ul>
-                {form.renderAll('pets', form => <li>
-                    {form.render('name', form => (
-                        <label>name <input {...useInput(form, 150)} /></label>
+                {form.renderAll('pets', petForm => <li>
+                    {petForm.render('name', nameForm => (
+                        <label>name <input {...useInput(nameForm, 150)} /></label>
                     ))}
-                    <code>(id: {form.id})</code>
+                    <code>(id: {petForm.id})</code>
                 </li>)}
             </ul>
             <button type="button" onClick={addPet}>Add pet</button>
