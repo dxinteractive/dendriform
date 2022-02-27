@@ -791,6 +791,7 @@ describe(`Dendriform`, () => {
 
             expect(barForm.value).toBe(undefined);
             expect(barForm.id).toBe('notfound');
+            expect(barForm._readonly).toBe(true);
         });
 
         test(`should get deleted child value`, () => {
@@ -803,6 +804,7 @@ describe(`Dendriform`, () => {
             form.set([[[123]]]);
 
             expect(elemForm.branch(0).value).toBe(undefined);
+            expect(elemForm.branch(0)._readonly).toBe(true);
             expect(form.branch([0,0,0]).value).toBe(123);
         });
     });

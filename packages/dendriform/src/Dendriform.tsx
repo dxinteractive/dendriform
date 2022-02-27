@@ -316,8 +316,10 @@ export class Core<C,P extends Plugins> {
             });
         }
 
-        const id = node ? node.id : 'notfound';
-        return this.getFormById(id, readonly);
+        if(!node) {
+            return this.getFormById('notfound', true);
+        }
+        return this.getFormById(node.id, readonly);
     };
 
     getFormById = (id: string, readonly: boolean): Dendriform<unknown,P> => {
