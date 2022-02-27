@@ -2133,6 +2133,43 @@ describe(`Dendriform`, () => {
         });
 
         describe(`derive between forms`, () => {
+            test(`should derive in a circle without infinite looping`, () => {
+
+                const form = new Dendriform({
+                    val: 10
+                });
+
+                const formString = new Dendriform({
+                    val: ''
+                });
+
+                form.onDerive(({val}) => {
+                    formString.set({
+                        val: `${val}`
+                    });
+                });
+
+                formString.onDerive(({val}) => {
+                    form.set({
+                        val: Number(val)
+                    });
+                });
+
+                form.set(draft => {
+                    draft.val = 20;
+                });
+
+                expect(form.value.val).toBe(20);
+                expect(formString.value.val).toBe('20');
+
+                formString.set(draft => {
+                    draft.val = '30';
+                });
+
+                expect(form.value.val).toBe(30);
+                expect(formString.value.val).toBe('30');
+            });
+
             test(`should undo and redo, second form is always derived`, () => {
 
                 // could be useful for derived data such as validation
