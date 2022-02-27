@@ -115,7 +115,7 @@ Dendriform is kind of like a very advanced `useState()` hook that:
 - Can produce diffs of changes
   - see [diffing changes](#diffing-changes)
 - Can automatically derive data in other forms
-  - see [synchronising forms](#synchronising-forms)
+  - see [deriving data](#deriving-data)
 - Can enforce data integrity and prevent invalid states
   - see [cancel changes based on constraints](#cancel-changes-based-on-constraints)
 - Comes with demos and recipes for building forms and data-editing user interfaces
