@@ -887,10 +887,10 @@ describe(`Dendriform`, () => {
             expect(forms.map(f => f.value)).toEqual([0,1]);
         });
 
-        test(`should error if getting a basic type`, () => {
+        test(`should NOT error if getting a basic type`, () => {
             const form = new Dendriform(123);
 
-            expect(() => form.branchAll()).toThrow('branchAll() can only be called on forms containing an array, object, es6 map or es6 set');
+            expect(form.branchAll()).toEqual([]);
         });
 
         // TODO what about misses?
@@ -1176,11 +1176,7 @@ describe(`Dendriform`, () => {
 
         describe(`rendering`, () => {
 
-            test(`should error if rendering a basic type`, () => {
-                const consoleError = console.error;
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                console.error = () => {};
-
+            test(`should NOT error if rendering a basic type`, () => {
                 const form = new Dendriform('4');
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
@@ -1189,9 +1185,10 @@ describe(`Dendriform`, () => {
                     return props.form.renderAll(renderer);
                 };
 
-                expect(() => mount(<MyComponent form={form} foo={1} />)).toThrow('renderAll() can only be called on forms containing an array, object, es6 map or es6 set');
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
 
-                console.error = consoleError;
+                expect(renderer).toHaveBeenCalledTimes(0);
+                expect(wrapper.find('.branch').length).toBe(0);
             });
 
             test(`should renderAll no levels and return React element`, () => {

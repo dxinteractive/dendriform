@@ -26,7 +26,6 @@ import produce, {isDraft, original} from 'immer';
 import {producePatches, Patch} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {die} from './errors';
-import type {ErrorKey} from './errors';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches, getNode} from './Nodes';
 import type {Nodes, NodeAny, NewNodeCreator} from './Nodes';
 import type {Plugin} from './Plugin';
@@ -716,11 +715,11 @@ const Branch = React.memo(
 const branchable = (thing: any) => getType(thing) !== BASIC;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const entriesOrDie = (thing: any, error: ErrorKey) => {
+const entriesOrNone = (thing: any): any[] => {
     try {
         return entries(thing);
     } catch(e) {
-        die(error);
+        return [];
     }
 };
 
@@ -967,7 +966,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     branchAll(pathOrKey: any): any {
         const got = this.branch(pathOrKey);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return entriesOrDie(got.value, 2).map(([key]) => got.branch(key as any));
+        return entriesOrNone(got.value).map(([key]) => got.branch(key as any));
     }
 
     render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4],P>>, deps?: unknown[]): React.ReactElement;
@@ -1002,7 +1001,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
 
         const containerRenderer = (): React.ReactElement[] => {
             const value = form.useValue();
-            return entriesOrDie(value, 3).map(([key]): React.ReactElement => {
+            return entriesOrNone(value).map(([key]): React.ReactElement => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const child = form.branch(key as any);
                 return <Branch key={child.id} renderer={() => renderer(child)} deps={deps} />;
