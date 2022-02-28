@@ -1,10 +1,10 @@
-const all = `can only be called on forms containing an array, object, es6 map or es6 set`;
+// const all = `can only be called on forms containing an array, object, es6 map or es6 set`;
 
 const errors = {
     0: (id: number) => `Cannot find path of node ${id}`,
     // 1: (path: unknown[]) => `Cannot find node at path ${path.map(a => JSON.stringify(a)).join('","')}`,
-    2: `branchAll() ${all}`,
-    3: `renderAll() ${all}`,
+    // 2: `branchAll() ${all}`,
+    // 3: `renderAll() ${all}`,
     4: (path: unknown[]) => `useIndex() can only be called on array element forms, can't be called at path ${path.map(a => JSON.stringify(a)).join('","')}`,
     5: `sync() forms must have the same maximum number of history items configured`,
     6: (msg: string) => `onDerive() callback must not throw errors on first call. Threw: ${msg}`,

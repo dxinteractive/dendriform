@@ -138,8 +138,9 @@ npm install --save dendriform
 - [Creation](#creation)
 - [Values](#values)
 - [Branching](#branching)
+- [Branching multiple children](#branching-multiple-children)
 - [Rendering](#rendering)
-- [Rendering arrays](#rendering-arrays)
+- [Rendering arrays and multiple children](#rendering-arrays-and-multiple-children)
 - [Setting data](#setting-data)
 - [Read-only forms](#readonly-forms)
 - [Updating from props](#updating-from-props)
@@ -274,14 +275,28 @@ function MyComponent(props) {
 
 [Demo](http://dendriform.xyz#branch)
 
-A form containing a non-branchable value such as a string, number, undefined or null will throw an error if `.branch()` is called on it. You can check if a form is branchable using `.branchable`:
+You can check if a form is branchable using `.branchable`. On a form containing a non-branchable value such as a string, number, undefined or null it will return false, or if the form is branchable it will return true.
 
 ```js
 new Dendriform(123).branchable; // returns false
 new Dendriform({name: 'Bill'}).branchable; // returns true
 ```
 
+You can still call `.branch()` on non-branchable forms - the returned form will be read-only and contain a value of undefined. While this may seem overly loose, it is to prevent the proliferation of safe-guarding code in userland, and is useful for situations where React components that render branched forms are still briefly mounted after a parent values changes from a branchable type to a non-branchable type.
+
+### Branching multiple children
+
 The `.branchAll()` methods can be used to branch all children at once, returning an array of branched forms.
+
+```js
+const form = new Dendriform(['a','b','c']);
+
+const elementForms = form.branchAll();
+// elementForms.length is 3
+// elementForms[0].value is 'a'
+```
+
+You can still call `.branchAll()` on non-branchable or non-iterable forms - it will return an empty array in this case.
 
 ### Rendering
 
@@ -404,7 +419,9 @@ function MyComponent(props) {
 
 [Demo](http://dendriform.xyz#renderdeps)
 
-### Rendering arrays
+You can still call `.render()` on non-branchable forms - the returned form will be read-only and contain a value of undefined. While this may seem overly loose, it is to prevent the proliferation of safe-guarding code in userland, and is useful for situations where React components that render branched forms are still briefly mounted after a parent values changes from a branchable type to a non-branchable type.
+
+### Rendering arrays and multiple children
 
 The `.renderAll()` function works in the same way as `.render()`, but repeats for all elements in an array. React keying is taken care of for you.
 
@@ -462,6 +479,8 @@ const petName = form.branch(['pets', 0, 'name']);
 ```
 
 Like with `.render()`, the `.renderAll()` function can also additionally accept an array of dependencies that will cause it to update in response to prop changes.
+
+You can still call `.renderAll()` on non-branchable or non-iterable forms - it will return an empty array in this case.
 
 ### Setting data
 
