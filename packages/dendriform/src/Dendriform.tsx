@@ -26,7 +26,6 @@ import produce, {isDraft, original} from 'immer';
 import {producePatches, Patch} from './producePatches';
 import type {ToProduce} from './producePatches';
 import {die} from './errors';
-import type {ErrorKey} from './errors';
 import {newNode, addNode, getPath, getNodeByPath, produceNodePatches, getNode} from './Nodes';
 import type {Nodes, NodeAny, NewNodeCreator} from './Nodes';
 import type {Plugin} from './Plugin';
@@ -106,13 +105,29 @@ export type DeriveCallbackDetails<V> = InternalMetaDetails & {
 };
 export type DeriveCallback<V> = (newValue: V, details: DeriveCallbackDetails<V>) => void;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type DeriveCallbackRef = [DeriveCallback<any>];
+export type DeriveCallbackRef = [string, DeriveCallback<any>];
 
 export type CancelCallback = (message: string) => void;
 
 //
+// chunks - allowing other files to register chunks of functionality for Dendriform to use
+//
+
+export type ExecuteHistorySync = (changedFormSet: Set<AnyCore>, offset?: number) => void;
+
+type ChunkRegistry = {
+    executeHistorySync?: ExecuteHistorySync;
+};
+
+export const _chunkRegistry: ChunkRegistry = {};
+
+
+//
 // core
 //
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyCore = Core<unknown,any>;
 
 export type Plugins = {[key: string]: Plugin}|undefined;
 
@@ -195,7 +210,7 @@ export class Core<C,P extends Plugins> {
     cancelCallbacks = new Set<CancelCallback>();
     // set of forms currently hvaing their set() functions called
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    static changingForms = new Set<Core<unknown,any>>();
+    static changingForms = new Set<AnyCore>();
     // debounce ids and count numbers to identify when each id has debounced
     debounceMap = new Map<string,number>();
 
@@ -265,10 +280,18 @@ export class Core<C,P extends Plugins> {
         return path;
     };
 
+
     getValue = (id: string): unknown => {
         const path = this.getPath(id);
         if(!path) return undefined;
         return getIn(this.state.value, path);
+    };
+
+    getRevertValue = (id: string): unknown => {
+        const {stateRevert} = this;
+        const path = this.getPath(id);
+        if(!path || !stateRevert) return undefined;
+        return getIn(stateRevert.value, path);
     };
 
     getKey = (id: string): unknown => {
@@ -310,8 +333,10 @@ export class Core<C,P extends Plugins> {
             });
         }
 
-        const id = node ? node.id : 'notfound';
-        return this.getFormById(id, readonly);
+        if(!node) {
+            return this.getFormById('notfound', true);
+        }
+        return this.getFormById(node.id, readonly);
     };
 
     getFormById = (id: string, readonly: boolean): Dendriform<unknown,P> => {
@@ -350,12 +375,13 @@ export class Core<C,P extends Plugins> {
 
             // call all change callbacks involved in this form and clear revert points
             if(originator) {
+                const changedForms = Array.from(Core.changingForms.values());
+
                 // clear the changing forms set before calling callbacks
                 // so any calls to .set in callbacks start a new change
-                const forms = Array.from(Core.changingForms.values());
                 this.finaliseChange();
 
-                forms.forEach(form => form.callAllChangeCallbacks(internalMeta));
+                changedForms.forEach(form => form.callAllChangeCallbacks(internalMeta));
             }
 
         } catch(e) {
@@ -451,6 +477,9 @@ export class Core<C,P extends Plugins> {
             // e.g. when sync() deliberately adds empty history items
             if(historyItem.do.value.length > 0) {
                 this.callAllDeriveCallbacks(internalMeta);
+
+                // look through historySyncGroups to find if any forms need blank history items added
+                _chunkRegistry.executeHistorySync?.(Core.changingForms);
             }
         }, internalMeta);
     };
@@ -492,24 +521,27 @@ export class Core<C,P extends Plugins> {
         if(this.internalState.deriving) return;
         this.internalState.deriving = true;
 
-        const [deriveCallback] = deriveCallbackRef;
+        const [id, deriveCallback] = deriveCallbackRef;
         const patches = this.internalState.changeBuffer ?? new HistoryItem();
+
+        const nextValue = this.getValue(id);
+        const prevValue = this.getRevertValue(id);
 
         const details = {
             ...internalMeta,
             patches,
             prev: {
-                value: this.stateRevert?.value,
+                value: prevValue,
                 nodes: this.stateRevert?.nodes
             },
             next: {
-                value: this.state.value,
+                value: nextValue,
                 nodes: this.state.nodes
             },
-            id: '0'
+            id
         };
 
-        deriveCallback(this.state.value, details);
+        deriveCallback(nextValue, details);
         this.internalState.deriving = false;
     };
 
@@ -631,6 +663,9 @@ export class Core<C,P extends Plugins> {
 
             // call derive callbacks
             this.callAllDeriveCallbacks(internalMeta);
+
+            // look through historySyncGroups to find if any forms need their history updated
+            _chunkRegistry.executeHistorySync?.(Core.changingForms, offset);
         }, internalMeta);
 
         this.internalState.going = false;
@@ -706,11 +741,11 @@ const Branch = React.memo(
 const branchable = (thing: any) => getType(thing) !== BASIC;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const entriesOrDie = (thing: any, error: ErrorKey) => {
+const entriesOrNone = (thing: any): any[] => {
     try {
         return entries(thing);
     } catch(e) {
-        die(error);
+        return [];
     }
 };
 
@@ -850,7 +885,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     };
 
     onDerive(callback: DeriveCallback<V>): (() => void) {
-        const deriveCallback: DeriveCallbackRef = [callback];
+        const deriveCallback: DeriveCallbackRef = [this.id, callback];
         this.core.deriveCallbackRefs.add(deriveCallback);
 
         // call immediately, and dont add to history
@@ -973,7 +1008,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     branchAll(pathOrKey: any): any {
         const got = this.branch(pathOrKey);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return entriesOrDie(got.value, 2).map(([key]) => got.branch(key as any));
+        return entriesOrNone(got.value).map(([key]) => got.branch(key as any));
     }
 
     render<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<Val<Val<Val<V,K1>,K2>,K3>[K4],P>>, deps?: unknown[]): React.ReactElement;
@@ -1008,7 +1043,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
 
         const containerRenderer = (): React.ReactElement[] => {
             const value = form.useValue();
-            return entriesOrDie(value, 3).map(([key]): React.ReactElement => {
+            return entriesOrNone(value).map(([key]): React.ReactElement => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const child = form.branch(key as any);
                 return <Branch key={child.id} renderer={() => renderer(child)} deps={deps} />;

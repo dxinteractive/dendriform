@@ -52,20 +52,20 @@ function MyComponent(props) {
     //   these each add a 150ms debounce
     
     return <div>
-        {form.render('name', form => (
-            <label>name <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render(['address', 'street'], street => (
-            <label>street <input {...useInput(street, 150)} /></label>
+        {form.render(['address', 'street'], streetForm => (
+            <label>street <input {...useInput(streetForm, 150)} /></label>
         ))}
 
         <fieldset>
             <legend>pets</legend>
             <ul>
-                {form.renderAll('pets', form => <li>
-                    {form.render('name', form => (
-                        <label>name <input {...useInput(form, 150)} /></label>
+                {form.renderAll('pets', petForm => <li>
+                    {petForm.render('name', nameForm => (
+                        <label>name <input {...useInput(nameForm, 150)} /></label>
                     ))}
                 </li>)}
             </ul>
@@ -115,7 +115,7 @@ Dendriform is kind of like a very advanced `useState()` hook that:
 - Can produce diffs of changes
   - see [diffing changes](#diffing-changes)
 - Can automatically derive data in other forms
-  - see [synchronising forms](#synchronising-forms)
+  - see [deriving data](#deriving-data)
 - Can enforce data integrity and prevent invalid states
   - see [cancel changes based on constraints](#cancel-changes-based-on-constraints)
 - Comes with demos and recipes for building forms and data-editing user interfaces
@@ -138,8 +138,9 @@ npm install --save dendriform
 - [Creation](#creation)
 - [Values](#values)
 - [Branching](#branching)
+- [Branching multiple children](#branching-multiple-children)
 - [Rendering](#rendering)
-- [Rendering arrays](#rendering-arrays)
+- [Rendering arrays and multiple children](#rendering-arrays-and-multiple-children)
 - [Setting data](#setting-data)
 - [Read-only forms](#readonly-forms)
 - [Updating from props](#updating-from-props)
@@ -161,7 +162,7 @@ Advanced usage
 
 - [Diffing changes](#diffing-changes)
 - [Deriving data](#deriving-data)
-- [Synchronising forms](#synchronising-forms)
+- [Synchronising form history](#synchronising-form-history)
 - [Cancel changes based on constraints](#cancel-changes-based-on-constraints)
 - [Lazy derive](#lazy-derive)
 
@@ -274,14 +275,28 @@ function MyComponent(props) {
 
 [Demo](http://dendriform.xyz#branch)
 
-A form containing a non-branchable value such as a string, number, undefined or null will throw an error if `.branch()` is called on it. You can check if a form is branchable using `.branchable`:
+You can check if a form is branchable using `.branchable`. On a form containing a non-branchable value such as a string, number, undefined or null it will return false, or if the form is branchable it will return true.
 
 ```js
 new Dendriform(123).branchable; // returns false
 new Dendriform({name: 'Bill'}).branchable; // returns true
 ```
 
+You can still call `.branch()` on non-branchable forms - the returned form will be read-only and contain a value of undefined. While this may seem overly loose, it is to prevent the proliferation of safe-guarding code in userland, and is useful for situations where React components that render branched forms are still briefly mounted after a parent values changes from a branchable type to a non-branchable type.
+
+### Branching multiple children
+
 The `.branchAll()` methods can be used to branch all children at once, returning an array of branched forms.
+
+```js
+const form = new Dendriform(['a','b','c']);
+
+const elementForms = form.branchAll();
+// elementForms.length is 3
+// elementForms[0].value is 'a'
+```
+
+You can still call `.branchAll()` on non-branchable or non-iterable forms - it will return an empty array in this case.
 
 ### Rendering
 
@@ -303,13 +318,13 @@ function MyComponent(props) {
     const form = useDendriform({name: 'Ben'});
 
     return <div>
-        {form.render('name', form => {
+        {form.render('name', nameForm => {
             // this component will update whenever 'name' changes,
             // and only because the useValue() hook is used.
             // the useValue() hook tells this component
             // to opt-in to 'name' changes
 
-            const name = form.useValue();
+            const name = nameForm.useValue();
             return <div>My name is {name}</div>;
         })}
     </div>;
@@ -339,8 +354,8 @@ function MyComponent(props) {
 The `form` passed into the `render()` callback is provided just for convenience of writing less code while branching and rendering. The following examples are equivalent. You can use whichever suits:
 
 ```js
-form.render('name', form => {
-    const name = form.useValue();
+form.render('name', nameForm => {
+    const name = nameForm.useValue();
     return <div>My name is {name}</div>;
 });
 
@@ -349,7 +364,7 @@ form.render(form => {
     return <div>My name is {name}</div>;
 });
 
-form.render('name', form => <div>My name is {form.useValue()}</div>);
+form.render('name', nameForm => <div>My name is {nameForm.useValue()}</div>);
 
 form.render(() => {
     const name = form.branch('name').useValue();
@@ -394,8 +409,8 @@ function MyComponent(props) {
     const [className] = useState('darkMode');
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             return <div className={className}>My name is {name}</div>;
         }, [className])}
     </div>;
@@ -404,7 +419,9 @@ function MyComponent(props) {
 
 [Demo](http://dendriform.xyz#renderdeps)
 
-### Rendering arrays
+You can still call `.render()` on non-branchable forms - the returned form will be read-only and contain a value of undefined. While this may seem overly loose, it is to prevent the proliferation of safe-guarding code in userland, and is useful for situations where React components that render branched forms are still briefly mounted after a parent values changes from a branchable type to a non-branchable type.
+
+### Rendering arrays and multiple children
 
 The `.renderAll()` function works in the same way as `.render()`, but repeats for all elements in an array. React keying is taken care of for you.
 
@@ -417,8 +434,8 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.renderAll('colours', form => {
-            const colour = form.useValue();
+        {form.renderAll('colours', colourForm => {
+            const colour = colourForm.useValue();
             return <div>Colour: {colour}</div>;
         })}
     </div>;
@@ -438,9 +455,9 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.renderAll('colours', form => {
-            const colour = form.useValue();
-            const index = form.useIndex();
+        {form.renderAll('colours', colourForm => {
+            const colour = colourForm.useValue();
+            const index = colourForm.useIndex();
 
             return <div>Colour: {colour}, index: {index}</div>;
         })}
@@ -462,6 +479,8 @@ const petName = form.branch(['pets', 0, 'name']);
 ```
 
 Like with `.render()`, the `.renderAll()` function can also additionally accept an array of dependencies that will cause it to update in response to prop changes.
+
+You can still call `.renderAll()` on non-branchable or non-iterable forms - it will return an empty array in this case.
 
 ### Setting data
 
@@ -500,10 +519,10 @@ function MyComponent(props) {
     const form = useDendriform({name: 'Ben', age: 30});
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             const setToBill = useCallback(() => {
-                form.set('Bill');
+                nameForm.set('Bill');
             }, []);
 
             return <div>
@@ -531,8 +550,8 @@ function MyComponent(props) {
     }, []);
 
     return <div>
-        {form.render('count', form => {
-            const count = form.useValue();
+        {form.render('count', countForm => {
+            const count = countForm.useValue();
             return <div>Count: {count}</div>;
         })}
 
@@ -617,8 +636,8 @@ function MyComponent(props) {
     );
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             return <div>Name: {name}</div>;
         })}
     </div>;
@@ -644,8 +663,8 @@ function MyComponent(props) {
     lastNameFromProps.current = nameFromProps;
 
     return <div>
-        {form.render('name', form => {
-            const name = form.useValue();
+        {form.render('name', nameForm => {
+            const name = nameForm.useValue();
             return <div>Name: {name}</div>;
         })}
     </div>;
@@ -788,14 +807,14 @@ function MyComponent(props) {
     }));
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {form.render('fruit', form => (
+        {form.render('fruit', fruitForm => (
             <label>
                 select:
-                <select {...useInput(form)}>
+                <select {...useInput(fruitForm)}>
                     <option value="grapefruit">Grapefruit</option>
                     <option value="lime">Lime</option>
                     <option value="coconut">Coconut</option>
@@ -804,15 +823,15 @@ function MyComponent(props) {
             </label>
         ))}
 
-        {form.render('canSwim', form => (
+        {form.render('canSwim', canSwimForm => (
             <label>
                 can you swim?
-                <input type="checkbox" {...useCheckbox(form)} />
+                <input type="checkbox" {...useCheckbox(canSwimForm)} />
             </label>
         ))}
 
-        {form.render('comment', form => (
-            <label>comment: <textarea {...useInput(form)} /></label>
+        {form.render('comment', commentForm => (
+            <label>comment: <textarea {...useInput(commentForm)} /></label>
         ))}
     </div>;
 };
@@ -900,12 +919,12 @@ function MyComponent(props) {
     }, []);
 
     return <div>
-        {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+        {form.render('firstName', firstNameForm => (
+            <label>first name: <input {...useInput(firstNameForm, 150)} /></label>
         ))}
 
-        {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+        {form.render('lastName', lastNameForm => (
+            <label>last name: <input {...useInput(lastNameForm, 150)} /></label>
         ))}
     </div>;
 };
@@ -930,12 +949,12 @@ function MyComponent(props) {
     });
 
     return <div>
-        {form.render('firstName', form => (
-            <label>first name: <input {...useInput(form, 150)} /></label>
+        {form.render('firstName', firstNameForm => (
+            <label>first name: <input {...useInput(firstNameForm, 150)} /></label>
         ))}
 
-        {form.render('lastName', form => (
-            <label>last name: <input {...useInput(form, 150)} /></label>
+        {form.render('lastName', lastNameForm => (
+            <label>last name: <input {...useInput(lastNameForm, 150)} /></label>
         ))}
     </div>;
 }
@@ -962,7 +981,7 @@ The detail object contains:
 
 #### onChange vs onDerive
 
-The `onChange` and `onDerive` functions intially might appear to be quite similar, but they have a few key differences.
+The `onChange` and `onDerive` functions may initially appear to be very similar, but they have a few key differences.
 
 - `onDerive` is called once at initial call and every change afterward; `onChange` is called only at every change afterward.
 - `onDerive` is called *during* a change, so the data that it is called with may not be the same as the data after the change is complete; `onChange` is called *after* a change and all deriving is complete, so it only ever receives the "final" data.
@@ -995,14 +1014,14 @@ function MyComponent(props) {
     const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <div>
-        {form.renderAll('colours', form => {
+        {form.renderAll('colours', colourForm => {
 
-            const remove = useCallback(() => form.set(array.remove()), []);
-            const moveDown = useCallback(() => offsetElement(form, 1), []);
-            const moveUp = useCallback(() => offsetElement(form, -1), []);
+            const remove = useCallback(() => colourForm.set(array.remove()), []);
+            const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
+            const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <div>
-                <label>colour: <input {...useInput(form, 150)} /></label>
+                <label>colour: <input {...useInput(colourForm, 150)} /></label>
 
                 <button onClick={remove}>remove</button>
                 <button onClick={moveDown}>down</button>
@@ -1045,8 +1064,8 @@ function MyComponent(props) {
     const form = useDendriform(() => ({name: 'Ben'}), {history: 100});
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
         {form.render(form => {
@@ -1080,8 +1099,8 @@ function MyComponent(props) {
     const form = useDendriform(() => ({name: 'Ben'}), {history: 100});
 
     return <div>
-        {form.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
         {form.render(form => {
@@ -1223,11 +1242,11 @@ function DragAndDrop() {
 }
 
 function DragAndDropList(props) {
-    return props.form.renderAll(form => {
+    return props.form.renderAll(eachForm => {
 
-        const id = \`$\{form.id}\`;
-        const index = form.useIndex();
-        const remove = useCallback(() => form.set(array.remove()), []);
+        const id = \`$\{eachForm.id}\`;
+        const index = eachForm.useIndex();
+        const remove = useCallback(() => eachForm.set(array.remove()), []);
 
         return <Draggable key={id} draggableId={id} index={index}>
             {provided => <div
@@ -1235,7 +1254,7 @@ function DragAndDropList(props) {
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
             >
-                <label>colour: <input {...useInput(form, 150)} /></label>
+                <label>colour: <input {...useInput(eachForm, 150)} /></label>
                 <button onClick={remove}>remove</button>
             </div>}
         </Draggable>;
@@ -1451,7 +1470,7 @@ The detail object contains:
 
 #### onChange vs onDerive
 
-The `onChange` and `onDerive` functions intially might appear to be quite similar, but they have a few key differences.
+The `onChange` and `onDerive` functions may initially appear to be very similar, but they have a few key differences.
 
 - `onDerive` is called once at initial call and every change afterward; `onChange` is called only at every change afterward.
 - `onDerive` is called *during* a change, so the data that it is called with may not be the same as the data after the change is complete; `onChange` is called *after* a change and all deriving is complete, so it only ever receives the "final" data.
@@ -1459,78 +1478,110 @@ The `onChange` and `onDerive` functions intially might appear to be quite simila
 
 If you always need one form to contain data corresponding to another form's data, use `onDerive`. If you want to fire side effects whenever a change has completed successfully, use `onChange`.
 
-### Synchronising forms
+#### Two-way deriving
 
-You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
-
-Synchronised forms must have the same maximum number of history items configured.
+You can also derive in both directions. Here a `numberForm` and a `stringForm` are created, and changes to one are derived into the other without causing an infinite loop.
 
 ```js
-import {sync} from 'dendriform';
+const numberForm = new Dendriform(10);
+const stringForm = new Dendriform('');
+
+// add first deriver
+numberForm.onDerive(value => {
+    stringForm.set(`${value}`);
+});
+
+// at this point stringForm.value is now '10'
+
+// add second deriver
+stringForm.onDerive(({val}) => {
+    numberForm.set(Number(val));
+});
+
+// now set number, string will derive
+numberForm.set(20);
+// numberForm.value === 20
+// stringForm.value === '20'
+
+// now set string, number will derive
+stringForm.set('30');
+// numberForm.value === 30
+// stringForm.value === '30'
+```
+
+[Demo](http://dendriform.xyz#derivetwoway)
+
+### Synchronising form history
+
+You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` on one will also undo the changes that have occurred in multiple forms. The `syncHistory` utility can do this.
+
+Synchronised forms must have the same maximum number of history items configured, and `syncHistory` must be called before any of the affected forms have any changes made to them.
+
+```js
+import {syncHistory} from 'dendriform';
 
 const nameForm = new Dendriform({name: 'Bill'}, {history: 100});
 const addressForm = new Dendriform({street: 'Cool St'}, {history: 100});
 
-const unsync = sync(nameForm, addressForm);
+syncHistory(nameForm, addressForm);
 
 // if nameForm.undo() is called, addressForm.undo() is also called, and vice versa
 // if nameForm.redo() is called, addressForm.redo() is also called, and vice versa
 // if nameForm.go() is called, addressForm.go() is also called, and vice versa
+```
 
-// call unsync() to unsynchronise the forms
+Multiple forms can be synced together through multiple calls fo `syncHistory`, so it's possible to append forms to a groups of already-synchronised forms.
+
+```js
+import {syncHistory} from 'dendriform';
+
+const nameForm = new Dendriform('Noof', {history: 100});
+const addressForm = new Dendriform('12 Foo St', {history: 100});
+const suburbForm = new Dendriform('Suburbtown', {history: 100});
+
+syncHistory(nameForm, addressForm, suburbForm);
+
+// later, but before any changes are made to any affected forms, other forms can be synchronised
+
+const colourForm = new Dendriform('Blue', {history: 100});
+
+syncHistory(suburbForm, colourForm);
+
+// now nameForm, addressForm, suburbForm and colourForm will be synchronised through history
 ```
 
 [Demo](http://dendriform.xyz#sync)
 
-Inside of a React component you can use the `useSync()` hook to achieve the same result.
+Inside of a React component you can use the `useHistorySync()` hook to achieve the same result.
 
 ```js
-import {useSync} from 'dendriform';
+import {useHistorySync} from 'dendriform';
 
 function MyComponent(props) {
-    const nameForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
+    const personForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
     const addressForm = useDendriform(() => ({street: 'Cool St'}), {history: 100});
 
-    useSync(nameForm, addressForm);
+    useHistorySync(personForm, addressForm);
 
     return <div>
-        {nameForm.render('name', form => (
-            <label>name: <input {...useInput(form, 150)} /></label>
+        {personForm.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
         ))}
 
-        {addressForm.render('street', form => (
-            <label>street: <input {...useInput(form, 150)} /></label>
+        {addressForm.render('street', streetForm => (
+            <label>street: <input {...useInput(streetForm, 150)} /></label>
         ))}
 
-        {nameForm.render(form => {
-            const {canUndo, canRedo} = form.useHistory();
+        {personForm.render(personForm => {
+            const {canUndo, canRedo} = personForm.useHistory();
             return <div>
-                <button onClick={form.undo} disabled={!canUndo}>Undo</button>
-                <button onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button onClick={personForm.undo} disabled={!canUndo}>Undo</button>
+                <button onClick={personForm.redo} disabled={!canRedo}>Redo</button>
             </div>;
         })}
     </div>;
 }
 ```
-
-The `sync()` function can also accept a deriver to derive data in one direction. This has the effect of caching each derived form state in history, and calling undo and redo will just restore the relevant derived data at that point in history.
-
-```js
-import {sync} from 'dendriform';
-
-const namesForm = new Dendriform(['Bill', 'Ben', 'Bob'], {history: 100});
-
-const addressForm = new Dendriform({
-    street: 'Cool St',
-    occupants: 0
-}, {history: 100});
-
-sync(nameForm, addressForm, names => {
-    addressForm.branch('occupants').set(names.length);
-});
-```
-
-[Demo](http://dendriform.xyz#syncderive)
 
 ### Cancel changes based on constraints
 
@@ -1589,6 +1640,8 @@ The cancel feature can be used to set up data integrity constraints between form
 [Demo](http://dendriform.xyz#foreign-key)
 
 ### Lazy derive
+
+**Warning:** *the {LazyDerive} API is experimental and may be replaced or removed in future.*
 
 The LazyDerive class can be used when derivations are heavy or asynchronous, and it makes more sense to only perform these derivations lazily, i.e. when something asks for the derived data. The derivation is cached until any of its dependencies change, at which point the cache is cleared. If it has any current subscribers using `lazyDeriver.onChange()` or `lazyDeriver.useValue()` then a new derivation will start immediately.
 

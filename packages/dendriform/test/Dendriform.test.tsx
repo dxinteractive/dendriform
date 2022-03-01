@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable, cancel, Plugin} from '../src/index';
+import {useDendriform, Dendriform, historySync, useHistorySync, noChange, sync, useSync, immerable, cancel, Plugin} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 import {BASIC, OBJECT, ARRAY} from 'dendriform-immer-patch-optimiser';
 
@@ -533,21 +533,123 @@ describe(`Dendriform`, () => {
             const form = new Dendriform(123, {history: 100});
 
             form.set(456);
-            // form.core.flush();
             form.set(noChange);
-            // form.core.flush();
 
             expect(form.value).toBe(456);
 
             form.undo();
-            // form.core.flush();
 
             expect(form.value).toBe(456);
 
             form.undo();
-            // form.core.flush();
 
             expect(form.value).toBe(123);
+        });
+
+        describe(`historySync`, () => {
+
+            test(`should allow forms to sync`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 100});
+                
+                historySync(formA, formB);
+
+                formA.set(456);
+
+                expect(formA.core.state.historyIndex).toBe(1);
+                expect(formA.value).toBe(456);
+                expect(formB.core.state.historyIndex).toBe(1);
+                expect(formB.value).toBe(123);
+                expect(formC.core.state.historyIndex).toBe(0);
+                expect(formC.value).toBe(123);
+
+                // undo with one form, expect other form to also undo
+                formA.undo();
+
+                expect(formA.core.state.historyIndex).toBe(0);
+                expect(formA.value).toBe(123);
+                expect(formB.core.state.historyIndex).toBe(0);
+                expect(formB.value).toBe(123);
+                expect(formC.core.state.historyIndex).toBe(0);
+                expect(formC.value).toBe(123);
+
+                // redo with other form, expect other form to also redo
+                formB.redo();
+
+                expect(formA.core.state.historyIndex).toBe(1);
+                expect(formA.value).toBe(456);
+                expect(formB.core.state.historyIndex).toBe(1);
+                expect(formB.value).toBe(123);
+                expect(formC.core.state.historyIndex).toBe(0);
+                expect(formC.value).toBe(123);
+            });
+
+            test(`should join sync groups together`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 100});
+                const formD = new Dendriform(123, {history: 100});
+                const formE = new Dendriform(123, {history: 100});
+                const formF = new Dendriform(123, {history: 100});
+                
+                historySync(formA, formB);
+                historySync(formC, formD);
+                historySync(formC, formB);
+                historySync(formE, formF);
+
+                formD.set(456);
+
+                expect(formA.core.state.historyIndex).toBe(1);
+                expect(formB.core.state.historyIndex).toBe(1);
+                expect(formC.core.state.historyIndex).toBe(1);
+                expect(formD.core.state.historyIndex).toBe(1);
+                expect(formE.core.state.historyIndex).toBe(0);
+                expect(formF.core.state.historyIndex).toBe(0);
+            });
+
+            test(`should error if passed mismatched history sizes`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 200});
+                
+                expect(() => historySync(formA, formB, formC)).toThrow('[Dendriform] All syncHistory() forms must each have a matching non-zero number of history items configured, e.g. {history: 10}');
+            });
+
+            test(`should error if passed zero history sizes`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123);
+                
+                expect(() => historySync(formA, formB)).toThrow('[Dendriform] All syncHistory() forms must each have a matching non-zero number of history items configured, e.g. {history: 10}');
+            });
+
+            test(`should error if any form has already changed`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 100});
+                formC.set(456);
+                
+                expect(() => historySync(formA, formB, formC)).toThrow('[Dendriform] syncHistory() can only be applied to forms that have not had any changes made yet');
+            });
+
+            test(`should useHistorySync`, () => {
+
+                const hookA = renderHook(() => useDendriform(() => 'hi', {history: 10}));
+                const hookB = renderHook(() => useDendriform(() => 0, {history: 10}));
+
+                const formA = hookA.result.current;
+                const formB = hookB.result.current;
+
+                renderHook(() => {
+                    useHistorySync(formA, formB);
+                });
+
+                act(() => {
+                    formA.set('hello');
+                });
+
+                expect(formB.core.state.historyIndex).toBe(1);
+            });
         });
     });
 
@@ -791,6 +893,7 @@ describe(`Dendriform`, () => {
 
             expect(barForm.value).toBe(undefined);
             expect(barForm.id).toBe('notfound');
+            expect(barForm._readonly).toBe(true);
         });
 
         test(`should get deleted child value`, () => {
@@ -803,6 +906,7 @@ describe(`Dendriform`, () => {
             form.set([[[123]]]);
 
             expect(elemForm.branch(0).value).toBe(undefined);
+            expect(elemForm.branch(0)._readonly).toBe(true);
             expect(form.branch([0,0,0]).value).toBe(123);
         });
     });
@@ -885,10 +989,10 @@ describe(`Dendriform`, () => {
             expect(forms.map(f => f.value)).toEqual([0,1]);
         });
 
-        test(`should error if getting a basic type`, () => {
+        test(`should NOT error if getting a basic type`, () => {
             const form = new Dendriform(123);
 
-            expect(() => form.branchAll()).toThrow('branchAll() can only be called on forms containing an array, object, es6 map or es6 set');
+            expect(form.branchAll()).toEqual([]);
         });
 
         // TODO what about misses?
@@ -1174,11 +1278,7 @@ describe(`Dendriform`, () => {
 
         describe(`rendering`, () => {
 
-            test(`should error if rendering a basic type`, () => {
-                const consoleError = console.error;
-                // eslint-disable-next-line @typescript-eslint/no-empty-function
-                console.error = () => {};
-
+            test(`should NOT error if rendering a basic type`, () => {
                 const form = new Dendriform('4');
 
                 const renderer = jest.fn(form => <div className="branch">{form.value}</div>);
@@ -1187,9 +1287,10 @@ describe(`Dendriform`, () => {
                     return props.form.renderAll(renderer);
                 };
 
-                expect(() => mount(<MyComponent form={form} foo={1} />)).toThrow('renderAll() can only be called on forms containing an array, object, es6 map or es6 set');
+                const wrapper = mount(<MyComponent form={form} foo={1} />);
 
-                console.error = consoleError;
+                expect(renderer).toHaveBeenCalledTimes(0);
+                expect(wrapper.find('.branch').length).toBe(0);
             });
 
             test(`should renderAll no levels and return React element`, () => {
@@ -1698,6 +1799,35 @@ describe(`Dendriform`, () => {
 
         });
 
+        test(`should allow derivers on branched forms`, () => {
+
+            const form = new Dendriform({
+                name: 'boo',
+                letters: 0
+            });
+
+            const deriver = jest.fn();
+
+            form.branch('name').onDerive(deriver);
+            form.set(draft => {
+                draft.name = 'baa';
+            });
+
+            expect(deriver).toHaveBeenCalledTimes(2);
+            expect(deriver.mock.calls[1][0]).toBe('baa');
+            expect(deriver.mock.calls[1][1].id).toBe('1');
+            expect(deriver.mock.calls[1][1].prev.value).toBe('boo');
+            expect(deriver.mock.calls[1][1].next.value).toBe('baa');
+
+            // should always derive, for now, even if source field does not change
+
+            form.set(draft => {
+                draft.letters = 2;
+            });
+
+            expect(deriver).toHaveBeenCalledTimes(3);
+        });
+
         test(`should handle multiple derivers on same form, calling them sequentially`, () => {
 
             const form = new Dendriform({
@@ -2155,6 +2285,43 @@ describe(`Dendriform`, () => {
         });
 
         describe(`derive between forms`, () => {
+            test(`should derive in a circle without infinite looping`, () => {
+
+                const form = new Dendriform({
+                    val: 10
+                });
+
+                const formString = new Dendriform({
+                    val: ''
+                });
+
+                form.onDerive(({val}) => {
+                    formString.set({
+                        val: `${val}`
+                    });
+                });
+
+                formString.onDerive(({val}) => {
+                    form.set({
+                        val: Number(val)
+                    });
+                });
+
+                form.set(draft => {
+                    draft.val = 20;
+                });
+
+                expect(form.value.val).toBe(20);
+                expect(formString.value.val).toBe('20');
+
+                formString.set(draft => {
+                    draft.val = '30';
+                });
+
+                expect(form.value.val).toBe(30);
+                expect(formString.value.val).toBe('30');
+            });
+
             test(`should undo and redo, second form is always derived`, () => {
 
                 // could be useful for derived data such as validation
@@ -2900,7 +3067,7 @@ describe(`Dendriform`, () => {
             });
         });
 
-         test(`should remove nodes as parent changes type`, () => {
+        test(`should remove nodes as parent changes type`, () => {
             const form = new Dendriform<any>({
                 foo: {
                     bar: 123,

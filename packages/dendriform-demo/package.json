@@ -1,6 +1,6 @@
 {
   "name": "dendriform-demo",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "date-fns": "^2.11.1",
-    "dendriform": "^3.3.0",
+    "dendriform": "^3.4.0",
     "gray-matter": "^4.0.2",
     "next": "9.5.3",
     "react": "16.13.1",
