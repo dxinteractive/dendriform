@@ -162,7 +162,7 @@ Advanced usage
 
 - [Diffing changes](#diffing-changes)
 - [Deriving data](#deriving-data)
-- [Synchronising forms](#synchronising-forms)
+- [Synchronising form history](#synchronising-form-history)
 - [Cancel changes based on constraints](#cancel-changes-based-on-constraints)
 - [Lazy derive](#lazy-derive)
 
@@ -1511,41 +1511,57 @@ stringForm.set('30');
 
 [Demo](http://dendriform.xyz#derivetwoway)
 
-### Synchronising forms
+### Synchronising form history
 
-**Warning:** *the {sync} API is experimental and may be replaced or removed in future.*
+You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` on one will also undo the changes that have occurred in multiple forms. The `syncHistory` utility can do this.
 
-You can use any number of forms to store your editable state so you can keep related data grouped logically together. However you might also want several separate forms to move through history together, so calling `.undo()` will undo the changes that have occurred in multiple forms. The `sync` utility can do this.
-
-Synchronised forms must have the same maximum number of history items configured.
+Synchronised forms must have the same maximum number of history items configured, and `syncHistory` must be called before any of the affected forms have any changes made to them.
 
 ```js
-import {sync} from 'dendriform';
+import {syncHistory} from 'dendriform';
 
 const nameForm = new Dendriform({name: 'Bill'}, {history: 100});
 const addressForm = new Dendriform({street: 'Cool St'}, {history: 100});
 
-const unsync = sync(nameForm, addressForm);
+syncHistory(nameForm, addressForm);
 
 // if nameForm.undo() is called, addressForm.undo() is also called, and vice versa
 // if nameForm.redo() is called, addressForm.redo() is also called, and vice versa
 // if nameForm.go() is called, addressForm.go() is also called, and vice versa
+```
 
-// call unsync() to unsynchronise the forms
+Multiple forms can be synced together through multiple calls fo `syncHistory`, so it's possible to append forms to a groups of already-synchronised forms.
+
+```js
+import {syncHistory} from 'dendriform';
+
+const nameForm = new Dendriform('Noof', {history: 100});
+const addressForm = new Dendriform('12 Foo St', {history: 100});
+const suburbForm = new Dendriform('Suburbtown', {history: 100});
+
+syncHistory(nameForm, addressForm, suburbForm);
+
+// later, but before any changes are made to any affected forms, other forms can be synchronised
+
+const colourForm = new Dendriform('Blue', {history: 100});
+
+syncHistory(suburbForm, colourForm);
+
+// now nameForm, addressForm, suburbForm and colourForm will be synchronised through history
 ```
 
 [Demo](http://dendriform.xyz#sync)
 
-Inside of a React component you can use the `useSync()` hook to achieve the same result.
+Inside of a React component you can use the `useHistorySync()` hook to achieve the same result.
 
 ```js
-import {useSync} from 'dendriform';
+import {useHistorySync} from 'dendriform';
 
 function MyComponent(props) {
     const personForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
     const addressForm = useDendriform(() => ({street: 'Cool St'}), {history: 100});
 
-    useSync(personForm, addressForm);
+    useHistorySync(personForm, addressForm);
 
     return <div>
         {personForm.render('name', nameForm => (
@@ -1566,25 +1582,6 @@ function MyComponent(props) {
     </div>;
 }
 ```
-
-The `sync()` function can also accept a deriver to derive data in one direction. This has the effect of caching each derived form state in history, and calling undo and redo will just restore the relevant derived data at that point in history.
-
-```js
-import {sync} from 'dendriform';
-
-const namesForm = new Dendriform(['Bill', 'Ben', 'Bob'], {history: 100});
-
-const addressForm = new Dendriform({
-    street: 'Cool St',
-    occupants: 0
-}, {history: 100});
-
-sync(nameForm, addressForm, names => {
-    addressForm.branch('occupants').set(names.length);
-});
-```
-
-[Demo](http://dendriform.xyz#syncderive)
 
 ### Cancel changes based on constraints
 
