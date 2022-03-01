@@ -1,4 +1,4 @@
-import {useDendriform, Dendriform, noChange, sync, useSync, immerable, cancel, Plugin} from '../src/index';
+import {useDendriform, Dendriform, historySync, useHistorySync, noChange, sync, useSync, immerable, cancel, Plugin} from '../src/index';
 import {renderHook, act} from '@testing-library/react-hooks';
 import {BASIC, OBJECT, ARRAY} from 'dendriform-immer-patch-optimiser';
 
@@ -533,21 +533,123 @@ describe(`Dendriform`, () => {
             const form = new Dendriform(123, {history: 100});
 
             form.set(456);
-            // form.core.flush();
             form.set(noChange);
-            // form.core.flush();
 
             expect(form.value).toBe(456);
 
             form.undo();
-            // form.core.flush();
 
             expect(form.value).toBe(456);
 
             form.undo();
-            // form.core.flush();
 
             expect(form.value).toBe(123);
+        });
+
+        describe(`historySync`, () => {
+
+            test(`should allow forms to sync`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 100});
+                
+                historySync(formA, formB);
+
+                formA.set(456);
+
+                expect(formA.core.state.historyIndex).toBe(1);
+                expect(formA.value).toBe(456);
+                expect(formB.core.state.historyIndex).toBe(1);
+                expect(formB.value).toBe(123);
+                expect(formC.core.state.historyIndex).toBe(0);
+                expect(formC.value).toBe(123);
+
+                // undo with one form, expect other form to also undo
+                formA.undo();
+
+                expect(formA.core.state.historyIndex).toBe(0);
+                expect(formA.value).toBe(123);
+                expect(formB.core.state.historyIndex).toBe(0);
+                expect(formB.value).toBe(123);
+                expect(formC.core.state.historyIndex).toBe(0);
+                expect(formC.value).toBe(123);
+
+                // redo with other form, expect other form to also redo
+                formB.redo();
+
+                expect(formA.core.state.historyIndex).toBe(1);
+                expect(formA.value).toBe(456);
+                expect(formB.core.state.historyIndex).toBe(1);
+                expect(formB.value).toBe(123);
+                expect(formC.core.state.historyIndex).toBe(0);
+                expect(formC.value).toBe(123);
+            });
+
+            test(`should join sync groups together`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 100});
+                const formD = new Dendriform(123, {history: 100});
+                const formE = new Dendriform(123, {history: 100});
+                const formF = new Dendriform(123, {history: 100});
+                
+                historySync(formA, formB);
+                historySync(formC, formD);
+                historySync(formC, formB);
+                historySync(formE, formF);
+
+                formD.set(456);
+
+                expect(formA.core.state.historyIndex).toBe(1);
+                expect(formB.core.state.historyIndex).toBe(1);
+                expect(formC.core.state.historyIndex).toBe(1);
+                expect(formD.core.state.historyIndex).toBe(1);
+                expect(formE.core.state.historyIndex).toBe(0);
+                expect(formF.core.state.historyIndex).toBe(0);
+            });
+
+            test(`should error if passed mismatched history sizes`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 200});
+                
+                expect(() => historySync(formA, formB, formC)).toThrow('[Dendriform] All syncHistory() forms must each have a matching non-zero number of history items configured, e.g. {history: 10}');
+            });
+
+            test(`should error if passed zero history sizes`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123);
+                
+                expect(() => historySync(formA, formB)).toThrow('[Dendriform] All syncHistory() forms must each have a matching non-zero number of history items configured, e.g. {history: 10}');
+            });
+
+            test(`should error if any form has already changed`, () => {
+                const formA = new Dendriform(123, {history: 100});
+                const formB = new Dendriform(123, {history: 100});
+                const formC = new Dendriform(123, {history: 100});
+                formC.set(456);
+                
+                expect(() => historySync(formA, formB, formC)).toThrow('[Dendriform] syncHistory() can only be applied to forms that have not had any changes made yet');
+            });
+
+            test(`should useHistorySync`, () => {
+
+                const hookA = renderHook(() => useDendriform(() => 'hi', {history: 10}));
+                const hookB = renderHook(() => useDendriform(() => 0, {history: 10}));
+
+                const formA = hookA.result.current;
+                const formB = hookB.result.current;
+
+                renderHook(() => {
+                    useHistorySync(formA, formB);
+                });
+
+                act(() => {
+                    formA.set('hello');
+                });
+
+                expect(formB.core.state.historyIndex).toBe(1);
+            });
         });
     });
 
@@ -2943,7 +3045,7 @@ describe(`Dendriform`, () => {
             });
         });
 
-         test(`should remove nodes as parent changes type`, () => {
+        test(`should remove nodes as parent changes type`, () => {
             const form = new Dendriform<any>({
                 foo: {
                     bar: 123,

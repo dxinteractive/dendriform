@@ -10,7 +10,9 @@ const errors = {
     6: (msg: string) => `onDerive() callback must not throw errors on first call. Threw: ${msg}`,
     7: `Cannot call .set() on an element of an es6 Set`,
     8: `Plugin must be passed into a Dendriform instance before this operation can be called`,
-    9: `Cannot call .set() or .go() on a readonly form`
+    9: `Cannot call .set() or .go() on a readonly form`,
+    10: `All syncHistory() forms must each have a matching non-zero number of history items configured, e.g. {history: 10}`,
+    11: `syncHistory() can only be applied to forms that have not had any changes made yet`
 } as const;
 
 export type ErrorKey = keyof typeof errors;

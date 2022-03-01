@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState, useRef, memo} from 'react';
-import {Dendriform, useDendriform, useInput, useCheckbox, useSync, array, immerable, cancel, diff, PluginSubmit} from 'dendriform';
+import {Dendriform, useDendriform, useInput, useCheckbox, useHistorySync, array, immerable, cancel, diff, PluginSubmit} from 'dendriform';
 import {Box, Flex} from '../components/Layout';
 import {H2, Link, Text} from '../components/Text';
 import styled from 'styled-components';
@@ -1334,7 +1334,7 @@ function Sync(): React.ReactElement {
     const nameForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
     const addressForm = useDendriform(() => ({street: 'Cool St'}), {history: 100});
 
-    useSync(nameForm, addressForm);
+    useHistorySync(nameForm, addressForm);
 
     return <Region>
         {nameForm.render('name', nameForm => (
@@ -1360,7 +1360,7 @@ function MyComponent(props) {
     const nameForm = useDendriform(() => ({name: 'Bill'}), {history: 100});
     const addressForm = useDendriform(() => ({street: 'Cool St'}), {history: 100});
 
-    useSync(nameForm, addressForm);
+    useHistorySync(nameForm, addressForm);
 
     return <div>
         {nameForm.render('name', nameForm => (
@@ -1377,110 +1377,6 @@ function MyComponent(props) {
                 <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
                 <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
             </div>;
-        })}
-    </div>;
-}
-`;
-
-//
-// sync derive
-//
-
-function SyncDerive(): React.ReactElement {
-
-    const namesForm = useDendriform(() => ['Bill', 'Ben', 'Bob'], {history: 100});
-
-    const addressForm = useDendriform(() => ({
-        street: 'Cool St',
-        occupants: 0
-    }), {history: 100});
-
-    useSync(namesForm, addressForm, names => {
-        // eslint-disable-next-line no-console
-        console.log(`Deriving occupants for ${JSON.stringify(names)}`);
-        addressForm.branch('occupants').set(names.length);
-    });
-
-    const addName = useCallback(() => {
-        namesForm.set(draft => {
-            draft.push('Name ' + draft.length);
-        });
-    }, []);
-
-    return <Region>
-        <fieldset>
-            <legend>names</legend>
-            <ul>
-                {namesForm.renderAll(nameForm => <Region of="li">
-                    <label><input {...useInput(nameForm, 150)} /></label>
-                </Region>)}
-            </ul>
-            <button type="button" onClick={addName}>Add name</button>
-        </fieldset>
-
-        {addressForm.render('street', streetForm => (
-            <Region of="label">street: <input {...useInput(streetForm, 150)} /></Region>
-        ))}
-
-        {addressForm.render('occupants', occupantsForm => (
-            <Region of="code">occupants: {occupantsForm.useValue()}</Region>
-        ))}
-
-        {namesForm.render(namesForm => {
-            const {canUndo, canRedo} = namesForm.useHistory();
-            return <Region>
-                <button type="button" onClick={namesForm.undo} disabled={!canUndo}>Undo</button>
-                <button type="button" onClick={namesForm.redo} disabled={!canRedo}>Redo</button>
-            </Region>;
-        })}
-    </Region>;
-}
-
-const SyncDeriveCode = `
-function MyComponent(props) {
-
-    const namesForm = useDendriform(() => ['Bill', 'Ben', 'Bob'], {history: 100});
-
-    const addressForm = useDendriform(() => ({
-        street: 'Cool St',
-        occupants: 0
-    }), {history: 100});
-
-    useSync(namesForm, addressForm, names => {
-        addressForm.branch('occupants').set(names.length);
-    });
-
-    const addName = useCallback(() => {
-        namesForm.set(draft => {
-            draft.push('Name ' + draft.length);
-        });
-    }, []);
-
-    return <div>
-        <fieldset>
-            <legend>names</legend>
-            <ul>
-                {namesForm.renderAll(nameForm => <Region of="li">
-                    <label><input {...useInput(nameForm, 150)} /></label>
-                </Region>)}
-            </ul>
-            <button type="button" onClick={addName}>Add name</button>
-        </fieldset>
-
-        {addressForm.render('street', streetForm => (
-            <label>street: <input {...useInput(streetForm, 150)} /></label>
-        ))}
-
-        {addressForm.render('occupants', occupantsForm => (
-            <code>occupants: {occupantsForm.useValue()}</code>
-        ))}
-
-        {namesForm.render(namesForm => {
-            const {canUndo, canRedo} = namesForm.useHistory();
-            return <>
-                <button type="button" onClick={namesForm.undo} disabled={!canUndo}>Undo</button>
-                <button type="button" onClick={namesForm.redo} disabled={!canRedo}>Redo</button>
-            </>;
         })}
     </div>;
 }
@@ -2830,14 +2726,6 @@ const ADVANCED_DEMOS: DemoObject[] = [
         code: SyncCode,
         description: 'When forms are synchronised with each other, their changes throughout history are also synchronised. Type in either input and use undo and redo to see how the two forms are connected.',
         anchor: 'sync',
-        more: 'synchronising-forms'
-    },
-    {
-        title: 'Synchronising forms with deriving',
-        Demo: SyncDerive,
-        code: SyncDeriveCode,
-        description: `The useSync() hook can also accept a deriver to derive data in one direction.  This has the effect of caching each derived form state in history, and calling undo and redo will just restore the relevant derived data at that point in history.`,
-        anchor: 'syncderive',
         more: 'synchronising-forms'
     },
     {

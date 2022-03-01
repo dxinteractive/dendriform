@@ -110,8 +110,24 @@ export type DeriveCallbackRef = [string, DeriveCallback<any>];
 export type CancelCallback = (message: string) => void;
 
 //
+// chunks - allowing other files to register chunks of functionality for Dendriform to use
+//
+
+export type ExecuteHistorySync = (changedFormSet: Set<AnyCore>, offset?: number) => void;
+
+type ChunkRegistry = {
+    executeHistorySync?: ExecuteHistorySync;
+};
+
+export const _chunkRegistry: ChunkRegistry = {};
+
+
+//
 // core
 //
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyCore = Core<unknown,any>;
 
 export type Plugins = {[key: string]: Plugin}|undefined;
 
@@ -194,7 +210,7 @@ export class Core<C,P extends Plugins> {
     cancelCallbacks = new Set<CancelCallback>();
     // set of forms currently hvaing their set() functions called
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    static changingForms = new Set<Core<unknown,any>>();
+    static changingForms = new Set<AnyCore>();
     // debounce ids and count numbers to identify when each id has debounced
     debounceMap = new Map<string,number>();
 
@@ -357,12 +373,13 @@ export class Core<C,P extends Plugins> {
 
             // call all change callbacks involved in this form and clear revert points
             if(originator) {
+                const changedForms = Array.from(Core.changingForms.values());
+
                 // clear the changing forms set before calling callbacks
                 // so any calls to .set in callbacks start a new change
-                const forms = Array.from(Core.changingForms.values());
                 this.finaliseChange();
 
-                forms.forEach(form => form.callAllChangeCallbacks(internalMeta));
+                changedForms.forEach(form => form.callAllChangeCallbacks(internalMeta));
             }
 
         } catch(e) {
@@ -458,6 +475,9 @@ export class Core<C,P extends Plugins> {
             // e.g. when sync() deliberately adds empty history items
             if(historyItem.do.value.length > 0) {
                 this.callAllDeriveCallbacks(internalMeta);
+
+                // look through historySyncGroups to find if any forms need blank history items added
+                _chunkRegistry.executeHistorySync?.(Core.changingForms);
             }
         }, internalMeta);
     };
@@ -640,6 +660,9 @@ export class Core<C,P extends Plugins> {
 
             // call derive callbacks
             this.callAllDeriveCallbacks(internalMeta);
+
+            // look through historySyncGroups to find if any forms need their history updated
+            _chunkRegistry.executeHistorySync?.(Core.changingForms, offset);
         }, internalMeta);
 
         this.internalState.going = false;
