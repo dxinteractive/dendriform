@@ -135,6 +135,8 @@ export type Options<P extends Plugins> = {
     history?: number;
     replace?: boolean;
     plugins?: P;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dependencies?: Dendriform<any>[];
 };
 
 export type UseDendriformOptions<P extends Plugins> = {
@@ -785,6 +787,8 @@ export type SetOptions = {
     force?: boolean;
 };
 
+type DendriformInitialValue<V> = (() => V)|V;
+
 export class Dendriform<V,P extends Plugins = undefined> {
 
     // dev notes:
@@ -797,7 +801,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     id: string;
     _readonly = false;
 
-    constructor(initialValue: V|DendriformBranch<P>, options: Options<P> = {}) {
+    constructor(initialValue: DendriformInitialValue<V>|DendriformBranch<P>, options: Options<P> = {}) {
 
         // if branching off an existing form, pass id and core along
         if(initialValue instanceof Object && (initialValue as DendriformBranch<P>).__branch) {
@@ -808,9 +812,13 @@ export class Dendriform<V,P extends Plugins = undefined> {
         }
 
         // if not branch off an existing form, make a core
+        const value = typeof initialValue === 'function'
+            ? (initialValue as (() => V))()
+            : initialValue;
+
         this.id = '0';
         this.core = new Core({
-            initialValue,
+            initialValue: value,
             options
         });
 
@@ -1043,16 +1051,11 @@ export class Dendriform<V,P extends Plugins = undefined> {
 // useDendriform
 //
 
-type UseDendriformValue<V> = (() => V)|V;
-
-export const useDendriform = <V,P extends Plugins = undefined>(initialValue: UseDendriformValue<V>, {plugins, dependencies = [], ...options}: UseDendriformOptions<P> = {}): Dendriform<V,P> => {
+export const useDendriform = <V,P extends Plugins = undefined>(initialValue: DendriformInitialValue<V>, {plugins, dependencies = [], ...options}: UseDendriformOptions<P> = {}): Dendriform<V,P> => {
     const [form] = useState(() => {
-        const value = typeof initialValue === 'function'
-            ? (initialValue as (() => V))()
-            : initialValue;
-
-        return new Dendriform<V,P>(value as V, {
+        return new Dendriform<V,P>(initialValue, {
             plugins: plugins?.(),
+            dependencies: dependencies.filter((dep): dep is Dendriform<any> => dep instanceof Dendriform),
             ...options
         });
     });

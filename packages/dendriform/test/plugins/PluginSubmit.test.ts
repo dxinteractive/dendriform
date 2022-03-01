@@ -62,7 +62,7 @@ describe(`plugin submit`, () => {
         expect(onSubmit.mock.calls[0][0]).toEqual(3);
     });
     
-    test(`should change value and show previous and dirty at paths`, () => {
+    test.only(`should change value and show previous and dirty at paths`, () => {
 
         const value: Val = {
             foo: 123,
