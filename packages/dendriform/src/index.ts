@@ -7,6 +7,7 @@ export * from './useInput';
 export * from './useCheckbox';
 export * from './useProps';
 export * from './sync';
+export * from './syncHistory';
 export * from './diff';
 export * from './LazyDerive';
 export * from './Plugin';
