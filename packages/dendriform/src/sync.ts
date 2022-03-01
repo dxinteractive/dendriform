@@ -9,6 +9,8 @@ export const sync = <V,S,VP extends Plugins,SP extends Plugins>(
     derive?: DeriveCallback<V>
 ): (() => void) => {
 
+    console.warn('sync() is deprecated and will be removed in the next major version. Use historySync() instead.');
+
     if(masterForm.core.historyLimit !== slaveForm.core.historyLimit) {
         die(5);
     }
