@@ -823,12 +823,16 @@ export class Dendriform<V,P extends Plugins = undefined> {
         }
     }
 
+    protected getValue(): V {
+        return this.core.getValue(this.id) as V;
+    }
+
     //
     // public api
     //
 
     get value(): V {
-        return this.core.getValue(this.id) as V;
+        return this.getValue();
     }
 
     get key(): unknown {

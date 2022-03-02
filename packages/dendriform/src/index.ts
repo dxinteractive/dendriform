@@ -10,6 +10,7 @@ export * from './sync';
 export * from './syncHistory';
 export * from './diff';
 export * from './LazyDerive';
+export * from './Lazyform';
 export * from './Plugin';
 export * from './plugins/PluginSubmit';
 export {immerable} from 'immer';
