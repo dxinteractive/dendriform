@@ -10,6 +10,8 @@ export type LazyStatus = {
     complete: boolean;
 };
 
+let tempId = 0;
+
 export class Lazyform<V,P extends Plugins = undefined> extends Dendriform<V|undefined,P> {
 
     _evaluator: LazyEvaluator<V>;
@@ -20,32 +22,42 @@ export class Lazyform<V,P extends Plugins = undefined> extends Dendriform<V|unde
     _activeUseValueHooks = 0;
     _completeCallbacks: ((value: V) => void)[] = [];
 
+    _tempId: number;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(lazyEvaluator: LazyEvaluator<V>, dependencies: (Dendriform<any>|Lazyform<any>)[] = []) {
         super(undefined);
         this._evaluator = lazyEvaluator;
         this._dependencies = dependencies;
+        this._tempId = tempId++;
 
-        // problem - dep.onChange calls dep.value, which derives upstream :/
         dependencies.map(dep => dep.onChange(() => {
-            this.markStale();
+            const counted = ++this._depCount;
+            setTimeout(() => {
+                if(counted === this._depCount) {
+                    console.log('!');
+                    this.markStale();
+                }
+            }, 0);
         }));
     }
 
     private markStale(): void {
-        this._depCount++;
         this.status.branch('complete').set(false);
-        if(this._activeUseValueHooks > 0) {
-            this.evaluate();
-        }
+        // if(this._activeUseValueHooks > 0) {
+        //     this.evaluate();
+        // }
     }
 
     private evaluate(): void {
+        console.log(`evaluate ${this._tempId}:`, this._depCount, this._evalCount);
         if(this._depCount === this._evalCount) return;
 
         const result = this._evaluator();
         this._evalResult = result;
         this._evalCount = this._depCount;
+
+        console.log(`evaluate now ${this._tempId}:`, this._depCount, this._evalCount);
 
         if(!isPromise(result)) {
             this.status.branch('complete').set(true);

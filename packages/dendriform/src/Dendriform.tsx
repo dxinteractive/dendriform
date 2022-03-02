@@ -907,7 +907,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
     onChange(callback: ChangeCallback<V>, changeType?: ChangeTypeValue): (() => void);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     onChange(callback:any, changeType: any): any {
-        const changeCallback: ChangeCallbackRef = [changeType || 'value', this.id, callback, this.value];
+        const changeCallback: ChangeCallbackRef = [changeType || 'value', this.id, callback, this.getValue()];
         this.core.changeCallbackRefs.add(changeCallback);
         // return unsubscriber
         return () => void this.core.changeCallbackRefs.delete(changeCallback);
