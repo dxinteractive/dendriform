@@ -3,7 +3,7 @@
 
 # dendriform
 
-[![npm](https://img.shields.io/npm/v/dendriform.svg)](https://www.npmjs.com/package/dendriform) ![Master build](https://github.com/92green/dendriform/workflows/CI/badge.svg?branch=master) ![Maturity: Early Days](https://img.shields.io/badge/Maturity-Early%20days-yellow) ![Coolness Reasonable](https://img.shields.io/badge/Coolness-Reasonable-blue) 
+[![npm](https://img.shields.io/npm/v/dendriform.svg)](https://www.npmjs.com/package/dendriform) ![Master build](https://github.com/dxinteractive/dendriform/workflows/CI/badge.svg?branch=master) ![Maturity: Early Days](https://img.shields.io/badge/Maturity-Early%20days-yellow) ![Coolness Reasonable](https://img.shields.io/badge/Coolness-Reasonable-blue) 
 
 
 
@@ -1704,6 +1704,6 @@ Demos can be found on [dendriform.xyz](http://dendriform.xyz).
 
 ## Development
 
-This library is written and maintained by [Damien Clarke](https://damienclarke.me/), with feedback from others at [92green](https://github.com/92green). All online library discussion happens over on [Github](https://github.com/92green/dendriform).
+This library is written and maintained by [Damien Clarke](https://damienclarke.me/). All online library discussion happens over on [Github](https://github.com/dxinteractive/dendriform).
 
 I hope this library helps solve some data-editing user interface problems for you. 🎉

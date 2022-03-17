@@ -2825,7 +2825,7 @@ function Demo(props: DemoProps): React.ReactElement {
         </Flex>
         <Box mb={4}>
             <Text fontSize="smaller">
-                {description} {more && <Link title="To the documentation" href={`https://github.com/92green/dendriform#${more}`}>docs {'>'}</Link>}
+                {description} {more && <Link title="To the documentation" href={`https://github.com/dxinteractive/dendriform#${more}`}>docs {'>'}</Link>}
             </Text>
         </Box>
         <DemoStyle>

@@ -18,12 +18,12 @@ export default function Main(): React.ReactElement {
         </Flex>
         <FloatZone>
             <Badge src="https://img.shields.io/npm/v/dendriform.svg" to="https://www.npmjs.com/package/dendriform">NPM</Badge>
-            <Badge src="https://github.com/92green/dendriform/workflows/CI/badge.svg?branch=master">CI: Build Status</Badge>
+            <Badge src="https://github.com/dxinteractive/dendriform/workflows/CI/badge.svg?branch=master">CI: Build Status</Badge>
             <Badge src="https://img.shields.io/badge/Maturity-Early%20days-yellow">Maturity: Early Days</Badge>
             <Badge src="https://img.shields.io/badge/Coolness-Reasonable-blue">Coolness Reasonable</Badge>
         </FloatZone>
         <Box my={5}>
-            <Text fontSize="big">Looking for the docs or source code? <Link href="https://github.com/92green/dendriform">Go to the github repo.</Link></Text>
+            <Text fontSize="big">Looking for the docs or source code? <Link href="https://github.com/dxinteractive/dendriform">Go to the github repo.</Link></Text>
         </Box>
         <Hr />
         <Box mb={3}>

@@ -31,10 +31,10 @@
   "author": "Damien Clarke",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/92green/dendriform.git"
+    "url": "git+https://github.com/dxinteractive/dendriform.git"
   },
   "bugs": {
-    "url": "https://github.com/92green/dendriform/issues"
+    "url": "https://github.com/dxinteractive/dendriform/issues"
   },
   "module": "dist/dendriform-immer-patch-optimiser.esm.js",
   "sideEffects": false,

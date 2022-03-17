@@ -1,12 +1,12 @@
 # dendriform-immer-patch-optimiser
 
-[Dendriform](https://github.com/92green/dendriform) uses [Immer](https://github.com/immerjs/immer). Immer is wonderful, especially its ability to produce [patches](https://immerjs.github.io/immer/docs/patches) for implementing concurrent editing and undo & redo functionality.
+[Dendriform](https://github.com/dxinteractive/dendriform) uses [Immer](https://github.com/immerjs/immer). Immer is wonderful, especially its ability to produce [patches](https://immerjs.github.io/immer/docs/patches) for implementing concurrent editing and undo & redo functionality.
 
 But Dendriform needs to track how array elements are moved around. Luckily the RFC6902 JSON patch standard that Immer's patches are similar to describes ["move" operations](https://tools.ietf.org/html/rfc6902#section-4.4). Immer does not produce "move" patches, so this plugin post-processes Immer patches to infer array element movement and produce "move" patches.
 
 When using Immer alone, certain types of changes [can lead to a large number of patches](https://github.com/immerjs/immer/issues/642) because Immer's design [optimises for good performance at generation time](https://github.com/immerjs/immer/issues/642#issuecomment-660086462). A nice side effect of this library is that describing movements naturally reduces the number of patches.
 
-Please note that while this library does some immer patch optimisations that could be used in any project, **the main goal of this library is to solve problems for [Dendriform](https://github.com/92green/dendriform)**. As such, it's API may be a little volatile, and it won't necessarily aim to please the use cases of the general public. You are welcome to use the library as is, copy the source code for your own uses, or even republish the code as a new library if you'd like to take on the responsibility of maintaining a more public-serving variant of it.
+Please note that while this library does some immer patch optimisations that could be used in any project, **the main goal of this library is to solve problems for [Dendriform](https://github.com/dxinteractive/dendriform)**. As such, it's API may be a little volatile, and it won't necessarily aim to please the use cases of the general public. You are welcome to use the library as is, copy the source code for your own uses, or even republish the code as a new library if you'd like to take on the responsibility of maintaining a more public-serving variant of it.
 
 ### Current limitations
 
