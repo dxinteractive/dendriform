@@ -820,14 +820,18 @@ const offsetElement = <T,>(form: Dendriform<T>, offset: number): void => {
 function ArrayOperations(): React.ReactElement {
 
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     const coloursForm = form.branch('colours');
     const shift = useCallback(() => coloursForm.set(array.shift()), []);
     const pop = useCallback(() => coloursForm.set(array.pop()), []);
-    const unshift = useCallback(() => coloursForm.set(array.unshift('Puce')), []);
-    const push = useCallback(() => coloursForm.set(array.push('Puce')), []);
+    const unshift = useCallback(() => coloursForm.set(array.unshift({colour: 'Puce'})), []);
+    const push = useCallback(() => coloursForm.set(array.push({colour: 'Puce'})), []);
     const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <Region>
@@ -838,8 +842,11 @@ function ArrayOperations(): React.ReactElement {
             const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <Region>
-                <label>colour: <input {...useInput(colourForm, 150)} /></label>
-
+                {colourForm.render('colour', form => (
+                    <Region>
+                        <label>colour: <input {...useInput(form, 150)} /></label>
+                    </Region>
+                ))}
                 <button type="button" onClick={remove}>remove</button>
                 <button type="button" onClick={moveDown}>down</button>
                 <button type="button" onClick={moveUp}>up</button>
@@ -861,14 +868,18 @@ const offsetElement = (form, offset) => {
 function MyComponent(props) {
 
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     const coloursForm = form.branch('colours');
     const shift = useCallback(() => coloursForm.set(array.shift()), []);
     const pop = useCallback(() => coloursForm.set(array.pop()), []);
-    const unshift = useCallback(() => coloursForm.set(array.unshift('Puce')), []);
-    const push = useCallback(() => coloursForm.set(array.push('Puce')), []);
+    const unshift = useCallback(() => coloursForm.set(array.unshift({colour: 'Puce'})), []);
+    const push = useCallback(() => coloursForm.set(array.push({colour: 'Puce'})), []);
     const move = useCallback(() => coloursForm.set(array.move(-1,0)), []);
 
     return <div>
@@ -879,7 +890,9 @@ function MyComponent(props) {
             const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
 
             return <div>
-                <label>colour: <input {...useInput(colourForm, 150)} /></label>
+                {colourForm.render('colour', form => (
+                    <label>colour: <input {...useInput(form, 150)} /></label>
+                ))}
 
                 <button type="button" onClick={remove}>remove</button>
                 <button type="button" onClick={moveDown}>down</button>
@@ -903,12 +916,16 @@ function MyComponent(props) {
 function ArrayIndexes(): React.ReactElement {
 
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     return <Region>
         {form.renderAll('colours', colourForm => {
-            const colour = colourForm.useValue();
+            const colour = colourForm.branch('colour').useValue();
             const index = colourForm.useIndex();
             const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
             const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
@@ -930,12 +947,16 @@ const offsetElement = (form, offset) => {
 function MyComponent(props) {
 
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     return <div>
         {form.renderAll('colours', colourForm => {
-            const colour = colourForm.useValue();
+            const colour = colourForm.branch('colour').useValue();
             const index = colourForm.useIndex();
             const moveDown = useCallback(() => offsetElement(colourForm, 1), []);
             const moveUp = useCallback(() => offsetElement(colourForm, -1), []);
@@ -1402,7 +1423,11 @@ function dndReorder<V extends unknown[]>(result: DropResult): ((draft: Draft<V>)
 function DragAndDrop(): React.ReactElement {
 
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     const onDragEnd = useCallback(result => {
@@ -1410,7 +1435,7 @@ function DragAndDrop(): React.ReactElement {
     }, []);
 
     const onAdd = useCallback(() => {
-        form.branch('colours').set(array.push('Puce'));
+        form.branch('colours').set(array.push({colour: 'Puce'}));
     }, []);
 
     return <Region>
@@ -1431,7 +1456,7 @@ function DragAndDrop(): React.ReactElement {
 }
 
 type DragAndDropListProps = {
-    form: Dendriform<string[]>;
+    form: Dendriform<{colour: string}[]>;
 };
 
 function DragAndDropList(props: DragAndDropListProps): React.ReactElement {
@@ -1448,7 +1473,11 @@ function DragAndDropList(props: DragAndDropListProps): React.ReactElement {
                 {...provided.dragHandleProps}
             >
                 <Region>
-                    <label>colour: <input {...useInput(eachForm, 150)} /></label>
+                    {eachForm.render('colour', form => (
+                        <Region>
+                            <label>colour: <input {...useInput(form, 150)} /></label>
+                        </Region>
+                    ))}
                     <button type="button" onClick={remove}>remove</button>
                 </Region>
             </div>}
@@ -1473,7 +1502,11 @@ const dndReorder = (result) => (draft) => {
 function DragAndDrop() {
 
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     const onDragEnd = useCallback(result => {
@@ -1481,7 +1514,7 @@ function DragAndDrop() {
     }, []);
 
     const onAdd = useCallback(() => {
-        form.branch('colours').set(array.push('Puce'));
+        form.branch('colours').set(array.push({colour: 'Puce'}));
     }, []);
 
     return <div>
@@ -1513,7 +1546,9 @@ function DragAndDropList(props) {
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
             >
-                <label>colour: <input {...useInput(eachForm, 150)} /></label>
+                {eachForm.render('colour', form => (
+                    <label>colour: <input {...useInput(eachForm, 150)} /></label>
+                ))}
                 <button type="button" onClick={remove}>remove</button>
             </div>}
         </Draggable>;
@@ -1561,7 +1596,7 @@ function PluginSubmitExample(): React.ReactElement {
             },
             onError: e => e.message
         })
-    });    
+    });
 
     const form = useDendriform<SubmitValue,SubmitPlugins>(() => initialValue, {plugins});
 
@@ -1632,7 +1667,7 @@ function PluginSubmitExample() {
                 await fakeSave(newValue);
             }
         })
-    });    
+    });
 
     const form = useDendriform(() => initialValue, {plugins});
 
@@ -1691,7 +1726,7 @@ function Cancel(): React.ReactElement {
         }
     });
 
-    
+
     // eslint-disable-next-line no-console
     ageForm.useCancel(reason => console.warn(reason));
 
