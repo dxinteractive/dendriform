@@ -7,7 +7,7 @@
 
 
 
-Build feature-rich data-editing React UIs with great performance and little code.
+Build performant, reactive data-editing UIs for React. Succinct code, observable state, undo & redo included!
 
 **[See the demos](http://dendriform.xyz)**
 
