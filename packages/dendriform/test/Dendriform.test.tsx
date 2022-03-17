@@ -151,7 +151,13 @@ describe(`Dendriform`, () => {
     describe('.index and .useIndex()', () => {
         test(`should provide index and produce an update`, () => {
 
-            const firstHook = renderHook(() => useDendriform(['a','b','c']));
+            const A = {id: 'a'};
+            const B = {id: 'b'};
+            const C = {id: 'c'};
+            const D = {id: 'd'};
+            const E = {id: 'e'};
+
+            const firstHook = renderHook(() => useDendriform([A,B,C]));
 
             const form = firstHook.result.current;
             const elementForm = form.branch(0);
@@ -160,7 +166,7 @@ describe(`Dendriform`, () => {
 
             act(() => {
                 form.set(draft => {
-                    draft.unshift('x');
+                    draft.unshift(D);
                 });
             });
 
@@ -170,7 +176,7 @@ describe(`Dendriform`, () => {
 
             act(() => {
                 form.set(draft => {
-                    draft.push('y');
+                    draft.push(E);
                 });
             });
 
@@ -552,7 +558,7 @@ describe(`Dendriform`, () => {
                 const formA = new Dendriform(123, {history: 100});
                 const formB = new Dendriform(123, {history: 100});
                 const formC = new Dendriform(123, {history: 100});
-                
+
                 historySync(formA, formB);
 
                 formA.set(456);
@@ -592,7 +598,7 @@ describe(`Dendriform`, () => {
                 const formD = new Dendriform(123, {history: 100});
                 const formE = new Dendriform(123, {history: 100});
                 const formF = new Dendriform(123, {history: 100});
-                
+
                 historySync(formA, formB);
                 historySync(formC, formD);
                 historySync(formC, formB);
@@ -612,14 +618,14 @@ describe(`Dendriform`, () => {
                 const formA = new Dendriform(123, {history: 100});
                 const formB = new Dendriform(123, {history: 100});
                 const formC = new Dendriform(123, {history: 200});
-                
+
                 expect(() => historySync(formA, formB, formC)).toThrow('[Dendriform] All syncHistory() forms must each have a matching non-zero number of history items configured, e.g. {history: 10}');
             });
 
             test(`should error if passed zero history sizes`, () => {
                 const formA = new Dendriform(123, {history: 100});
                 const formB = new Dendriform(123);
-                
+
                 expect(() => historySync(formA, formB)).toThrow('[Dendriform] All syncHistory() forms must each have a matching non-zero number of history items configured, e.g. {history: 10}');
             });
 
@@ -628,7 +634,7 @@ describe(`Dendriform`, () => {
                 const formB = new Dendriform(123, {history: 100});
                 const formC = new Dendriform(123, {history: 100});
                 formC.set(456);
-                
+
                 expect(() => historySync(formA, formB, formC)).toThrow('[Dendriform] syncHistory() can only be applied to forms that have not had any changes made yet');
             });
 
@@ -3383,18 +3389,18 @@ describe(`Dendriform`, () => {
         }
 
         test(`should contain value`, () => {
-            
+
             const value: PluginValue = {
                 foo: true,
                 bar: true
             };
-    
+
             const plugins = {
                 myplugin: new MyPlugin()
             };
-    
+
             const form = new Dendriform(value, {plugins});
-    
+
             expect(initMock).toHaveBeenCalledTimes(1);
             expect(initMock.mock.calls[0][0]).toBe(form);
 
@@ -3404,7 +3410,7 @@ describe(`Dendriform`, () => {
             expect(pluginResult).toBe('0');
             expect(pluginResult2).toBe('1');
             expect(form.plugins.myplugin.state.calledTimes).toBe(2);
-    
+
         });
 
         describe('useDendriform() with plugins', () => {
@@ -3413,9 +3419,9 @@ describe(`Dendriform`, () => {
                 const plugins = () => ({
                     myplugin: new MyPlugin()
                 });
-    
+
                 const firstHook = renderHook(() => useDendriform(123, {plugins}));
-    
+
                 const form = firstHook.result.current;
                 expect(form.plugins.myplugin instanceof MyPlugin).toBe(true);
             });
