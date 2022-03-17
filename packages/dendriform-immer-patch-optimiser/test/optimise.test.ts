@@ -431,7 +431,7 @@ describe(`change deep arrays`, () => {
     );
 });
 
-describe(`sort with mutiple identical values`, () => {
+describe(`dont optimise with primitive values`, () => {
     runTest(
         ['b','a','c','a','c','b','a'],
         d => {
@@ -475,6 +475,27 @@ describe(`sort with mutiple identical values`, () => {
                 {op: 'replace', path: [1], value: 'c'},
                 {op: 'replace', path: [2], value: 'a'},
                 {op: 'replace', path: ['length'], value: 4}
+            ]
+        }
+    );
+});
+
+describe(`deal with multiple identical values`, () => {
+    runTest(
+        [A,A,B,A],
+        d => {
+            d.shift();
+        },
+        [A,B,A],
+        {
+            vanilla: [
+                {op: 'replace', path: [1], value: B},
+                {op: 'replace', path: [2], value: A},
+                {op: 'replace', path: ['length'], value: 3}
+            ],
+            optimised: [
+                {op: 'move', from: [2], path: [1]},
+                {op: 'replace', path: ['length'], value: 3}
             ]
         }
     );
