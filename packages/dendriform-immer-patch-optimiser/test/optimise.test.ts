@@ -37,13 +37,21 @@ function runTest<B>(
     });
 }
 
+const A = {id: 'a'};
+const B = {id: 'b'};
+const C = {id: 'c'};
+const D = {id: 'd'};
+const E = {id: 'e'};
+const F = {id: 'f'};
+const Z = {id: 'z'};
+
 describe(`pop`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
             d.pop();
         },
-        ['a','b'],
+        [A,B],
         {
             vanilla: [
                 {op: 'replace', path: ['length'], value: 2}
@@ -57,12 +65,12 @@ describe(`pop`, () => {
 
 describe(`pop x2`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
             d.pop();
             d.pop();
         },
-        ['a'],
+        [A],
         {
             vanilla: [
                 {op: 'replace', path: ['length'], value: 1}
@@ -76,15 +84,15 @@ describe(`pop x2`, () => {
 
 describe(`shift`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
             d.shift();
         },
-        ['b','c'],
+        [B,C],
         {
             vanilla: [
-                {op: 'replace', path: [0], value: 'b'},
-                {op: 'replace', path: [1], value: 'c'},
+                {op: 'replace', path: [0], value: B},
+                {op: 'replace', path: [1], value: C},
                 {op: 'replace', path: ['length'], value: 2}
             ],
             optimised: [
@@ -98,15 +106,15 @@ describe(`shift`, () => {
 
 describe(`shift x2`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
             d.shift();
             d.shift();
         },
-        ['c'],
+        [C],
         {
             vanilla: [
-                {op: 'replace', path: [0], value: 'c'},
+                {op: 'replace', path: [0], value: C},
                 {op: 'replace', path: ['length'], value: 1}
             ],
             optimised: [
@@ -119,17 +127,17 @@ describe(`shift x2`, () => {
 
 describe(`push`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
-            d.push('d');
+            d.push(D);
         },
-        ['a','b','c','d'],
+        [A,B,C,D],
         {
             vanilla: [
-                {op: 'add', path: [3], value: 'd'}
+                {op: 'add', path: [3], value: D}
             ],
             optimised: [
-                {op: 'add', path: [3], value: 'd'}
+                {op: 'add', path: [3], value: D}
             ]
         }
     );
@@ -137,20 +145,20 @@ describe(`push`, () => {
 
 describe(`push x2`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
-            d.push('d');
-            d.push('e');
+            d.push(D);
+            d.push(E);
         },
-        ['a','b','c','d','e'],
+        [A,B,C,D,E],
         {
             vanilla: [
-                {op: 'add', path: [3], value: 'd'},
-                {op: 'add', path: [4], value: 'e'}
+                {op: 'add', path: [3], value: D},
+                {op: 'add', path: [4], value: E}
             ],
             optimised: [
-                {op: 'add', path: [3], value: 'd'},
-                {op: 'add', path: [4], value: 'e'}
+                {op: 'add', path: [3], value: D},
+                {op: 'add', path: [4], value: E}
             ]
         }
     );
@@ -159,20 +167,20 @@ describe(`push x2`, () => {
 
 describe(`unshift`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
-            d.unshift('d');
+            d.unshift(D);
         },
-        ['d','a','b','c'],
+        [D,A,B,C],
         {
             vanilla: [
-                {op: 'replace', path: [0], value: 'd'},
-                {op: 'replace', path: [1], value: 'a'},
-                {op: 'replace', path: [2], value: 'b'},
-                {op: 'add', path: [3], value: 'c'}
+                {op: 'replace', path: [0], value: D},
+                {op: 'replace', path: [1], value: A},
+                {op: 'replace', path: [2], value: B},
+                {op: 'add', path: [3], value: C}
             ],
             optimised: [
-                {op: 'add', path: [0], value: 'd'}
+                {op: 'add', path: [0], value: D}
             ]
         }
     );
@@ -180,23 +188,23 @@ describe(`unshift`, () => {
 
 describe(`unshift x2`, () => {
     runTest(
-        ['a','b','c'],
+        [A,B,C],
         d => {
-            d.unshift('d');
-            d.unshift('e');
+            d.unshift(D);
+            d.unshift(E);
         },
-        ['e','d','a','b','c'],
+        [E,D,A,B,C],
         {
             vanilla: [
-                {op: 'replace', path: [0], value: 'e'},
-                {op: 'replace', path: [1], value: 'd'},
-                {op: 'replace', path: [2], value: 'a'},
-                {op: 'add', path: [3], value: 'b'},
-                {op: 'add', path: [4], value: 'c'}
+                {op: 'replace', path: [0], value: E},
+                {op: 'replace', path: [1], value: D},
+                {op: 'replace', path: [2], value: A},
+                {op: 'add', path: [3], value: B},
+                {op: 'add', path: [4], value: C}
             ],
             optimised: [
-                {op: 'add', path: [0], value: 'e'},
-                {op: 'add', path: [1], value: 'd'}
+                {op: 'add', path: [0], value: E},
+                {op: 'add', path: [1], value: D}
             ]
         }
     );
@@ -204,17 +212,17 @@ describe(`unshift x2`, () => {
 
 describe(`reverse`, () => {
     runTest(
-        ['a','b','c','d','e'],
+        [A,B,C,D,E],
         d => {
             d.reverse();
         },
-        ['e','d','c','b','a'],
+        [E,D,C,B,A],
         {
             vanilla: [
-                {op: 'replace', path: [0], value: 'e'},
-                {op: 'replace', path: [1], value: 'd'},
-                {op: 'replace', path: [3], value: 'b'},
-                {op: 'replace', path: [4], value: 'a'}
+                {op: 'replace', path: [0], value: E},
+                {op: 'replace', path: [1], value: D},
+                {op: 'replace', path: [3], value: B},
+                {op: 'replace', path: [4], value: A}
             ],
             optimised: [
                 {op: 'move', from: [4], path: [0]},
@@ -228,36 +236,28 @@ describe(`reverse`, () => {
 
 describe(`reverse with adds and removes`, () => {
     runTest(
-        ['a','b','X','Y','c','d','e','Z'],
+        [A,B,C,D,E,F],
         d => {
-            d.splice(2,2);
-            d.pop();
-            d.reverse();
-            d.push('C');
-            d.splice(3, 0, 'B');
-            d.unshift('A');
+            d.splice(2,2);     // abef
+            d.pop();           // abe
+            d.reverse();       // eba
+            d.push(C);         // ebac
+            d.splice(3, 0, Z); // ebazc
         },
-        ['A','e','d','c','B','b','a','C'],
+        [E,B,A,Z,C],
         {
             vanilla: [
-                {op: 'replace', path: [0], value: 'A'},
-                {op: 'replace', path: [1], value: 'e'},
-                {op: 'replace', path: [2], value: 'd'},
-                {op: 'replace', path: [3], value: 'c'},
-                {op: 'replace', path: [4], value: 'B'},
-                {op: 'replace', path: [5], value: 'b'},
-                {op: 'replace', path: [6], value: 'a'},
-                {op: 'replace', path: [7], value: 'C'}
+                {op: 'replace', path: [0], value: E},
+                {op: 'replace', path: [2], value: A},
+                {op: 'replace', path: [3], value: Z},
+                {op: 'replace', path: [4], value: C},
+                {op: 'replace', path: ['length'], value: 5}
             ],
             optimised: [
-                {op: 'move', from: [6], path: [0]},
-                {op: 'move', from: [6], path: [1]},
-                {op: 'move', from: [6], path: [2]},
-                {op: 'move', from: [4], path: [3]},
-                {op: 'replace', path: ['length'], value: 5},
-                {op: 'add', path: [0], value: 'A'},
-                {op: 'add', path: [4], value: 'B'},
-                {op: 'add', path: [7], value: 'C'}
+                {op: 'move', from: [4], path: [0]},
+                {op: 'move', from: [2], path: [1]},
+                {op: 'replace', path: ['length'], value: 4},
+                {op: 'add', path: [3], value: Z}
             ]
         }
     );
@@ -265,17 +265,21 @@ describe(`reverse with adds and removes`, () => {
 
 describe(`sort`, () => {
     runTest(
-        ['e','b','a','c','d'],
+        [E,B,A,C,D],
         d => {
-            d.sort();
+            d.sort((a, b) => {
+                if(a.id > b.id) return 1;
+                if(a.id < b.id) return -1;
+                return 0;
+            });
         },
-        ['a','b','c','d','e'],
+        [A,B,C,D,E],
         {
             vanilla: [
-                {op: 'replace', path: [0], value: 'a'},
-                {op: 'replace', path: [2], value: 'c'},
-                {op: 'replace', path: [3], value: 'd'},
-                {op: 'replace', path: [4], value: 'e'}
+                {op: 'replace', path: [0], value: A},
+                {op: 'replace', path: [2], value: C},
+                {op: 'replace', path: [3], value: D},
+                {op: 'replace', path: [4], value: E}
             ],
             optimised: [
                 {op: 'move', from: [2], path: [0]},
@@ -289,19 +293,19 @@ describe(`sort`, () => {
 
 describe(`splice`, () => {
     runTest(
-        ['a','b','c','d'],
+        [A,B,C,D],
         d => {
-            d.splice(2, 0, 'e');
+            d.splice(2, 0, E);
         },
-        ['a','b','e','c','d'],
+        [A,B,E,C,D],
         {
             vanilla: [
-                {op: 'replace', path: [2], value: 'e'},
-                {op: 'replace', path: [3], value: 'c'},
-                {op: 'add', path: [4], value: 'd'}
+                {op: 'replace', path: [2], value: E},
+                {op: 'replace', path: [3], value: C},
+                {op: 'add', path: [4], value: D}
             ],
             optimised: [
-                {op: 'add', path: [2], value: 'e'}
+                {op: 'add', path: [2], value: E}
             ]
         }
     );
@@ -309,23 +313,23 @@ describe(`splice`, () => {
 
 describe(`splice x2`, () => {
     runTest(
-        ['a','b','c','d'],
+        [A,B,C,D],
         d => {
-            d.splice(2, 0, 'e');
-            d.splice(1, 0, 'f');
+            d.splice(2, 0, E);
+            d.splice(1, 0, F);
         },
-        ['a','f','b','e','c','d'],
+        [A,F,B,E,C,D],
         {
             vanilla: [
-                {op: 'replace', path: [1], value: 'f'},
-                {op: 'replace', path: [2], value: 'b'},
-                {op: 'replace', path: [3], value: 'e'},
-                {op: 'add', path: [4], value: 'c'},
-                {op: 'add', path: [5], value: 'd'}
+                {op: 'replace', path: [1], value: F},
+                {op: 'replace', path: [2], value: B},
+                {op: 'replace', path: [3], value: E},
+                {op: 'add', path: [4], value: C},
+                {op: 'add', path: [5], value: D}
             ],
             optimised: [
-                {op: 'add', path: [1], value: 'f'},
-                {op: 'add', path: [3], value: 'e'}
+                {op: 'add', path: [1], value: F},
+                {op: 'add', path: [3], value: E}
             ]
         }
     );
@@ -337,23 +341,23 @@ describe(`splice remove unshift`, () => {
     // - do move
     // - are new
     runTest(
-        ['a','b','c','d'],
+        [A,B,C,D],
         d => {
             d.splice(2, 1);
-            d.push('e','f');
+            d.push(E,F);
         },
-        ['a','b','d','e','f'],
+        [A,B,D,E,F],
         {
             vanilla: [
-                {op: 'replace', path: [2], value: 'd'},
-                {op: 'replace', path: [3], value: 'e'},
-                {op: 'add', path: [4], value: 'f'}
+                {op: 'replace', path: [2], value: D},
+                {op: 'replace', path: [3], value: E},
+                {op: 'add', path: [4], value: F}
             ],
             optimised: [
                 {op: 'move', from: [3], path: [2]},
                 {op: 'replace', path: ['length'], value: 3},
-                {op: 'add', path: [3], value: 'e'},
-                {op: 'add', path: [4], value: 'f'}
+                {op: 'add', path: [3], value: E},
+                {op: 'add', path: [4], value: F}
             ]
         }
     );
@@ -365,23 +369,23 @@ describe(`splice remove unshift with object references involved`, () => {
     // - do move
     // - are new
     runTest(
-        [{i:'a'},{i:'b'},{i:'c'},{i:'d'}],
+        [{i:A},{i:B},{i:C},{i:D}],
         d => {
             d.splice(2, 1);
-            d.push({i:'e'},{i:'f'});
+            d.push({i:E},{i:F});
         },
-        [{i:'a'},{i:'b'},{i:'d'},{i:'e'},{i:'f'}],
+        [{i:A},{i:B},{i:D},{i:E},{i:F}],
         {
             vanilla: [
-                {op: 'replace', path: [2], value: {i:'d'}},
-                {op: 'replace', path: [3], value: {i:'e'}},
-                {op: 'add', path: [4], value: {i:'f'}}
+                {op: 'replace', path: [2], value: {i:D}},
+                {op: 'replace', path: [3], value: {i:E}},
+                {op: 'add', path: [4], value: {i:F}}
             ],
             optimised: [
                 {op: 'move', from: [3], path: [2]},
                 {op: 'replace', path: ['length'], value: 3},
-                {op: 'add', path: [3], value: {i:'e'}},
-                {op: 'add', path: [4], value: {i:'f'}}
+                {op: 'add', path: [3], value: {i:E}},
+                {op: 'add', path: [4], value: {i:F}}
             ]
         }
     );
@@ -391,7 +395,7 @@ describe(`change deep arrays`, () => {
     runTest(
         {
             foo: {
-                bar: ['a','b','c']
+                bar: [A,B,C]
             },
             baz: 'baz',
             qux: []
@@ -405,15 +409,15 @@ describe(`change deep arrays`, () => {
         },
         {
             foo: {
-                bar: ['c','b','a']
+                bar: [C,B,A]
             },
             baz: 'baz?',
             qux: ['qux']
         },
         {
             vanilla: [
-                {op: 'replace', path: ['foo','bar',0], value: 'c'},
-                {op: 'replace', path: ['foo','bar',2], value: 'a'},
+                {op: 'replace', path: ['foo','bar',0], value: C},
+                {op: 'replace', path: ['foo','bar',2], value: A},
                 {op: 'add', path: ['qux', 0], value: 'qux'},
                 {op: 'replace', path: ['baz'], value: 'baz?'}
             ],
@@ -427,8 +431,7 @@ describe(`change deep arrays`, () => {
     );
 });
 
-// TODO - cope with mutiple identical objects
-describe.skip(`sort with mutiple identical objects`, () => {
+describe(`dont optimise with primitive values`, () => {
     runTest(
         ['b','a','c','a','c','b','a'],
         d => {
@@ -441,14 +444,58 @@ describe.skip(`sort with mutiple identical objects`, () => {
                 {op: 'replace', path: [0], value: 'a'},
                 {op: 'replace', path: [2], value: 'b'},
                 {op: 'replace', path: [3], value: 'b'},
-                {op: 'replace', path: [5], value: 'b'},
+                {op: 'replace', path: [5], value: 'c'},
                 {op: 'replace', path: ['length'], value: 6}
             ],
             optimised: [
-                {op: 'replace', path: ['length'], value: 6}, // bacacb
-                {op: 'move', from: [1], path: [0]}, // abcacb
-                {op: 'move', from: [3], path: [1]}, // aabccb
-                {op: 'move', from: [5], path: [3]} // aabbcc
+                {op: 'replace', path: [0], value: 'a'},
+                {op: 'replace', path: [2], value: 'b'},
+                {op: 'replace', path: [3], value: 'b'},
+                {op: 'replace', path: [5], value: 'c'},
+                {op: 'replace', path: ['length'], value: 6}
+            ]
+        }
+    );
+
+    runTest(
+        ['a','b','c','a','a'],
+        d => {
+            d.shift();
+        },
+        ['b','c','a','a'],
+        {
+            vanilla: [
+                {op: 'replace', path: [0], value: 'b'},
+                {op: 'replace', path: [1], value: 'c'},
+                {op: 'replace', path: [2], value: 'a'},
+                {op: 'replace', path: ['length'], value: 4}
+            ],
+            optimised: [
+                {op: 'replace', path: [0], value: 'b'},
+                {op: 'replace', path: [1], value: 'c'},
+                {op: 'replace', path: [2], value: 'a'},
+                {op: 'replace', path: ['length'], value: 4}
+            ]
+        }
+    );
+});
+
+describe(`deal with multiple identical values`, () => {
+    runTest(
+        [A,A,B,A],
+        d => {
+            d.shift();
+        },
+        [A,B,A],
+        {
+            vanilla: [
+                {op: 'replace', path: [1], value: B},
+                {op: 'replace', path: [2], value: A},
+                {op: 'replace', path: ['length'], value: 3}
+            ],
+            optimised: [
+                {op: 'move', from: [2], path: [1]},
+                {op: 'replace', path: ['length'], value: 3}
             ]
         }
     );
@@ -456,14 +503,14 @@ describe.skip(`sort with mutiple identical objects`, () => {
 
 describe(`filter with returned arrays`, () => {
     runTest(
-        ['a','b','c','d','e'],
+        [A,B,C,D,E],
         d => {
-            return d.filter(letter => 'abe'.indexOf(letter) !== -1);
+            return d.filter(obj => 'abe'.indexOf(obj.id) !== -1);
         },
-        ['a','b','e'],
+        [A,B,E],
         {
             vanilla: [
-                {op: 'replace', path: [], value: ['a','b','e']}
+                {op: 'replace', path: [], value: [A,B,E]}
             ],
             optimised: [
                 {op: 'move', from: [4], path: [2]},
@@ -475,7 +522,7 @@ describe(`filter with returned arrays`, () => {
 
 describe(`do nothing special with replacement values of non-array types`, () => {
     runTest(
-        ['a','b','c','d','e'],
+        [A,B,C,D,E],
         () => 123,
         123,
         {

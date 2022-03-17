@@ -430,17 +430,23 @@ See [Array operations](#array-operations) for convenient ways to let the user ma
 ```js
 function MyComponent(props) {
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     return <div>
         {form.renderAll('colours', colourForm => {
-            const colour = colourForm.useValue();
+            const colour = colourForm.branch('colour').useValue();
             return <div>Colour: {colour}</div>;
         })}
     </div>;
 }
 ```
+
+Please note that if you are rendering an array that contains any primitive values (undefined, number, string) then the automatic keying will not be able to be as accurate as if you were to render an array of objects / arrays / class instances / sets / maps. This is because object references are used to track the movement of array elements through time, and primitive elements cannot be tracked in this way.
 
 Array element forms can also opt-in to updates regarding their indexes using the `.useIndex()` hook.
 
@@ -1214,7 +1220,11 @@ const dndReorder = (result) => (draft) => {
 function DragAndDrop() {
 
     const form = useDendriform({
-        colours: ['Red', 'Green', 'Blue']
+        colours: [
+            {colour: 'Red'},
+            {colour: 'Green'},
+            {colour: 'Blue'}
+        ]
     });
 
     const onDragEnd = useCallback(result => {
@@ -1254,7 +1264,7 @@ function DragAndDropList(props) {
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
             >
-                <label>colour: <input {...useInput(eachForm, 150)} /></label>
+                <label>colour: <input {...useInput(eachForm.branch('colour'), 150)} /></label>
                 <button onClick={remove}>remove</button>
             </div>}
         </Draggable>;

@@ -127,6 +127,11 @@ export const optimiseArray = <B>(base: B[], patches: ImmerPatch[]): DendriformPa
         if(!Array.isArray(value)) return patches;
         targetIds = value.map(addItem);
 
+    } else if(base.some(b => typeof b !== 'object')) {
+        // if any primitives are in the array, we cant reliably track by reference
+        // so skip the optimisation
+        return patches;
+
     } else {
         const replacedPatches = patches.map(patch => {
             const {op, value, path} = patch;
