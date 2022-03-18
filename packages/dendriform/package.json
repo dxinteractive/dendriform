@@ -1,5 +1,5 @@
 {
-  "version": "3.4.1",
+  "version": "3.4.2",
   "license": "MIT",
   "main": "dist/index.js",
   "description": "Build performant, reactive data-editing UIs for React. Succinct code, observable state, undo & redo included!",
@@ -20,7 +20,7 @@
     "prepare": "tsdx build"
   },
   "dependencies": {
-    "dendriform-immer-patch-optimiser": "^2.1.1",
+    "dendriform-immer-patch-optimiser": "^2.1.2",
     "immer": "9.0.1",
     "shallow-equal": "1.2.1"
   },
