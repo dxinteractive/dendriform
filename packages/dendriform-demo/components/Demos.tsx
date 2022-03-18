@@ -1404,6 +1404,98 @@ function MyComponent(props) {
 `;
 
 //
+// sync stack
+//
+
+function SyncStack(): React.ReactElement {
+    const history = 100;
+    const form = useDendriform(() => ({name: 'Ben', age: '88'}), {history});
+    const historyStack = useDendriform<string[]>(() => [], {history});
+
+    useHistorySync(form, historyStack);
+
+    return <Region>
+        {form.render('name', nameForm => {
+            const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const newValue = e.target.value;
+                nameForm.buffer();
+                nameForm.set(newValue);
+                historyStack.set(draft => {
+                    draft.push('Edit name');
+                });
+                nameForm.done();
+            };
+
+            return <Region of="label">
+                name: <input value={nameForm.useValue()} onChange={handleChange} />
+            </Region>
+        })}
+
+        {form.render('age', ageForm => {
+            const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const newValue = e.target.value;
+                ageForm.buffer(); // TODO buffer should be global so histories dont get out of sync!
+                // also add a check and a warning about out of sync history items!
+                ageForm.set(newValue);
+                historyStack.set(draft => {
+                    draft.push('Edit age');
+                });
+                ageForm.done();
+            };
+
+            return <Region of="label">
+                age: <input value={ageForm.useValue()} onChange={handleChange} />
+            </Region>
+        })}
+
+        {form.render(form => {
+            const {canUndo, canRedo} = form.useHistory();
+            historyStack.useValue();
+
+            console.log('form historyIndex', form.core.state.historyIndex);
+            console.log('historyStack historyIndex', historyStack.core.state.historyIndex);
+            // this function will only re-render if canUndo or canRedo changes
+            return <Region>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={() => form.go(-3)} disabled={!canUndo}>Undo 3</button>
+            </Region>;
+        })}
+
+        {historyStack.renderAll(historyItem => {
+            return <Region>{historyItem.useValue()}</Region>;
+        })}
+    </Region>;
+}
+
+const SyncStackCode = `
+function MyComponent(props) {
+    const form = useDendriform(() => ({name: 'Ben'}), {history: 10});
+
+    return <div>
+        {form.render('name', nameForm => (
+            <label>name: <input {...useInput(nameForm, 150)} /></label>
+        ))}
+
+        {form.render('age', ageForm => (
+            <label>age: <input {...useInput(ageForm, 150)} /></label>
+        ))}
+
+        {form.render(form => {
+            const {canUndo, canRedo} = form.useHistory();
+            // this function will only re-render if canUndo or canRedo changes
+            return <>
+                <button type="button" onClick={form.undo} disabled={!canUndo}>Undo</button>
+                <button type="button" onClick={form.redo} disabled={!canRedo}>Redo</button>
+                <button type="button" onClick={() => form.go(-3)} disabled={!canUndo}>Undo 3</button>
+            </>;
+        })}
+    </div>;
+}
+`;
+
+
+//
 // drag and drop
 //
 
@@ -2756,11 +2848,19 @@ const ADVANCED_DEMOS: DemoObject[] = [
         more: 'deriving-two-way'
     },
     {
-        title: 'Synchronising forms',
+        title: 'Synchronising form history',
         Demo: Sync,
         code: SyncCode,
         description: 'When forms are synchronised with each other, their changes throughout history are also synchronised. Type in either input and use undo and redo to see how the two forms are connected.',
         anchor: 'sync',
+        more: 'synchronising-forms'
+    },
+    {
+        title: 'Navigating form history',
+        Demo: SyncStack,
+        code: SyncStackCode,
+        description: 'Form synchronisation can be used to build a UI component that can navigate through history.',
+        anchor: 'sync-stack',
         more: 'synchronising-forms'
     },
     {
