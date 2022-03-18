@@ -723,6 +723,7 @@ export class Core<C,P extends Plugins> {
 type MaybeReactElement = React.ReactElement|null;
 
 type BranchProps = {
+    id?: string;
     renderer: () => MaybeReactElement|MaybeReactElement[];
     deps: unknown[];
 };
@@ -731,7 +732,7 @@ type BranchProps = {
 const Branch = React.memo(
     // eslint-disable-next-line react/prop-types
     (props: BranchProps): React.ReactElement => <>{props.renderer()}</>,
-    (prevProps, nextProps) => shallowEqualArrays(prevProps.deps, nextProps.deps)
+    (prevProps, nextProps) => prevProps.id === nextProps.id && shallowEqualArrays(prevProps.deps, nextProps.deps)
 );
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1005,7 +1006,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
         const renderer = aIsRenderer ? a : b;
         const deps = aIsRenderer ? b : c;
         const form = aIsRenderer ? this : this.branch(a);
-        return <Branch key={form.id} renderer={() => renderer(form)} deps={deps} />;
+        return <Branch id={form.id} renderer={() => renderer(form)} deps={deps} />;
     }
 
     renderAll<K1 extends Key<V>, K2 extends keyof Val<V,K1>, K3 extends keyof Val<Val<V,K1>,K2>, K4 extends keyof Val<Val<Val<V,K1>,K2>,K3>, W extends Val<Val<Val<V,K1>,K2>,K3>[K4]>(path: [K1, K2, K3, K4], renderer: Renderer<Dendriform<BranchableChild<W>,P>>, deps?: unknown[]): React.ReactElement;
@@ -1031,7 +1032,7 @@ export class Dendriform<V,P extends Plugins = undefined> {
             });
         };
 
-        return <Branch key={form.id} renderer={containerRenderer} deps={deps} />;
+        return <Branch id={form.id} renderer={containerRenderer} deps={deps} />;
     }
 
     readonly(): Dendriform<V,P> {
