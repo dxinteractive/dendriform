@@ -49,7 +49,7 @@
     "eslint-config-blueflag": "^0.11.1",
     "eslint-plugin-react": "^7.20.6",
     "husky": "^4.2.5",
-    "immer": "9.0.1",
+    "immer": "9.0.15",
     "size-limit": "^4.5.7",
     "ts-loader": "^8.0.3",
     "tsdx": "^0.13.3",
